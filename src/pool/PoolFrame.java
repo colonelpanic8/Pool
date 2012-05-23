@@ -15,8 +15,8 @@ public class PoolFrame {
 		public void stateChanged(ChangeEvent evt){
 			slider = (JSlider)evt.getSource();
 			double aind = slider.getValue();
-			pp.cueball.xcue = Math.cos((aind)*2*Math.PI/2000);
-			pp.cueball.ycue = Math.sin((aind)*2*Math.PI/2000);
+			pp.aimer.aim.x = Math.cos((aind)*2*Math.PI/2000);
+			pp.aimer.aim.y = Math.sin((aind)*2*Math.PI/2000);
 			pp.repaint();
 		}
 	}
@@ -43,8 +43,8 @@ public class PoolFrame {
 			pp = a; pwr = 15;
 		}
 		public void actionPerformed(ActionEvent evt){
-			pp.cueball.xv = pp.cueball.xcue*pwr;						//power
-			pp.cueball.yv = pp.cueball.ycue*pwr;
+			pp.cueball.vel.x = -pp.aimer.aim.x*pwr;						//power
+			pp.cueball.vel.y = -pp.aimer.aim.y*pwr;
 			pp.gball = false;
 		}
 	}

@@ -3,27 +3,25 @@ package pool;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import java.awt.Point;
+import java.awt.geom.Point2D;
 
 public class Ball{
-	double xv, yv;
-	double xp, yp;
-	double xf, yf;
-	double xcue, ycue;
+    Point2D.Double pos;
+    Point2D.Double vel;
 	int size;
 	Color color;
 	boolean sel;
-	public Ball(Color col, int x, int y, int a, int b, int s){
-		xp = x;
-		yp = y;
-		color = col;
-		xv = a;
-		yv = b;
-		size = s;
+	public Ball(Color col, double x, double y, double a, double b, int s){
+	    pos = new Point2D.Double(x,y);
+	    vel = new Point2D.Double(a,b);
+	    color = col;
+	    size = s;
 	}
 	public double getcx(){
-		return xp + size/2;
+		return pos.x + size/2;
 	}
 	public double getcy(){
-		return yp + size/2;
+		return pos.y + size/2;
 	}
 }
