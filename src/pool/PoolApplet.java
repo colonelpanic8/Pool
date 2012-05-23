@@ -9,11 +9,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JApplet;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -76,17 +72,17 @@ public class PoolApplet extends JApplet {
 			int height = msp.getHeight()/2 - 20;
 			switch (cc.getSelectedIndex()) {
 				case 1:
-					msp.balls[msp.numberofballs] = new Ball(Color.BLUE, width, height, 2, 2, 42);
+					msp.balls[msp.numberofballs] = new Ball(Color.BLUE, width, height, 0, 0, 42);
 					break;
 				case 2:
-					msp.balls[msp.numberofballs] = new Ball(Color.GREEN, width, height, -1, 1, 42);
+					msp.balls[msp.numberofballs] = new Ball(Color.GREEN, width, height, 0, 0, 42);
 					break;
 				case 3:
 					msp.balls[msp.numberofballs] = new Ball(Color.BLACK, width, height, -2, 1, 42);
 					break;
 
 				default:
-					msp.balls[msp.numberofballs] = new Ball(Color.RED, width, height, -1, -1, 42);
+					msp.balls[msp.numberofballs] = new Ball(Color.RED, width, height, 0, 0, 42);
 					break;
 			}
 			msp.numberofballs++;

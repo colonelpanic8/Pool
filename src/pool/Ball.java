@@ -20,10 +20,10 @@ public class Ball{
 		yv = b;
 		size = s;
 	}
-	public int getcx(){
-		return (int)xp + size/2;
+	public double getcx(){
+		return xp + size/2;
 	}
-	public int getcy(){
-		return (int)yp + size/2;
+	public double getcy(){
+		return yp + size/2;
 	}
 }

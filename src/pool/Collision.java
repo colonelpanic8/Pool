@@ -9,14 +9,12 @@ package pool;
 //
 
 public class Collision {
-	double time;
-	int type;
-	Ball ball;
-	int wpb;  //wall pocket or ball
-	public Collision(double t, Ball b, int a, int c){
-		time = t;
-		ball = b;
-		type = a;
-		wpb = c;
-	}
+    double time;
+    Ball ball1;
+    Ball ball2;
+    public Collision(double t, Ball b, Ball c){
+	time = t;
+	ball1 = b;
+        ball2 = c;
+    }
 }
