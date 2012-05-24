@@ -95,13 +95,20 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 	int c2 = 0;
 	g.setColor(Color.BLACK);
 	if(cueball.vel.x < 1 && cueball.vel.y < 1){
-	    g.drawLine( (int)(cx - -aimer.aim.y*cueball.size/2) , (int)(cy + -aimer.aim.x*cueball.size/2) , (int)(cx + -aimer.aim.x*600 - -aimer.aim.y*cueball.size/2) , (int)(cy + -aimer.aim.y*600 + -aimer.aim.x*cueball.size/2) );
 	    g.drawLine(cx, cy, (int)(cx+(-aimer.aim.x*600)), (int)(cy+(-aimer.aim.y*600)));
-	    g.drawLine( (int)(cx + -aimer.aim.y*cueball.size/2) , (int)(cy - -aimer.aim.x*cueball.size/2) , (int)(cx + -aimer.aim.x*600 + -aimer.aim.y*cueball.size/2) , (int)(cy + -aimer.aim.y*600 - -aimer.aim.x*cueball.size/2) );
-	    g.fillOval((int)(cueball.getcx() + aimer.length*aimer.aim.x - aimer.size/2),
-		       (int)(cueball.getcy() + aimer.length*aimer.aim.y - aimer.size/2), aimer.size, aimer.size);
-	    g.drawLine((int)(cueball.getcx() + aimer.length*aimer.aim.x),
-		       (int)(cueball.getcy() + aimer.length*aimer.aim.y), (int)cueball.getcx(), (int)cueball.getcy());
+	    /*
+	    g.drawLine( (int)(cx - -aimer.aim.y*cueball.size/2),
+			(int)(cy + -aimer.aim.x*cueball.size/2), 
+			(int)(cx + -aimer.aim.x*600 - -aimer.aim.y*cueball.size/2), 
+			(int)(cy + -aimer.aim.y*600 + -aimer.aim.x*cueball.size/2));
+	    g.drawLine( (int)(cx + -aimer.aim.y*cueball.size/2),
+			(int)(cy - -aimer.aim.x*cueball.size/2), 
+			(int)(cx + -aimer.aim.x*600 + -aimer.aim.y*cueball.size/2),
+			(int)(cy + -aimer.aim.y*600 - -aimer.aim.x*cueball.size/2));
+	    */
+
+	    g.fillOval((int)(aimer.tracker.x - aimer.size/2),
+		       (int)(aimer.tracker.y - aimer.size/2), aimer.size, aimer.size);
 	}
 	g.fillOval(3*-cueball.size/2, 3*-cueball.size/2, 3*cueball.size, 3*cueball.size);
 	g.drawString(Double.toString(tval), 100, 100);
@@ -230,7 +237,6 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 	detectCollisions();
 	collisionEffects();
 	updateGhostBall();
-
 	int count = 0;
 	while (count < numberofballs) {
 	    Ball temp = balls[count];
@@ -272,57 +278,83 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 	    temp.vel.y = .99*temp.vel.y;
 	    count++;
 	}
+	if(!aimer.dragging && ! aimer.shooting) {
+	    aimer.tracker.setLocation(cueball.getcx(), cueball.getcy());
+	}
+	if(aimer.shooting) {
+	    aimer.vel += aimer.acc;
+	    if(aimer.distance > aimer.vel) {
+		aimer.distance -= aimer.vel;
+                aimer.tracker.x = cueball.getcx() + aimer.aim.x*aimer.distance;
+		aimer.tracker.y = cueball.getcy() + aimer.aim.y*aimer.distance;   
+	    } else {
+		aimer.shooting = false;
+		cueball.vel.x = -aimer.aim.x*aimer.vel;
+		cueball.vel.y = -aimer.aim.y*aimer.vel;
+		aimer.vel = 0;
+            }
+	}
 	this.repaint();
     }
 }
 
 class Aimer implements MouseMotionListener, MouseListener {
-    boolean dragging;
-    Ball cb; //cueball
-    int offset;
+    boolean dragging, shooting;
+    Ball cb;
     int size;
     int length;
     Point.Double aim;
+    Point.Double tracker;
     Point.Double click;
+    int vel;
+    int acc;
+    double distance;
     Aimer(int s, int l, Ball ball) {
 	size = s;
 	length = l;
 	cb = ball;
 	aim = new Point2D.Double(1,0);
+	tracker = new Point2D.Double(0,1);
 	click = new Point2D.Double(0,1);
 	dragging = false;
+	shooting = false;
+	vel = 0;
+	acc = 3;
     }
     
     public void mousePressed(MouseEvent evt) {
 	click.setLocation(evt.getX(), evt.getY());
-	if(click.distance(cb.getcx()+length*aim.x, cb.getcy() + length*aim.y) < size) {
+	if(click.distance(tracker) < size && !shooting) {
 	    dragging = true;
 	}
 	PoolPanel a = (PoolPanel)evt.getSource();
-	a.tval = 2;
+	a.tval = 4;
     }
 
     public void mouseEntered(MouseEvent evt) { }
     public void mouseExited(MouseEvent evt) { }
     public void mouseClicked(MouseEvent evt) { }
     public void mouseReleased(MouseEvent evt) {
-	dragging = false;
+	if(dragging) {
+	    dragging = false;
+	    if(distance > 20) {
+		shooting = true;
+	    }
+	}
     }
     public void mouseMoved(MouseEvent evt) {
-
 	click.setLocation(evt.getX(), evt.getY());
-
-	  //  1+1;
-	//}
+	PoolPanel a = (PoolPanel)evt.getSource();
+	a.tval = click.distance(tracker.x, tracker.y);
+	a.tval = 4;
     }
     public void mouseDragged(MouseEvent evt){
 	PoolPanel a = (PoolPanel)evt.getSource();
 	if (dragging){
-	    click.setLocation(evt.getX(), evt.getY());
-	    double distance = click.distance(cb.getcx(), cb.getcy());
-	    aim.x = (click.x - cb.getcx())/distance;
-	    aim.y = (click.y - cb.getcy())/distance;
-	    a.tval =  distance;
+	    tracker.setLocation(evt.getX(), evt.getY());
+	    distance = tracker.distance(cb.getcx(), cb.getcy());
+	    aim.x = (tracker.x - cb.getcx())/distance;
+	    aim.y = (tracker.y - cb.getcy())/distance;
 	}
     }
 }
