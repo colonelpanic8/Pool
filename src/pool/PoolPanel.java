@@ -16,7 +16,7 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
     boolean gball; // True when a ghostball needs to be drawn.
     int gcx;
     int gcy; // location of center of ghostball.
-    double pocketsize;
+    double pocketSize;
     Ball wob; // the object ball that the ghost ball will be drawn next to
     int gballx; // location of ghostball (for drawing) (top right hand corner)
     int gbally;
@@ -37,7 +37,7 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 	pad = 25;
 	ballSize = 42;
 	numberofballs = 1;
-	pocketsize = 1.5;
+	pocketSize = 1.5*ballSize;
 	aPoint = new Point((int)(1.5*ballSize + pad), pad);
 	balls = new Ball[16];
 	cueball = new Ball(Color.WHITE, 850, 200, 0, 0, ballSize);
@@ -87,39 +87,23 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 	g.fillOval(3*-cueball.size/2+pad, 3*-cueball.size/2+height-pad, 3*cueball.size, 3*cueball.size);
 	g.fillOval(3*-cueball.size/2 + width - pad, 3*-cueball.size/2+pad, 3*cueball.size, 3*cueball.size);
 	g.fillOval(3*-cueball.size/2 + width - pad, 3*-cueball.size/2+height - pad, 3*cueball.size, 3*cueball.size);
-
-	//RAIL
-	g.fillRect(0,0,width,pad);
-	g.fillRect(0,0,pad,width);
-	g.fillRect(0,height-pad,width,pad);
-	g.fillRect(width-pad,0,pad,width);
-	    
-	g.setColor(Color.RED);
-	    
-	g.fillOval(aPoint.x, aPoint.y, 5, 5);
-
-
-	if (gball){
-	    g.fillOval(gballx, gbally, cueball.size, cueball.size);
-	    int cenx = (int)(wob.pos.x+wob.size/2);
-	    int ceny = (int)(wob.pos.y+wob.size/2);
-	    int vgx = (int)(cenx - gcx);
-	    int vgy = (int)(ceny - gcy);
-	    g.drawLine(gcx, gcy, gcx + 15*vgx, gcy + 15*vgy); 
-	}
-	int cx = (int)(cueball.pos.x + cueball.size/2);
-	int cy = (int)(cueball.pos.y + cueball.size/2);
+        
 	int count = 0;
 	while(count < numberofballs){
 	    Ball temp = balls[count];
-	    g.setColor(temp.color);
-	    g.fillOval((int)temp.pos.x, (int)temp.pos.y, temp.size, temp.size);
+	    if (temp.remove) {
+		balls[count] = balls[numberofballs - 1];
+                numberofballs--;
+		count--;
+		temp = balls[count];
+	    }
+	    temp.draw(g);
 	    count++;
 	}
-	int c2 = 0;
 	g.setColor(Color.BLACK);
 	if(Math.abs(cueball.vel.x) + Math.abs(cueball.vel.y) < 1){
-	    g.drawLine(cx, cy, (int)(cx+(-aimer.aim.x*600)), (int)(cy+(-aimer.aim.y*600)));
+	    g.drawLine((int)cueball.getcx(), (int)cueball.getcy(), 
+                    (int)(cueball.getcx()+(-aimer.aim.x*600)), (int)(cueball.getcy()+(-aimer.aim.y*600)));
 	    /*
 	    g.drawLine( (int)(cx - -aimer.aim.y*cueball.size/2),
 			(int)(cy + -aimer.aim.x*cueball.size/2), 
@@ -130,11 +114,26 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 			(int)(cx + -aimer.aim.x*600 + -aimer.aim.y*cueball.size/2),
 			(int)(cy + -aimer.aim.y*600 - -aimer.aim.x*cueball.size/2));
 	    */
+            if (gball){
+		g.fillOval(gballx, gbally, cueball.size, cueball.size);
+		int cenx = (int)(wob.pos.x+wob.size/2);
+		int ceny = (int)(wob.pos.y+wob.size/2);
+		int vgx = (int)(cenx - gcx);
+		int vgy = (int)(ceny - gcy);
+		g.drawLine(gcx, gcy, gcx + 15*vgx, gcy + 15*vgy); 
+	    }
 
 	    g.fillOval((int)(aimer.tracker.x - aimer.size/2),
 		       (int)(aimer.tracker.y - aimer.size/2), aimer.size, aimer.size);
 	}
 	g.drawString(Double.toString(tval), 100, 100);
+
+	//RAIL
+	g.setColor(Color.darkGray);
+	g.fillRect(0,0,width,pad);
+	g.fillRect(0,0,pad,width);
+	g.fillRect(0,height-pad,width,pad);
+	g.fillRect(width-pad,0,pad,width);
     }
     
     
@@ -373,7 +372,7 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
 	gball = false;
 	for(count = 1; count < numberofballs; count ++) {
 	    Ball temp = balls[count];
-	    if(cueball.vel.x == 0 && cueball.vel.y == 0 && ! (temp==cueball)){
+	    if(!(temp==cueball)){
 		// Quadratic with solutions (similar to collision detection)
 		double a = aimer.aim.x*aimer.aim.x + aimer.aim.y*aimer.aim.y;
 		double b = 2 * (cueball.getcx()*-aimer.aim.x - temp.getcx()*-aimer.aim.x + 
@@ -399,9 +398,32 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
     }
 
     public void checkPockets() {
-	
+	for(int count = 0; count < numberofballs; count++) {
+	    Ball temp = balls[count];
+	    Point p = new Point(pad,pad);
+	    if(p.distance(temp.getcx(), temp.getcy()) < pocketSize-temp.size/2) {
+		removeBall(temp);
+	    }
+	    p.setLocation(pad,getHeight()-pad);
+	    if(p.distance(temp.getcx(), temp.getcy()) < pocketSize-temp.size/2) {
+		removeBall(temp);
+	    }
+	    p.setLocation(getWidth()-pad,pad);
+	    if(p.distance(temp.getcx(), temp.getcy()) < pocketSize-temp.size/2) {
+		removeBall(temp);
+	    }
+	    p.setLocation(getWidth() -pad,getHeight()-pad);
+	    if(p.distance(temp.getcx(), temp.getcy()) < pocketSize-temp.size/2) {
+		removeBall(temp);
+	    }
+	}
     }
-    
+
+    public void removeBall(Ball b) {
+	b.vel.x = 0;
+	b.vel.y = 0;
+	b.sunk = true;
+    }
     
     public void actionPerformed(ActionEvent evt){
 	detectBallCollisions();
@@ -451,8 +473,8 @@ class Aimer implements MouseMotionListener, MouseListener {
 		tracker.y = cb.getcy() + aim.y*distance;   
 	    } else {
 		shooting = false;
-		cb.vel.x = -aim.x*vel/2;
-		cb.vel.y = -aim.y*vel/2;
+		cb.vel.x = -aim.x*vel;
+		cb.vel.y = -aim.y*vel;
 		vel = 0;
             }
 	}
@@ -463,8 +485,6 @@ class Aimer implements MouseMotionListener, MouseListener {
 	PoolPanel a = (PoolPanel)evt.getSource();
 	if(click.distance(tracker) < size && !shooting) {
 	    dragging = true;
-	} else{
-	    a.aPoint.setLocation(click);
 	}
     }
 
