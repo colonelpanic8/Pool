@@ -121,7 +121,7 @@ public class PoolFrame {
 		south.add(colorChoice);
 		content.add(south, BorderLayout.SOUTH);
 		window.setContentPane(content);
-		window.setSize(840, 670);
+		window.setSize(1200, 700);
 		window.setLocation(100,100);
 		window.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		window.setVisible(true);
