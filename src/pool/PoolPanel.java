@@ -32,7 +32,7 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
     Aimer aimer;
     
     public PoolPanel(){
-	setBackground(Color.gray);
+	setBackground(new Color(48,130,100));
 	setPreferredSize(new Dimension(800,600));
 	pad = 25;
 	ballSize = 42;
@@ -70,9 +70,9 @@ public class PoolPanel extends JPanel implements ActionListener, Comparator {
     
     @Override public void paintComponent(Graphics g){
 	super.paintComponent(g);
-	g.setColor(Color.BLACK);
 	int height = getHeight();
 	int width = getWidth();
+	g.setColor(Color.BLACK);
 
 	//WALLS
 

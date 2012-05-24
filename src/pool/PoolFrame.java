@@ -51,7 +51,7 @@ public class PoolFrame {
 			pp.gball = false;
 		}
 	}
-	private static class NBControl implements ActionListener{
+	public static class NBControl implements ActionListener{
 		PoolPanel msp;
 		JComboBox cc;
 		public NBControl(PoolPanel a, JComboBox c){
