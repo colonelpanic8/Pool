@@ -1,9 +1,12 @@
 package pool;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class PoolFrame {
 	public static class AngleListener implements ChangeListener{
@@ -26,7 +29,7 @@ public class PoolFrame {
 		JSlider slider;
 		SListener slistener;
 		public PowerListener(PoolPanel a, SListener b){
-			pp=a; slistener=b;
+			pp = a; slistener=b;
 		}
 		public void stateChanged(ChangeEvent evt){
 			slider = (JSlider)evt.getSource();
