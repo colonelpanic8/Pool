@@ -17,6 +17,7 @@ public class Collision {
     Ball ball2;
     boolean inX;
     Point point;
+    boolean removal;
     public Collision(double t, Ball b, Ball c){
 	time = t;
 	ball1 = b;
@@ -33,5 +34,10 @@ public class Collision {
 	ball1 = b;
 	ball2 = null;
 	point = p;
-    }    
+    }
+    public Collision(Ball b, double t) {
+	removal = true;
+	ball1 = b;
+	time = t;
+    }
 }
