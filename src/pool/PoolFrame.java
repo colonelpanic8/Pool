@@ -46,9 +46,8 @@ public class PoolFrame {
 	    pp = a; pwr = 15;
 	}
 	public void actionPerformed(ActionEvent evt){
-	    pp.cueball.vel.x = -pp.aimer.aim.x*pwr;						//power
+	    pp.cueball.vel.x = -pp.aimer.aim.x*pwr;
 	    pp.cueball.vel.y = -pp.aimer.aim.y*pwr;
-	    pp.displayGhostBall = false;
 	}
     }
     public static class ModeListener implements ActionListener{
@@ -79,17 +78,17 @@ public class PoolFrame {
 	    int height = msp.getHeight()/2 - 20;
 	    switch (cc.getSelectedIndex()) {
 	    case 1:
-		msp.balls[msp.numberofballs] = new Ball(Color.BLUE, width, height, 2, 2, 42);
+		msp.balls.add(new Ball(Color.BLUE, width, height, 2, 2, 42));
 		break;
 	    case 2:
-		msp.balls[msp.numberofballs] = new Ball(Color.GREEN, width, height, -1, 1, 42);
+		msp.balls.add(new Ball(Color.GREEN, width, height, -1, 1, 42));
 		break;
 	    case 3:
-		msp.balls[msp.numberofballs] = new Ball(Color.BLACK, width, height, -2, 1, 42);
+		msp.balls.add(new Ball(Color.yellow, width, height, -2, 1, 42));
 		break;
 		
 	    default:
-		msp.balls[msp.numberofballs] = new Ball(Color.RED, width, height, -1, -1, 42);
+		msp.balls.add(new Ball(Color.RED, width, height, -1, -1, 42));
 		break;
 	    }
 	    msp.numberofballs++;
@@ -106,7 +105,7 @@ public class PoolFrame {
 	colorChoice.addItem("Red");
 	colorChoice.addItem("Blue");
 	colorChoice.addItem("Green");
-	colorChoice.addItem("Black");
+	colorChoice.addItem("Yellow");
 	
 	JSlider angle = new JSlider(0,2000,0);//Defines angle of shot
 	AngleListener alist = new AngleListener(poolpanel);
