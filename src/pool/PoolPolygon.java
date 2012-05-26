@@ -16,7 +16,8 @@ public class PoolPolygon extends Polygon {
     }
     
     public void draw(Graphics g) {
-        g.drawPolygon(this);
+        g.setColor(color);
+        g.fillPolygon(this);
     }
     
     public void detectCollisions(Ball ball, PriorityQueue<Collision> collisions, double timePassed) {

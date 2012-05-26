@@ -22,7 +22,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     Ball cueball;
     Ball ghostBallObjectBall;
     Point ghostBallPosition;
-    int pocketSize, railSize, ballSize, borderSize;
+    int pocketSize, railSize, ballSize, borderSize, railIndent;
     PriorityQueue<Collision> collisions;
     Aimer aimer;
     boolean selMode;
@@ -37,13 +37,16 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public PoolPanel(){        
 	setBackground(new Color(48,130,100));
 	setPreferredSize(new Dimension(800,600));
-	this.addHierarchyBoundsListener(this);
-	selMode = false;
-	railSize = 25;
+	addHierarchyBoundsListener(this);
+        height = getHeight();
+        width = getWidth();
+        selMode = false;
 	ballSize = 40;
-	borderSize = ballSize;
         pockets = new ArrayList(6);
         pocketSize = (int)(2*ballSize);
+        railSize = pocketSize/2-10;
+        railIndent = railSize;
+        borderSize = pocketSize/2 + 10;
         polygons = new ArrayList(10);
 	initPockets();
         initPolygons();
@@ -65,26 +68,147 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void initPolygons() {
-        int[] xpoints = {
-            400, 400, 460, 460
-        };
-        int[] ypoints = {
-            40, 400, 320, 100
-        };
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, Color.GREEN));
+	Color color = new Color(48,130,100).darker();
+        int[] xpoints, ypoints;
+	xpoints = new int[4];
+	ypoints = new int[4];
+
+	xpoints[0] = borderSize + pocketSize/2;
+	xpoints[1] = borderSize + pocketSize/2 + railIndent;
+	xpoints[2] = width - pocketSize/2;
+	xpoints[3] = width - pocketSize/2;
+	ypoints[0] = borderSize;
+	ypoints[1] = borderSize + railSize;
+	ypoints[2] = borderSize + railSize;
+	ypoints[3] = borderSize;
+        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+
+	xpoints[0] = width/2 + pocketSize/2;
+	xpoints[1] = width/2 + pocketSize/2;
+	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
+        xpoints[3] = width - pocketSize/2 - borderSize;
+        ypoints[0] = borderSize;
+	ypoints[1] = borderSize + railSize;
+	ypoints[2] = borderSize + railSize;
+	ypoints[3] = borderSize;
+        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+        
+	xpoints[0] = width - borderSize - pocketSize/2;
+        xpoints[1] = width - borderSize - railSize;
+        xpoints[2] = width - borderSize- railSize;
+        xpoints[3] = width - borderSize;
+	ypoints[0] = borderSize + pocketSize/2;
+	ypoints[1] = borderSize + pocketSize/2 + railIndent;
+	ypoints[2] = height - borderSize - railIndent;
+	ypoints[3] = height - borderSize - pocketSize/2;
+        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+
+	xpoints[0] = width/2 + pocketSize/2;
+	xpoints[1] = width/2 + pocketSize/2;
+	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
+        xpoints[3] = width - pocketSize/2 - borderSize;
+	ypoints[0] = height - borderSize;
+	ypoints[1] = height - (borderSize + railSize);
+	ypoints[2] = height - (borderSize + railSize);
+	ypoints[3] = height - borderSize;
+        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+
+	xpoints[0] = borderSize + pocketSize/2;
+	xpoints[1] = borderSize + pocketSize/2 + railIndent;
+	xpoints[2] = width/2 - pocketSize/2;
+	xpoints[3] = width/2 - pocketSize/2;
+	ypoints[0] = height - borderSize;
+	ypoints[1] = height - (borderSize + railSize);
+	ypoints[2] = height - (borderSize + railSize);
+	ypoints[3] = height - borderSize;
+        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+        
+	xpoints[0] = borderSize;
+        xpoints[1] = borderSize+railSize;
+        xpoints[2] = borderSize+railSize;
+        xpoints[3] = borderSize;
+        ypoints[0] = borderSize + pocketSize/2;
+	ypoints[1] = borderSize + pocketSize/2 + railIndent;
+	ypoints[2] = height - borderSize - railIndent;
+	ypoints[3] = height - borderSize;
+        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
     }
 
     public void initPockets() {
-	pockets.add(new Pocket(borderSize, borderSize, pocketSize));
-	pockets.add(new Pocket(width/2, borderSize, pocketSize));
-	pockets.add(new Pocket(width - borderSize, borderSize, pocketSize));
-	pockets.add(new Pocket(borderSize, height - borderSize, pocketSize));
-	pockets.add(new Pocket(width/2, height - borderSize, pocketSize));
-	pockets.add(new Pocket(width - borderSize, height - borderSize, pocketSize));
+	pockets.add(new Pocket(borderSize , borderSize , pocketSize));
+	pockets.add(new Pocket(width/2, borderSize , pocketSize));
+	pockets.add(new Pocket(width - borderSize , borderSize , pocketSize));
+	pockets.add(new Pocket(borderSize , height - borderSize , pocketSize));
+	pockets.add(new Pocket(width/2, height - borderSize , pocketSize));
+	pockets.add(new Pocket(width - borderSize, height - borderSize , pocketSize));
+    }
+    
+    public void ancestorMoved(HierarchyEvent he) {
+         
+    }
+
+    public void ancestorResized(HierarchyEvent he) {
+        height = getHeight();
+        width = getWidth();
+        if(pockets != null) {
+	    pockets.get(0).pos.setLocation(borderSize , borderSize );
+	    pockets.get(1).pos.setLocation(width/2, borderSize );
+	    pockets.get(2).pos.setLocation(width - borderSize , borderSize );
+	    pockets.get(3).pos.setLocation(borderSize , height - borderSize );
+	    pockets.get(4).pos.setLocation(width/2, height - borderSize );
+	    pockets.get(5).pos.setLocation(width - borderSize, height - borderSize);
+        }
+        if(polygons != null) {
+            polygons.get(0).xpoints[2] = width/2 - pocketSize/2;
+            polygons.get(0).xpoints[3] = width/2 - pocketSize/2;
+
+	    polygons.get(1).xpoints[0] = width/2 + pocketSize/2;
+	    polygons.get(1).xpoints[1] = width/2 + pocketSize/2;
+	    polygons.get(1).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
+	    polygons.get(1).xpoints[3] = width - pocketSize/2 - borderSize;
+
+	    polygons.get(2).xpoints[0] = width - borderSize;
+	    polygons.get(2).xpoints[1] = width - borderSize-railSize;
+	    polygons.get(2).xpoints[2] = width - borderSize-railSize;
+	    polygons.get(2).xpoints[3] = width - borderSize;
+	    polygons.get(2).ypoints[0] = borderSize + pocketSize/2;
+	    polygons.get(2).ypoints[1] = borderSize + pocketSize/2 + railIndent;
+	    polygons.get(2).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
+	    polygons.get(2).ypoints[3] = height - borderSize - pocketSize/2;
+
+	    polygons.get(3).xpoints[0] = width/2 + pocketSize/2;
+	    polygons.get(3).xpoints[1] = width/2 + pocketSize/2;
+	    polygons.get(3).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
+	    polygons.get(3).xpoints[3] = width - pocketSize/2 - borderSize;
+	    polygons.get(3).ypoints[0] = height - borderSize;
+	    polygons.get(3).ypoints[1] = height - (borderSize + railSize);
+	    polygons.get(3).ypoints[2] = height - (borderSize + railSize);
+	    polygons.get(3).ypoints[3] = height - borderSize;
+	    
+	    
+	    polygons.get(4).xpoints[0] = borderSize + pocketSize/2;
+	    polygons.get(4).xpoints[1] = borderSize + pocketSize/2 + railIndent;
+	    polygons.get(4).xpoints[2] = width/2 - pocketSize/2;
+	    polygons.get(4).xpoints[3] = width/2 - pocketSize/2;
+	    polygons.get(4).ypoints[0] = height - borderSize;
+	    polygons.get(4).ypoints[1] = height - (borderSize + railSize);
+	    polygons.get(4).ypoints[2] = height - (borderSize + railSize);
+	    polygons.get(4).ypoints[3] = height - borderSize;
+           
+            polygons.get(5).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
+            polygons.get(5).ypoints[3] = height - borderSize - pocketSize/2;
+        }
     }
     
     @Override public void paintComponent(Graphics g){
 	super.paintComponent(g);
+        //BORDER
+	g.setColor(Color.DARK_GRAY);
+	g.fillRect(0,0,width,borderSize);
+	g.fillRect(0,0,borderSize,width);
+	g.fillRect(0,height-borderSize,width,borderSize);
+	g.fillRect(width-borderSize,0,borderSize,width);
+        
 	g.setColor(Color.BLACK);
 
 	//POCKETS
@@ -115,19 +239,19 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	if(Math.abs(cueball.vel.x) + Math.abs(cueball.vel.y) < 1) {
 	    g.drawLine((int)cueball.getcx(), 
 		       (int)cueball.getcy(), 
-		       (int)(cueball.getcx()+(-aimer.aim.x*600)), 
-		       (int)(cueball.getcy()+(-aimer.aim.y*600)));
+		       (int)(cueball.getcx()+(-aimer.aim.x*2000)), 
+		       (int)(cueball.getcy()+(-aimer.aim.y*2000)));
 	    //Additional aiming lines that were removed.
-	    /*
-	    g.drawLine( (int)(cx - -aimer.aim.y*cueball.size/2),
-			(int)(cy + -aimer.aim.x*cueball.size/2), 
-			(int)(cx + -aimer.aim.x*600 - -aimer.aim.y*cueball.size/2), 
-			(int)(cy + -aimer.aim.y*600 + -aimer.aim.x*cueball.size/2));
-	    g.drawLine( (int)(cx + -aimer.aim.y*cueball.size/2),
-			(int)(cy - -aimer.aim.x*cueball.size/2), 
-			(int)(cx + -aimer.aim.x*600 + -aimer.aim.y*cueball.size/2),
-			(int)(cy + -aimer.aim.y*600 - -aimer.aim.x*cueball.size/2));
-	    */
+	    
+	    g.drawLine( (int)(cueball.getcx() - -aimer.aim.y*cueball.size/2),
+			(int)(cueball.getcy() + -aimer.aim.x*cueball.size/2), 
+			(int)(cueball.getcx() + -aimer.aim.x*2000 - -aimer.aim.y*cueball.size/2), 
+			(int)(cueball.getcy() + -aimer.aim.y*2000 + -aimer.aim.x*cueball.size/2));
+	    g.drawLine( (int)(cueball.getcx() + -aimer.aim.y*cueball.size/2),
+			(int)(cueball.getcy() - -aimer.aim.x*cueball.size/2), 
+			(int)(cueball.getcx() + -aimer.aim.x*2000 + -aimer.aim.y*cueball.size/2),
+			(int)(cueball.getcy() + -aimer.aim.y*2000 - -aimer.aim.x*cueball.size/2));
+	    
             if (ghostBallObjectBall != null){
                 int gcx = ghostBallPosition.x + ballSize/2;
                 int gcy = ghostBallPosition.y + ballSize/2;
@@ -143,13 +267,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	
 	//SPEED INDICATOR
 	g.drawString(Double.toString(tval), 100, 100);
-
-	//RAILS
-	g.setColor(Color.darkGray);
-	g.fillRect(0,0,width,railSize);
-	g.fillRect(0,0,railSize,width);
-	g.fillRect(0,height-railSize,width,railSize);
-	g.fillRect(width-railSize,0,railSize,width);
+        
+        g.drawString(Integer.toString(modeListener.click.x), 100, 140);
+        g.drawString(Integer.toString(modeListener.click.y), 160, 140);
         
     }
     
@@ -184,10 +304,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	aimer.doShoot();
 	tval = Math.sqrt(cueball.vel.x*cueball.vel.x + cueball.vel.y*cueball.vel.y);
         Point2D.Double temp = new Point2D.Double(0,0);
-        tval = PoolPolygon.detectWallCollision(modeListener.a, modeListener.b, cueball, temp);
-        if(tval<1) {
-            this.repaint();
-        }
+        
 	this.repaint();
     }
     
@@ -215,7 +332,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    if(right*aBall.vel.y + aBall.getcy() > 1.5*ballSize + railSize &&
 	       right*aBall.vel.y + aBall.getcy() < height - (1.5*ballSize + railSize)) {
 		newVel.x = -newVel.x;
-		collisions.add(new WallCollision(left, aBall, newVel));
+		collisions.add(new WallCollision(right, aBall, newVel));
 		return;
 	    }
 	}
@@ -223,7 +340,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    if(top*aBall.vel.x + aBall.getcx() > 1.5*ballSize + railSize &&
 	       top*aBall.vel.x + aBall.getcx() < width - (1.5*ballSize + railSize)) {
 		newVel.y = -newVel.y;
-		collisions.add(new WallCollision(left, aBall, newVel));
+		collisions.add(new WallCollision(top, aBall, newVel));
 		return;
 	    }
 	}
@@ -231,7 +348,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    if(bottom*aBall.vel.x + aBall.getcx() > 1.5*ballSize + railSize &&
 	       bottom*aBall.vel.x + aBall.getcx() < width - (1.5*ballSize + railSize)) {
 		newVel.y = -newVel.y;
-		collisions.add(new WallCollision(left, aBall, newVel));
+		collisions.add(new WallCollision(bottom, aBall, newVel));
 		return;
 	    }
 	}
@@ -379,29 +496,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	return true;
     }
 
-    public void ancestorMoved(HierarchyEvent he) {
-         
-    }
-
-    public void ancestorResized(HierarchyEvent he) {
-        height = getHeight();
-        width = getWidth();
-        if(pockets != null) {
-	    pockets.get(0).pos.setLocation(railSize, 
-					   railSize);
-	    pockets.get(1).pos.setLocation(width/2,
-					   railSize);
-	    pockets.get(2).pos.setLocation(width - railSize,
-					   railSize);
-	    pockets.get(3).pos.setLocation(railSize,
-					   height - railSize);
-	    pockets.get(4).pos.setLocation(width/2,
-					   height - railSize);
-	    pockets.get(5).pos.setLocation(width - railSize,
-					   height - railSize);
-        }
-    }
-
     public void detectPolygonCollisions(Ball ball, double t) {
         Iterator<PoolPolygon> iter = polygons.iterator();
         while(iter.hasNext()) {
@@ -415,22 +509,16 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 class SelectionModeListener implements MouseMotionListener, MouseListener {
     Ball ball;
     Point click;
-    Point a, b;
 
     public SelectionModeListener() {
         ball = null;
 	click = new Point(0,0);
-        a = new Point(0,0);
-        b = new Point(0,0);
     }
 
     public void mousePressed(MouseEvent evt) {
 	PoolPanel pp = (PoolPanel)evt.getSource();
 	click.setLocation(evt.getX(), evt.getY());
 	if(!pp.selMode) {
-            b.setLocation(a);
-            a.setLocation(click);
-                   
 	    return;
 	}
         Iterator<Ball> iter;
@@ -459,7 +547,9 @@ class SelectionModeListener implements MouseMotionListener, MouseListener {
     public void mouseEntered(MouseEvent evt) { }
     public void mouseExited(MouseEvent evt) { }
     public void mouseClicked(MouseEvent evt) { }
-    public void mouseMoved(MouseEvent evt) { }
+    public void mouseMoved(MouseEvent evt) { 
+        click.setLocation(evt.getX(), evt.getY());
+    }
 }
 
 class Aimer implements MouseMotionListener, MouseListener {

@@ -8,6 +8,7 @@ import java.awt.geom.Point2D;
 public class Ball{
     Point2D.Double pos;
     Point2D.Double vel;
+    Point2D.Double acc;
     int size;
     int alpha;
     Color color;
@@ -15,6 +16,7 @@ public class Ball{
     public Ball(Color col, double x, double y, double a, double b, int s){
 	pos = new Point2D.Double(x,y);
 	vel = new Point2D.Double(a,b);
+        acc = new Point2D.Double(0,0);
 	color = col;
 	size = s;
 	sunk = false;

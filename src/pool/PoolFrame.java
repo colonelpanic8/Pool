@@ -24,6 +24,18 @@ public class PoolFrame {
 	}
     }
     
+    public static class SpinListener implements ChangeListener {
+        PoolPanel pp;
+	public SpinListener(PoolPanel a){
+	    pp=a;
+	}
+	public void stateChanged(ChangeEvent evt){
+            JSlider slider = (JSlider)evt.getSource();
+            double value = slider.getValue();
+            
+	}
+    }
+    
     public static class PowerListener implements ChangeListener{
 	PoolPanel pp;
 	JSlider slider;
