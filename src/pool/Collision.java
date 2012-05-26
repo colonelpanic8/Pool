@@ -1,17 +1,8 @@
 package pool;
 
-//
-
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
-
-//  Collision.java
-//  
-//
-//  Created by Ivan Malison on 12/8/09.
-//  Copyright 2009 Reed College. All rights reserved.
-//
 
 public abstract class Collision {
     double time;
@@ -105,24 +96,21 @@ class BallCollision extends Collision {
 }
 
 class WallCollision extends Collision {
-    boolean inX;
-    public WallCollision(double t, Ball b, boolean dir) {
+    Point2D.Double newVel;
+    public WallCollision(double t, Ball b, Point2D.Double v) {
 	time = t;
 	ball1 = b;
-	inX = dir;
+        newVel = v;
     }
 
     @Override public void doEffects(PoolPanel pp) {
-	if(inX) {
-	    ball1.vel.x = -ball1.vel.x;
-	} else{
-	    ball1.vel.y = -ball1.vel.y;
-	}
+        ball1.vel = newVel;
     }
 }
 
 class PointCollision extends Collision {
     Point point;
+    
     public PointCollision(double t, Point p, Ball b) {
 	time = t;
 	ball1 = b;
@@ -135,7 +123,7 @@ class PointCollision extends Collision {
 	unit = new Point2D.Double((point.x - ball1.getcx())/dist,
 				  (point.y - ball1.getcy())/dist );
 	trans = new Point2D.Double(1/(unit.x + unit.y*unit.y/unit.x), 1/(unit.y + unit.x*unit.x/unit.y));
-	temp = new Point2D.Double(trans.x*ball1.vel.x, trans.y*ball1.vel.y);
+	temp = new Point2D.Double(trans.x*ball1.vel.x, trans.y*ball1.vel.x);
 	temp.x += trans.y*ball1.vel.y;
 	temp.y += -trans.x*ball1.vel.y;
 	temp.x = -temp.x;

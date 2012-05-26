@@ -2,6 +2,7 @@ package pool;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.geom.Point2D;
 
 public class Ball{
@@ -63,4 +64,37 @@ public class Ball{
 	}
 	return t; 
     }
+
+    public double detectCollisionWith(Point p) {
+	double a,b,c,t;
+	a = vel.y*vel.y + vel.x*vel.x;
+	b = 2*(vel.y*(getcy()-p.y) + vel.x*(getcx() - p.x));
+	c = p.x*p.x + p.y*p.y - 2*p.x*getcx() - 2*p.y*getcy() +
+	    getcy()*getcy() + getcx()*getcx() - size*size/4;
+	if (a !=0 ){
+	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
+	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
+	    t = t1 < t2 ? t1 : t2;
+	} else {
+	    t = -c/b;  
+	}
+	return t;
+    }
+
+    public double detectCollisionWith(Point p, int distance) {
+	double a,b,c,t;
+	a = vel.y*vel.y + vel.x*vel.x;
+	b = 2*(vel.y*(getcy()-p.y) + vel.x*(getcx() - p.x));
+	c = p.x*p.x + p.y*p.y - 2*p.x*getcx() - 2*p.y*getcy()
+	    + getcy()*getcy() + getcx()*getcx() - distance*distance;
+	if (a !=0 ){
+	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
+	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
+	    t = t1 < t2 ? t1 : t2;
+	} else {
+	    t = -c/b;  
+	}
+	return t;
+    }
+    
 }

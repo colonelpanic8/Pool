@@ -78,20 +78,19 @@ public class PoolFrame {
 	    int height = msp.getHeight()/2 - 20;
 	    switch (cc.getSelectedIndex()) {
 	    case 1:
-		msp.balls.add(new Ball(Color.BLUE, width, height, 2, 2, 42));
+		msp.balls.add(new Ball(Color.BLUE, width, height, 2, 2, msp.ballSize));
 		break;
 	    case 2:
-		msp.balls.add(new Ball(Color.GREEN, width, height, -1, 1, 42));
+		msp.balls.add(new Ball(Color.GREEN, width, height, -1, 1, msp.ballSize));
 		break;
 	    case 3:
-		msp.balls.add(new Ball(Color.yellow, width, height, -2, 1, 42));
+		msp.balls.add(new Ball(Color.yellow, width, height, -2, 1, msp.ballSize));
 		break;
 		
 	    default:
-		msp.balls.add(new Ball(Color.RED, width, height, -1, -1, 42));
+		msp.balls.add(new Ball(Color.RED, width, height, -1, -1, msp.ballSize));
 		break;
 	    }
-	    msp.numberofballs++;
 	    msp.repaint();
 	}
     }
