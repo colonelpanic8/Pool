@@ -31,8 +31,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
             JSlider slider = (JSlider)evt.getSource();
-            double value = slider.getValue();
-            
+            pp.spin = (double)(slider.getValue())/200;
 	}
     }
     
@@ -41,27 +40,25 @@ public class PoolFrame {
 	JSlider slider;
 	SListener slistener;
 	public PowerListener(PoolPanel a, SListener b){
-	    pp = a; slistener=b;
+	    pp = a; slistener = b;
 	}
 	public void stateChanged(ChangeEvent evt){
 	    slider = (JSlider)evt.getSource();
-	    slistener.pwr = (slider.getValue())/2.6;
+	    pp.power = (slider.getValue())/2.6;
 	    
 	}
     }
     
-    
     public static class SListener implements ActionListener{
 	PoolPanel pp;
-	double pwr;
 	public SListener(PoolPanel a){
-	    pp = a; pwr = 15;
+	    pp = a;
 	}
 	public void actionPerformed(ActionEvent evt){
-	    pp.cueball.vel.x = -pp.aimer.aim.x*pwr;
-	    pp.cueball.vel.y = -pp.aimer.aim.y*pwr;
+            pp.shoot();
 	}
     }
+    
     public static class ModeListener implements ActionListener{
 	PoolPanel pp;
 	boolean enabled;
@@ -78,6 +75,24 @@ public class PoolFrame {
 	    }
 	}
     }
+    
+    public static class ShootingModeListener implements ActionListener{
+	PoolPanel pp;
+	boolean enabled;
+	public ShootingModeListener(PoolPanel a){
+	    pp = a;
+	}
+	public void actionPerformed(ActionEvent evt){
+	    JButton b = (JButton)evt.getSource();
+	    pp.sliderPower = !pp.sliderPower;
+	    if(pp.sliderPower) {
+		b.setLabel("Slider Power");
+	    } else {
+		b.setLabel("Drag Power");
+	    }
+	}
+    }
+    
     public static class NBControl implements ActionListener{
 	PoolPanel msp;
 	JComboBox cc;
@@ -129,15 +144,24 @@ public class PoolFrame {
 	JButton selMode = new JButton("Selection Mode");
 	ModeListener mode = new ModeListener(poolpanel);
 	selMode.addActionListener(mode);
+        
+        JButton powerMode = new JButton("Slider Mode");
+	ShootingModeListener shootingMode = new ShootingModeListener(poolpanel);
+	powerMode.addActionListener(shootingMode);
 	
 	JButton shoot = new JButton("Shoot");
 	SListener slistener = new SListener(poolpanel);
 	shoot.addActionListener(slistener);
 	
 	JSlider power = new JSlider(0,100,50);
-	PowerListener plist = new PowerListener(poolpanel, slistener);//unmodded
+	PowerListener plist = new PowerListener(poolpanel, slistener);
 	power.addChangeListener(plist);
 	power.setOrientation(JSlider.VERTICAL);
+        
+        JSlider spin = new JSlider(-100,100,0);
+        SpinListener spinListener = new SpinListener(poolpanel);
+        spin.addChangeListener(spinListener);
+                
 	
 	
 	
@@ -146,10 +170,12 @@ public class PoolFrame {
 	content.add(poolpanel, BorderLayout.CENTER);
 	content.add(angle, BorderLayout.NORTH);
 	content.add(power, BorderLayout.EAST);
+        south.add(powerMode);
 	south.add(selMode);
 	south.add(button);
 	south.add(shoot);
 	south.add(colorChoice);
+        south.add(spin);
 	content.add(south, BorderLayout.SOUTH);
 	window.setContentPane(content);
 	window.setSize(1200, 700);

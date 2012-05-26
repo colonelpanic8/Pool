@@ -16,7 +16,7 @@ public class Ball{
     public Ball(Color col, double x, double y, double a, double b, int s){
 	pos = new Point2D.Double(x,y);
 	vel = new Point2D.Double(a,b);
-        acc = new Point2D.Double(0,0);
+	acc = new Point2D.Double(0,0);
 	color = col;
 	size = s;
 	sunk = false;

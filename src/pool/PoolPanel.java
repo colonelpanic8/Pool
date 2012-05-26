@@ -19,16 +19,16 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     ArrayList<Ball> balls;
     ArrayList<Pocket> pockets;
     ArrayList<PoolPolygon> polygons;
-    Ball cueball;
+    Ball cueball, shootingBall;
     Ball ghostBallObjectBall;
     Point ghostBallPosition;
     int pocketSize, railSize, ballSize, borderSize, railIndent;
     PriorityQueue<Collision> collisions;
     Aimer aimer;
-    boolean selMode;
+    boolean selMode, sliderPower;
     SelectionModeListener modeListener;
     int height, width;
-
+    double spin, power;
 
     //Should be removed or renamed
     double tval;
@@ -44,7 +44,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ballSize = 40;
         pockets = new ArrayList(6);
         pocketSize = (int)(2*ballSize);
-        railSize = pocketSize/2-10;
+        railSize = 20;
         railIndent = railSize;
         borderSize = pocketSize/2 + 10;
         polygons = new ArrayList(10);
@@ -54,6 +54,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	aPoint = new Point((int)(1.5*ballSize + railSize), railSize);
 	balls = new ArrayList(16);	
 	cueball = new Ball(Color.WHITE, 850, 200, 2, 3, ballSize);
+        shootingBall = cueball;
 	collisions = new PriorityQueue(16, this);
 	balls.add(cueball);
 	aimer = new Aimer(25, 100, cueball);
@@ -200,6 +201,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
+    public void shoot() {
+        shootingBall.vel.x = -aimer.aim.x * power;
+        shootingBall.vel.y = -aimer.aim.y * power;
+        shootingBall.acc.x = -aimer.aim.x * spin;
+        shootingBall.acc.y = -aimer.aim.y * spin;
+    }
+    
     @Override public void paintComponent(Graphics g){
 	super.paintComponent(g);
         //BORDER
@@ -279,7 +287,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
             detectPolygonCollisions(ball, 0);
-	    detectWallCollisions(ball, 0);
 	    checkPockets(ball, 0);
 	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
 		double t = ball.detectCollisionWith(balls.get(i));
@@ -301,104 +308,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
 	updateBallPositions();
 	updateGhostBall();
-	aimer.doShoot();
+	aimer.doShoot(this);
 	tval = Math.sqrt(cueball.vel.x*cueball.vel.x + cueball.vel.y*cueball.vel.y);
         Point2D.Double temp = new Point2D.Double(0,0);
         
 	this.repaint();
-    }
-    
-    public void detectWallCollisions(Ball aBall, double timePassed) {
-	double left, right, top, bottom, time;
-        Point2D.Double newVel = new Point2D.Double(aBall.vel.x, aBall.vel.y);
-	left = (railSize - aBall.pos.x)/aBall.vel.x;
-	right = (width - railSize - aBall.pos.x-aBall.size)/aBall.vel.x;
-	top = (railSize - aBall.pos.y)/aBall.vel.y;
-	bottom = (height - railSize - aBall.pos.y-aBall.size)/aBall.vel.y;
-	left += timePassed;
-	right += timePassed;
-	top += timePassed;
-	bottom += timePassed;
-	
-	if(left > timePassed  && left < 1) {
-	    if(left*aBall.vel.y + aBall.getcy() > 1.5*ballSize + railSize &&
-	       left*aBall.vel.y + aBall.getcy() < height - (1.5*ballSize + railSize)) {
-                newVel.x = -newVel.x;
-		collisions.add(new WallCollision(left, aBall, newVel));
-		return;
-	    } 
-	}
-	if(right > timePassed && right < 1) {
-	    if(right*aBall.vel.y + aBall.getcy() > 1.5*ballSize + railSize &&
-	       right*aBall.vel.y + aBall.getcy() < height - (1.5*ballSize + railSize)) {
-		newVel.x = -newVel.x;
-		collisions.add(new WallCollision(right, aBall, newVel));
-		return;
-	    }
-	}
-	if(top > timePassed && top < 1) {
-	    if(top*aBall.vel.x + aBall.getcx() > 1.5*ballSize + railSize &&
-	       top*aBall.vel.x + aBall.getcx() < width - (1.5*ballSize + railSize)) {
-		newVel.y = -newVel.y;
-		collisions.add(new WallCollision(top, aBall, newVel));
-		return;
-	    }
-	}
-	if(bottom > timePassed && bottom < 1) {
-	    if(bottom*aBall.vel.x + aBall.getcx() > 1.5*ballSize + railSize &&
-	       bottom*aBall.vel.x + aBall.getcx() < width - (1.5*ballSize + railSize)) {
-		newVel.y = -newVel.y;
-		collisions.add(new WallCollision(bottom, aBall, newVel));
-		return;
-	    }
-	}
-	//Top Left
-	Point p = new Point((int)(1.5*ballSize + railSize), railSize);
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	p = new Point(railSize, (int)(1.5*ballSize + railSize));
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	
-	//Top Right
-	p = new Point((int)(width - (1.5*ballSize + railSize)), railSize);
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	p = new Point((int)(width - railSize), (int)(1.5*ballSize + railSize));
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	
-	//Bottom Right
-	p = new Point((int)(width - (1.5*ballSize + railSize)), height - railSize);
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	p = new Point((int)(width - railSize), (int)(height - (1.5*ballSize + railSize)));
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	
-	//Bottom Left
-	p = new Point((int)(1.5*ballSize + railSize), height - railSize);
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
-	p = new Point(railSize, (int)(height - (1.5*ballSize + railSize)));
-	time = aBall.detectCollisionWith(p);
-	if(time < 1 && time > 0) {
-	    collisions.add(new PointCollision(time, p, aBall));
-	}
     }
     
     public void updateBallPositions() {
@@ -423,12 +337,23 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    Ball ball = ballIterator.next();
 	    ball.pos.setLocation(ball.pos.x + (1-timePassed)*ball.vel.x,
 				 ball.pos.y + (1-timePassed)*ball.vel.y);
-	    if (Math.abs(ball.vel.x) < .10 && Math.abs(ball.vel.y) < .10){
-		ball.vel.x = 0;
-		ball.vel.y = 0;
-	    }
-	    ball.vel.x = .99*ball.vel.x;
-	    ball.vel.y = .99*ball.vel.y;
+            ball.vel.x += ball.acc.x;
+            ball.vel.y += ball.acc.y;
+            if(ball.vel.distance(0,0) < .15) {
+                ball.vel.x = 0;
+                ball.vel.y = 0;
+            } else {
+                ball.vel.x = ball.vel.x*.99;
+                ball.vel.y = ball.vel.y*.99;
+            }
+            if(ball.acc.distance(0,0) < .15) {
+                ball.acc.x = 0;
+                ball.acc.y = 0;
+            } else {
+                ball.acc.x = .99*ball.acc.x;
+                ball.acc.y = .99*ball.acc.y;
+            }
+            
 	}
     }
 
@@ -577,7 +502,7 @@ class Aimer implements MouseMotionListener, MouseListener {
 	acc = 2;
     }
 
-    public void doShoot() {
+    public void doShoot(PoolPanel pp) {
 	if(!dragging && ! shooting) {
 	    tracker.setLocation(cb.getcx(), cb.getcy());
 	}
@@ -588,10 +513,15 @@ class Aimer implements MouseMotionListener, MouseListener {
                 tracker.x = cb.getcx() + aim.x*distance;
 		tracker.y = cb.getcy() + aim.y*distance;   
 	    } else {
-		shooting = false;
-		cb.vel.x = -aim.x*vel;
-		cb.vel.y = -aim.y*vel;
-		vel = 0;
+                /*
+                 *shooting = false;
+                 *cb.vel.x = -aim.x*vel;
+                 *cb.vel.y = -aim.y*vel;
+                 *vel = 0;
+                 */
+                shooting = false;
+                vel = 0;        
+                pp.shoot();
             }
 	}
     }

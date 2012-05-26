@@ -31,7 +31,7 @@ public abstract class Collision {
 		}
 	    }
 	}
-	pp.detectWallCollisions(ball1, time);
+	pp.detectPolygonCollisions(ball1, time);
 	pp.checkPockets(ball1, time);
     }
         
@@ -63,7 +63,7 @@ class BallCollision extends Collision {
 		}
 	    }
 	}
-	pp.detectWallCollisions(ball2, time);
+	pp.detectPolygonCollisions(ball2, time);
 	pp.checkPockets(ball2, time);
     }
     
