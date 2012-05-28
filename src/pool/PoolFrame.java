@@ -93,6 +93,17 @@ public class PoolFrame {
 	}
     }
     
+    public static class MakeRackListener implements ActionListener{
+	PoolPanel pp;
+	boolean enabled;
+	public MakeRackListener(PoolPanel a){
+	    pp = a;
+	}
+	public void actionPerformed(ActionEvent evt){
+            pp.newRack();
+	}
+    }
+    
     public static class NBControl implements ActionListener{
 	PoolPanel msp;
 	JComboBox cc;
@@ -152,6 +163,10 @@ public class PoolFrame {
 	JButton shoot = new JButton("Shoot");
 	SListener slistener = new SListener(poolpanel);
 	shoot.addActionListener(slistener);
+        
+        JButton makeRack = new JButton("Make Rack");
+	MakeRackListener rackListener = new MakeRackListener(poolpanel);
+	makeRack.addActionListener(rackListener);
 	
 	JSlider power = new JSlider(0,100,50);
 	PowerListener plist = new PowerListener(poolpanel, slistener);
@@ -170,6 +185,7 @@ public class PoolFrame {
 	content.add(poolpanel, BorderLayout.CENTER);
 	content.add(angle, BorderLayout.NORTH);
 	content.add(power, BorderLayout.EAST);
+        south.add(makeRack);
         south.add(powerMode);
 	south.add(selMode);
 	south.add(button);

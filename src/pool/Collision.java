@@ -21,9 +21,10 @@ public abstract class Collision {
 	}
 	doEffects(pp);
 	ballIterator = pp.balls.iterator();
+        
 	while(ballIterator.hasNext()) {
 	    Ball ball = ballIterator.next();
-	    if( ball != ball1) {
+	    if(ball != ball1) {
 		double t = ball1.detectCollisionWith(ball);
 		t += time;
 		if(t < 1 && t > time){
@@ -51,18 +52,52 @@ class BallCollision extends Collision {
 
     @Override public void doCollision(PoolPanel pp) {
 	Iterator<Ball> ballIterator;
-	super.doCollision(pp);
+        Iterator<Collision> collIterator = pp.collisions.iterator();
+        
+        //Remove collisions involiving the balls
+        while(collIterator.hasNext()) {
+	    Collision item = collIterator.next();
+	    if(item.involves(ball1)) {
+		collIterator.remove();
+	    }
+	}
+        collIterator = pp.collisions.iterator();
+        while(collIterator.hasNext()) {
+	    Collision item = collIterator.next();
+	    if(item.involves(ball2)) {
+		collIterator.remove();
+	    }
+	}
+        
+        doEffects(pp);
+        
+        //Check for new collisions involving the balls
 	ballIterator = pp.balls.iterator();
+	while(ballIterator.hasNext()) {
+	    Ball ball = ballIterator.next();
+	    if(ball != ball1 && ball != ball2) {
+		double t = ball1.detectCollisionWith(ball);
+		t += time;
+		if(t <= 1 && t >= time){
+		    pp.collisions.add(new BallCollision(t, ball1, ball));
+		}
+	    }
+	}
+        
+        ballIterator = pp.balls.iterator();
 	while(ballIterator.hasNext()) {
 	    Ball ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2){
 		double t = ball2.detectCollisionWith(ball);
 		t += time;
-		if(t < 1 && t > time){
+		if(t <= 1 && t >= time){
 		    pp.collisions.add(new BallCollision(t, ball2, ball));
 		}
 	    }
 	}
+        
+	pp.detectPolygonCollisions(ball1, time);
+	pp.checkPockets(ball1, time);
 	pp.detectPolygonCollisions(ball2, time);
 	pp.checkPockets(ball2, time);
     }
@@ -92,6 +127,10 @@ class BallCollision extends Collision {
 	ball1.vel.y = vp2 * yp + vo1 * xp;
 	ball2.vel.x = vp1 * xp - vo2 * yp;
 	ball2.vel.y = vp1 * yp + vo2 * xp;
+    }
+    
+    @Override public boolean involves(Ball b) {
+        return (b == ball1 || b == ball2);
     }
 }
 
@@ -140,6 +179,18 @@ class PocketCollision extends Collision {
 	ball1 = b;
 	time = t;
     }
+    
+    @Override public void doCollision(PoolPanel pp) {
+        Iterator<Collision> collIterator = pp.collisions.iterator();
+        while(collIterator.hasNext()) {
+            Collision item = collIterator.next();
+            if(item.involves(ball1)) {
+                collIterator.remove();
+            }
+	}
+	doEffects(pp);
+    }
+    
     @Override public void doEffects(PoolPanel pp) {
 	ball1.vel.x = 0;
 	ball1.vel.y = 0;

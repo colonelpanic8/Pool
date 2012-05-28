@@ -3,9 +3,10 @@ package pool;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 
-public class Ball{
+public class Ball {
     Point2D.Double pos;
     Point2D.Double vel;
     Point2D.Double acc;
@@ -99,4 +100,10 @@ public class Ball{
 	return t;
     }
     
+    public boolean checkOverlap(Ball ball) {
+        Point2D.Double myCenter = new Point2D.Double(getcx(), getcy());
+        if(myCenter.distance(ball.getcx(), ball.getcy())+.5 < ((double)(size + ball.size))/2)
+            return true;
+        return false; 
+    }
 }
