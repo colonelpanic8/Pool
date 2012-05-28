@@ -317,45 +317,65 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 int gcx = ghostBallPosition.x + ballSize/2;
                 int gcy = ghostBallPosition.y + ballSize/2;
                 g.fillOval(ghostBallPosition.x, ghostBallPosition.y, ballSize, ballSize);
-                Point2D.Double last = new Point2D.Double(gcx, gcy);                        
-                Point2D.Double next = new Point2D.Double(ghostBallObjectBall.getcx(), ghostBallObjectBall.getcy());                        
+                Point2D.Double last = new Point2D.Double(gcx, gcy);                                              
                 Point2D.Double unit = new Point2D.Double(ghostBallObjectBall.getcx() - gcx,
                         ghostBallObjectBall.getcy() - gcy);
-                double horizontal = 0, vertical = 0;
-                for(int i = 0; i < 4; i++) {
-                    horizontal = Double.POSITIVE_INFINITY;
-                    vertical = Double.POSITIVE_INFINITY;
-                    
-                    if(unit.x != 0) {
-                        horizontal = (borderSize + railSize - last.x)/unit.x;
-                        if(horizontal <= .00001) {
-                            horizontal = (width - (borderSize + railSize) - last.x)/unit.x;
-                        }
-                    }
-                    if(unit.y != 0) {
-                        vertical = (borderSize + railSize - last.y)/unit.y;
-                        if(vertical <= .00001) {
-                            vertical = (height - (borderSize + railSize) - last.y)/unit.y;
-                        }
-                    }
-                    if(vertical < horizontal && vertical > 0) {
-                        next.setLocation((last.x + unit.x*vertical), (last.y+unit.y*vertical));
-                        g.drawLine((int)last.x, (int)last.y, (int)next.x, (int)(next.y));
-                        unit.y = -unit.y;
-                    } else {
-                        next.setLocation((last.x+unit.x*horizontal), (last.y+unit.y*horizontal));
-                        g.drawLine((int)last.x, (int)last.y, (int)(next.x), (int)(next.y));
-                        unit.x = -unit.x;
-                    }
-                    last.setLocation(next);
+                drawPoolPath(unit, last, g);
+                double temp = unit.y;
+                unit.y = unit.x;
+                unit.x = -temp;                      
+                g.setColor(Color.MAGENTA);
+                g.drawString(Double.toString(unit.x), 300, 140);
+                g.drawString(Double.toString(unit.y), 300, 180);
+                last.setLocation(cueball.getcx()-ghostBallObjectBall.getcx(), cueball.getcy()-ghostBallObjectBall.getcy());
+                Point2D.Double trans = new Point2D.Double(1/(last.x + last.y*last.y/last.x),
+                        1/(last.y + last.x*last.x/last.y));
+                temp = trans.y*gcx - trans.x*gcy;
+                double unitY = trans.y*unit.x - trans.x*unit.y;
+                double cueballY = trans.y*cueball.getcx() - trans.x*cueball.getcy();
+                if((unitY < 0) != (temp-cueballY < 0)){
+                    unit.x = -unit.x;
+                    unit.y = -unit.y;
                 }
-                g.drawString(Double.toString(vertical), 300, 300);
-                g.drawString(Double.toString(horizontal), 300, 340);
-	    }
+                last.setLocation(gcx,gcy);
+                drawPoolPath(unit, last, g);
+            }
             g.setColor(Color.BLACK);
 	    g.fillOval((int)(aimer.tracker.x - aimer.size/2),
 		       (int)(aimer.tracker.y - aimer.size/2), aimer.size, aimer.size);
 	}        
+    }
+    
+    public void drawPoolPath(Point2D.Double unit, Point2D.Double last, Graphics g) {
+        Point2D.Double next = new Point2D.Double();
+        double horizontal = 0, vertical = 0;
+        for(int i = 0; i < 6; i++) {
+            horizontal = Double.POSITIVE_INFINITY;
+            vertical = Double.POSITIVE_INFINITY;
+            
+            if(unit.x != 0) {
+                horizontal = (borderSize + railSize - last.x)/unit.x;
+                if(horizontal <= .00001) {
+                    horizontal = (width - (borderSize + railSize) - last.x)/unit.x;
+                }
+            }
+            if(unit.y != 0) {
+                vertical = (borderSize + railSize - last.y)/unit.y;
+                if(vertical <= .00001) {
+                    vertical = (height - (borderSize + railSize) - last.y)/unit.y;
+                }
+            }
+            if(vertical < horizontal && vertical > 0) {
+                next.setLocation((last.x + unit.x*vertical), (last.y+unit.y*vertical));
+                g.drawLine((int)last.x, (int)last.y, (int)next.x, (int)(next.y));
+                unit.y = -unit.y;
+            } else {
+                next.setLocation((last.x+unit.x*horizontal), (last.y+unit.y*horizontal));
+                g.drawLine((int)last.x, (int)last.y, (int)(next.x), (int)(next.y));
+                unit.x = -unit.x;
+            }
+            last.setLocation(next);
+        }        
     }
     
     
