@@ -1,7 +1,6 @@
 package pool;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.*;
@@ -10,76 +9,89 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
 
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
+    int pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent;
+    boolean selMode, sliderPower;
+    Ball cueball, shootingBall, ghostBallObjectBall;
     ArrayList<Ball> balls;
     ArrayList<Pocket> pockets;
     ArrayList<PoolPolygon> polygons;
-    Ball cueball, shootingBall, ghostBallObjectBall;
-    Point ghostBallPosition;
-    int pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent;
     PriorityQueue<Collision> collisions;
     Aimer aimer;
-    boolean selMode, sliderPower;
     SelectionModeListener modeListener;
+    Point ghostBallPosition;
+    Color tableColor;
     int height, width;
     double spin, power;
     int collisionsExecuted;
-
-    //Should be removed or renamed
-    double tval;
-    Point aPoint;
     boolean frameSkip, err;
     
-    public PoolPanel(){        
-	setBackground(new Color(48,130,100));
-	setPreferredSize(new Dimension(800,600));
-	addHierarchyBoundsListener(this);
-        frameSkip = false;
-        err = false;
-        height = getHeight();
-        width = getWidth();
-        collisionsExecuted = 0;
-        selMode = false;
-	ballSize = 45;
-        power = 70;
-        pockets = new ArrayList(6);
+    //INITIALIZATION
+    public PoolPanel(int bs, int rs) {
+        //Initialize size values
+        ballSize = bs;
+        railSize = rs;
         pocketSize = (int)(2.2*ballSize);
         sidePocketSize = (int)(1.8*ballSize);
-        railSize = 20;
-        sideIndent = 5;
-        railIndent = railSize;
         borderSize = pocketSize/2 + 10;
+        railIndent = railSize;
+        sideIndent = railIndent/4;
+        
+        //Initialize boolean values
+        selMode = false;
+        sliderPower = false;        
+        frameSkip = false;
+        err = false;
+        
+        //Set component color
+        tableColor = new Color(48,130,100);
+	setBackground(tableColor);
+        
+        //Initialize other primitives
+        power = 70;
+        spin = 0;
+        collisionsExecuted = 0;
+        
+        //Initialize table item arrays.
+        balls = new ArrayList(16);
+        pockets = new ArrayList(6);
         polygons = new ArrayList(10);
-	initPockets();
+        
+        //Initialize table items.
+        initPockets();
         initPolygons();
-	ghostBallPosition = new Point(0,0);
-	aPoint = new Point((int)(1.5*ballSize + railSize), railSize);
-	balls = new ArrayList(16);
-	cueball = new Ball(Color.WHITE, 400, 400, 1, 0, ballSize);
+        cueball = new Ball(Color.WHITE, 400, 400, 1, 0, ballSize);
+        balls.add(cueball);
         shootingBall = cueball;
-	collisions = new PriorityQueue(16, this);
-	balls.add(cueball);
-	aimer = new Aimer(25, 100, cueball);
+        
+        //Initialize mouse listeners
+        aimer = new Aimer(25, 100, cueball);
 	modeListener = new SelectionModeListener();
-	this.addMouseListener(aimer);
-	this.addMouseMotionListener(aimer);
-	this.addMouseListener(modeListener);
-	this.addMouseMotionListener(modeListener);
+        
+        //Add listeners
+        addMouseListener(aimer);
+	addMouseMotionListener(aimer);
+	addMouseListener(modeListener);
+	addMouseMotionListener(modeListener);        
+	addHierarchyBoundsListener(this);
+        
+        //Miscellaneous
+	ghostBallPosition = new Point(0,0);	
+	collisions = new PriorityQueue(16, this);
+       
+        //Start timer
 	Timer timer = new Timer(15, this);
 	timer.start();
-	tval = 0;
         
     }
     
     public void initPolygons() {
-	Color color = new Color(48,130,100).darker();
+	Color color = tableColor.darker();
         int[] xpoints, ypoints;
 	xpoints = new int[4];
 	ypoints = new int[4];
@@ -154,97 +166,175 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	pockets.add(new Pocket(width - borderSize, height - borderSize , pocketSize));
     }
     
-    public void ancestorMoved(HierarchyEvent he) {
-         
-    }
-
-    public void ancestorResized(HierarchyEvent he) {
-        height = getHeight();
-        width = getWidth();
-        if(pockets != null) {
-	    pockets.get(0).pos.setLocation(borderSize , borderSize );
-	    pockets.get(1).pos.setLocation(width/2, borderSize );
-	    pockets.get(2).pos.setLocation(width - borderSize , borderSize );
-	    pockets.get(3).pos.setLocation(borderSize , height - borderSize );
-	    pockets.get(4).pos.setLocation(width/2, height - borderSize );
-	    pockets.get(5).pos.setLocation(width - borderSize, height - borderSize);
+    //SIMULATION
+    public void actionPerformed(ActionEvent evt){
+	Iterator<Ball> iter;
+	iter = balls.iterator();
+        if(err) {
+            err = false;
+            frameSkip = true;
+            this.paintImmediately(0, 0, width, height);
+            rewind();
+            this.paintImmediately(0, 0, width, height);
+            return;   
         }
-        if(polygons != null) {
-            polygons.get(0).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
-            polygons.get(0).xpoints[3] = width/2 - sidePocketSize/2;
-
-	    polygons.get(1).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(1).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
-	    polygons.get(1).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-	    polygons.get(1).xpoints[3] = width - pocketSize/2 - borderSize;
-
-	    polygons.get(2).xpoints[0] = width - borderSize;
-	    polygons.get(2).xpoints[1] = width - borderSize-railSize;
-	    polygons.get(2).xpoints[2] = width - borderSize-railSize;
-	    polygons.get(2).xpoints[3] = width - borderSize;
-	    polygons.get(2).ypoints[0] = borderSize + pocketSize/2;
-	    polygons.get(2).ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(2).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
-	    polygons.get(2).ypoints[3] = height - borderSize - pocketSize/2;
-
-	    polygons.get(3).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(3).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
-	    polygons.get(3).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-	    polygons.get(3).xpoints[3] = width - pocketSize/2 - borderSize;
-	    polygons.get(3).ypoints[0] = height - borderSize;
-	    polygons.get(3).ypoints[1] = height - (borderSize + railSize);
-	    polygons.get(3).ypoints[2] = height - (borderSize + railSize);
-	    polygons.get(3).ypoints[3] = height - borderSize;
-	    
-	    
-	    polygons.get(4).xpoints[0] = borderSize + pocketSize/2;
-	    polygons.get(4).xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(4).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
-	    polygons.get(4).xpoints[3] = width/2 - sidePocketSize/2;
-	    polygons.get(4).ypoints[0] = height - borderSize;
-	    polygons.get(4).ypoints[1] = height - (borderSize + railSize);
-	    polygons.get(4).ypoints[2] = height - (borderSize + railSize);
-	    polygons.get(4).ypoints[3] = height - borderSize;
-           
-            polygons.get(5).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
-            polygons.get(5).ypoints[3] = height - borderSize - pocketSize/2;
+        if(frameSkip) {
+            frameSkip = true;
         }
+	while(iter.hasNext()) {
+	    Ball ball = iter.next();
+            ball.lastPos.setLocation(ball.pos);
+            ball.lastVel.setLocation(ball.vel);
+            detectPolygonCollisions(ball, 0);
+	    checkPockets(ball, 0);
+	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
+		double t = ball.detectCollisionWith(balls.get(i));
+		if(t < 1 && 0 <= t){
+		    collisions.add(new BallCollision(t, ball, balls.get(i)));
+		}
+	    }
+	    if (ball.remove) {
+		if(ball == cueball) {
+		    cueball.alpha = 255;
+		    cueball.remove = false;
+		    cueball.pos.x = width/2;
+		    cueball.pos.y = height/2;
+		    cueball.sunk = false;
+		} else {
+		    iter.remove();
+		}
+	    }
+	}
+        updateBallPositions();
+	updateGhostBall();
+	aimer.doShoot(this);	
+	this.repaint();
     }
     
-    public void newRack() {
-        Color def, other;
-        int x = width*2/3;
-        def = Color.ORANGE.darker();
-        other = Color.CYAN.darker();
-        for(int i = 0; i < 5; i++) {
-            int y = height/2 - i*ballSize/2;
-            for(int j = 0; j <= i; j++) {
-                if(j == 1 && i == 2) {
-                    balls.add(new Ball(Color.BLACK, x, y, 0, 0, ballSize));
-                    def = Color.CYAN.darker();
-                    other = Color.ORANGE.darker();
-                } else if((i+j)%2 == 0) {
-                    balls.add(new Ball(def, x, y, 0, 0, ballSize));
-                } else {
-                    balls.add(new Ball(other, x, y, 0, 0, ballSize));
-                }
-                y += ballSize+1; 
+    public void updateBallPositions(){
+	Iterator<Ball> ballIterator;
+	Collision collision = collisions.poll();
+	double timePassed = 0;
+        while(collision != null) {
+	    //Advance balls to the point where the collision occurs.
+            ballIterator = balls.iterator();
+	    while(ballIterator.hasNext()) {
+		Ball ball = ballIterator.next();
+		ball.pos.setLocation(ball.pos.x + (collision.time-timePassed) * ball.vel.x,
+				     ball.pos.y + (collision.time-timePassed) * ball.vel.y);
+                
             }
-            x += 2 + ballSize*Math.sqrt(3)/2;
+            timePassed = collision.time;
+	    
+            collision.doCollision(this);
+            collisionsExecuted++;
+            //For debugging remove later.
+            if(frameSkip) {
+                this.paintImmediately(0, 0, width, height);
+            }
+	    collision = collisions.poll();	    
+	}
+        ballIterator = balls.iterator();
+	while(ballIterator.hasNext()) {
+	    Ball ball = ballIterator.next();
+	    ball.pos.setLocation(ball.pos.x + (1-timePassed)*ball.vel.x,
+				 ball.pos.y + (1-timePassed)*ball.vel.y);
+            ball.vel.x += ball.acc.x;
+            ball.vel.y += ball.acc.y;
+            if(ball.vel.distance(0,0) < .15) {
+                ball.vel.x = 0;
+                ball.vel.y = 0;
+            } else {
+                ball.vel.x = ball.vel.x*.99;
+                ball.vel.y = ball.vel.y*.99;
+            }
+            if(ball.acc.distance(0,0) < .01) {
+                ball.acc.x = 0;
+                ball.acc.y = 0;
+            } else {
+                ball.acc.x = .98*ball.acc.x;
+                ball.acc.y = .98*ball.acc.y;
+            }
+            
+	}
+        ballIterator = balls.iterator();
+        while(ballIterator.hasNext()) {
+            Ball ball = ballIterator.next();
+            checkOverlaps(ball);
         }
-        cueball.pos.setLocation(width/4, height/2);
-        cueball.vel.setLocation(0,0);
     }
     
-    public void shoot() {
-        shootingBall.vel.x = -aimer.aim.x * power;
-        shootingBall.vel.y = -aimer.aim.y * power;
-        shootingBall.acc.x = -aimer.aim.x * spin;
-        shootingBall.acc.y = -aimer.aim.y * spin;
+    public void updateGhostBall() {
+	Iterator<Ball> iter;
+        double min = Double.POSITIVE_INFINITY;
+	iter = balls.iterator();
+	ghostBallObjectBall = null;
+	while(iter.hasNext()) {
+	    Ball ball = iter.next();
+	    if(!(ball==cueball)){
+		double a = aimer.aim.x*aimer.aim.x + aimer.aim.y*aimer.aim.y;
+		double b = 2 * (cueball.getcx()*-aimer.aim.x - ball.getcx()*-aimer.aim.x + 
+				cueball.getcy()*-aimer.aim.y - ball.getcy()*-aimer.aim.y);
+		double c = cueball.getcx()*cueball.getcx() + ball.getcx()*ball.getcx() +
+		    cueball.getcy()*cueball.getcy() + ball.getcy()*ball.getcy() - 2*cueball.getcx()*ball.getcx() - 
+		    2*cueball.getcy()*ball.getcy() - (ball.size + cueball.size)*(ball.size + cueball.size)/4;
+		double t;
+		if (a !=0 ){
+		    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
+		    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
+		    t = t1 < t2 ? t1 : t2;
+		} else {
+		    t = -c/b;  
+		}
+
+		if( !(Double.isNaN(t)) && t < min && t > 0){
+		    ghostBallPosition.setLocation((int)(cueball.pos.x + t * -aimer.aim.x),
+						  (int)(cueball.pos.y + t * -aimer.aim.y));
+		    ghostBallObjectBall = ball;
+		    min = t;
+		}
+	    }
+	}
     }
     
+    public void detectPolygonCollisions(Ball ball, double t) {
+        Iterator<PoolPolygon> iter = polygons.iterator();
+        while(iter.hasNext()) {
+            PoolPolygon p = iter.next();
+            p.detectCollisions(ball, collisions, t);
+        }
+    }
+    
+    public void detectPolygonCollisions(Ball ball, double t, WallCollision collision) {
+        Iterator<PoolPolygon> iter = polygons.iterator();
+        while(iter.hasNext()) {
+            PoolPolygon p = iter.next();
+            if(p == collision.poly) {
+                p.detectCollisionsWithoutWall(ball, collisions, t, collision.wall);
+            } else {
+                p.detectCollisions(ball, collisions, t);
+            }
+        }
+    }
+    
+    public void checkPockets(Ball ball, double timePassed) {
+	double time;
+	Iterator<Pocket> pocketItr;
+	pocketItr = pockets.iterator();
+        while(pocketItr.hasNext()) {
+            Pocket pocket = pocketItr.next();
+            time = pocket.detectCollisionWith(ball);
+            time += timePassed;
+	    if(time > timePassed && time < 1) {
+		collisions.add(new PocketCollision(ball, time));
+		return;
+	    }
+	}
+    }
+    
+    //DRAWING 
     @Override public void paintComponent(Graphics g){
-	super.paintComponent(g);
+	super.paintComponent(g);        
         //BORDER
 	g.setColor(Color.DARK_GRAY);
 	g.fillRect(0,0,width,borderSize);
@@ -267,8 +357,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	while(pocketItr.hasNext()) {
 	    Pocket pocket = pocketItr.next();
 	    pocket.draw(g);
-	}
-        
+	}        
 	
 	//BALLS
 	Iterator<Ball> iter = balls.iterator();
@@ -280,16 +369,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	//GHOST BALL AND AIMER
 	g.setColor(Color.BLACK);
         drawGhostBall(g);
-	
-	
-	//SPEED INDICATOR
-	g.drawString(Double.toString(tval), 100, 100);
-        
-        g.drawString(Integer.toString(modeListener.click.x), 100, 140);
-        g.drawString(Integer.toString(modeListener.click.y), 160, 140);
-        g.drawString(Integer.toString(collisionsExecuted), 160, 160);
-        g.drawString(Double.toString(power), 200, 140);
-        g.drawString(Double.toString(spin), 200, 160);
+		
+        /*
+         * Draw information on screen.
+         * g.drawString(Integer.toString(modeListener.click.x), 100, 140);
+         * g.drawString(Integer.toString(modeListener.click.y), 160, 140);
+         * g.drawString(Integer.toString(collisionsExecuted), 160, 160);
+         * g.drawString(Double.toString(power), 200, 140);
+         * g.drawString(Double.toString(spin), 200, 160);
+        */                       
     }
     
     void drawGhostBall(Graphics g) {
@@ -378,68 +466,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }        
     }
     
-    
-    
-    public void rewind() {
-        Iterator<Ball> iter;
-	iter = balls.iterator();
-        while(iter.hasNext()) {
-            Ball ball = iter.next();
-            ball.pos.setLocation(ball.lastPos);
-            ball.vel.setLocation(ball.lastVel);
-            
+    //ERROR HANDLING
+    public boolean checkBounds(Ball b) {
+        if(b.sunk) {
+            return false;
         }
+        if(b.pos.x < 0 || b.pos.y < 0 || b.pos.x > width - b.size || b.pos.y > height - b.size)
+            return true;
+        return false;
     }
-    
-    public void actionPerformed(ActionEvent evt){
-	Iterator<Ball> iter;
-	iter = balls.iterator();
-        if(err) {
-            err = false;
-            frameSkip = true;
-            this.paintImmediately(0, 0, width, height);
-            rewind();
-            this.paintImmediately(0, 0, width, height);
-            return;   
-        }
-        if(frameSkip) {
-            frameSkip = true;
-        }
-	while(iter.hasNext()) {
-	    Ball ball = iter.next();
-            ball.lastPos.setLocation(ball.pos);
-            ball.lastVel.setLocation(ball.vel);
-            detectPolygonCollisions(ball, 0);
-	    checkPockets(ball, 0);
-	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
-		double t = ball.detectCollisionWith(balls.get(i));
-		if(t < 1 && 0 <= t){
-		    collisions.add(new BallCollision(t, ball, balls.get(i)));
-		}
-	    }
-	    if (ball.remove) {
-		if(ball == cueball) {
-		    cueball.alpha = 255;
-		    cueball.remove = false;
-		    cueball.pos.x = width/2;
-		    cueball.pos.y = height/2;
-		    cueball.sunk = false;
-		} else {
-		    iter.remove();
-		}
-	    }
-	}
-        try {
-            updateBallPositions();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(PoolPanel.class.getName()).log(Level.SEVERE, null, ex);
-        }
-	updateGhostBall();
-	aimer.doShoot(this);
-	tval = Math.sqrt(cueball.vel.x*cueball.vel.x + cueball.vel.y*cueball.vel.y);
-	this.repaint();
-    }
-    
     
     public void checkOverlaps(Ball ball) {
         Iterator<Ball> ballIterator = balls.iterator();
@@ -461,112 +496,54 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void fixOverlap(Ball a, Ball b) {
-        a.color = a.color.darker();
-        b.color = b.color.darker();
+        a.color = Color.MAGENTA;
+        b.color = Color.MAGENTA;
         err = true;
+        
     }
     
-    public void updateBallPositions() throws InterruptedException {
-	Iterator<Ball> ballIterator;
-	Collision collision = collisions.poll();
-	double timePassed = 0;
-        while(collision != null) {
-	    //Advance balls to the point where the collision occurs.
-            ballIterator = balls.iterator();
-	    while(ballIterator.hasNext()) {
-		Ball ball = ballIterator.next();
-		ball.pos.setLocation(ball.pos.x + (collision.time-timePassed) * ball.vel.x,
-				     ball.pos.y + (collision.time-timePassed) * ball.vel.y);
-                
-            }
-            timePassed = collision.time;
-	    
-            collision.doCollision(this);
-            collisionsExecuted++;
-            //For debugging remove later.
-            if(frameSkip) {
-                this.paintImmediately(0, 0, width, height);
-            }
-	    collision = collisions.poll();	    
-	}
-        ballIterator = balls.iterator();
-	while(ballIterator.hasNext()) {
-	    Ball ball = ballIterator.next();
-	    ball.pos.setLocation(ball.pos.x + (1-timePassed)*ball.vel.x,
-				 ball.pos.y + (1-timePassed)*ball.vel.y);
-            ball.vel.x += ball.acc.x;
-            ball.vel.y += ball.acc.y;
-            if(ball.vel.distance(0,0) < .15) {
-                ball.vel.x = 0;
-                ball.vel.y = 0;
-            } else {
-                ball.vel.x = ball.vel.x*.99;
-                ball.vel.y = ball.vel.y*.99;
-            }
-            if(ball.acc.distance(0,0) < .01) {
-                ball.acc.x = 0;
-                ball.acc.y = 0;
-            } else {
-                ball.acc.x = .98*ball.acc.x;
-                ball.acc.y = .98*ball.acc.y;
-            }
+    public void rewind() {
+        Iterator<Ball> iter;
+        iter = balls.iterator();
+        while(iter.hasNext()) {
+            Ball ball = iter.next();
+            ball.pos.setLocation(ball.lastPos);
+            ball.vel.setLocation(ball.lastVel);
             
-	}
-        ballIterator = balls.iterator();
-        while(ballIterator.hasNext()) {
-            Ball ball = ballIterator.next();
-            checkOverlaps(ball);
         }
     }
     
-
-
-    public void updateGhostBall() {
-	Iterator<Ball> iter;
-        double min = 5000;
-	iter = balls.iterator();
-	ghostBallObjectBall = null;
-	while(iter.hasNext()) {
-	    Ball ball = iter.next();
-	    if(!(ball==cueball)){
-		double a = aimer.aim.x*aimer.aim.x + aimer.aim.y*aimer.aim.y;
-		double b = 2 * (cueball.getcx()*-aimer.aim.x - ball.getcx()*-aimer.aim.x + 
-				cueball.getcy()*-aimer.aim.y - ball.getcy()*-aimer.aim.y);
-		double c = cueball.getcx()*cueball.getcx() + ball.getcx()*ball.getcx() +
-		    cueball.getcy()*cueball.getcy() + ball.getcy()*ball.getcy() - 2*cueball.getcx()*ball.getcx() - 
-		    2*cueball.getcy()*ball.getcy() - (ball.size + cueball.size)*(ball.size + cueball.size)/4;
-		double t;
-		if (a !=0 ){
-		    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
-		    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
-		    t = t1 < t2 ? t1 : t2;
-		} else {
-		    t = -c/b;  
-		}
-
-		if( !(Double.isNaN(t)) && t < min && t > 0){
-		    ghostBallPosition.setLocation((int)(cueball.pos.x + t * -aimer.aim.x),
-						  (int)(cueball.pos.y + t * -aimer.aim.y));
-		    ghostBallObjectBall = ball;
-		    min = t;
-		}
-	    }
-	}
+    //ACTIONS
+    public void newRack() {
+        Color def, other;
+        int x = width*2/3;
+        def = Color.ORANGE.darker();
+        other = Color.CYAN.darker();
+        for(int i = 0; i < 5; i++) {
+            int y = height/2 - i*ballSize/2;
+            for(int j = 0; j <= i; j++) {
+                if(j == 1 && i == 2) {
+                    balls.add(new Ball(Color.BLACK, x, y, 0, 0, ballSize));
+                    def = Color.CYAN.darker();
+                    other = Color.ORANGE.darker();
+                } else if((i+j)%2 == 0) {
+                    balls.add(new Ball(def, x, y, 0, 0, ballSize));
+                } else {
+                    balls.add(new Ball(other, x, y, 0, 0, ballSize));
+                }
+                y += ballSize+1; 
+            }
+            x += 2 + ballSize*Math.sqrt(3)/2;
+        }
+        cueball.pos.setLocation(width/4, height/2);
+        cueball.vel.setLocation(0,0);
     }
     
-    public void checkPockets(Ball ball, double timePassed) {
-	double time;
-	Iterator<Pocket> pocketItr;
-	pocketItr = pockets.iterator();
-        while(pocketItr.hasNext()) {
-            Pocket pocket = pocketItr.next();
-            time = pocket.detectCollisionWith(ball);
-            time += timePassed;
-	    if(time > timePassed && time < 1) {
-		collisions.add(new PocketCollision(ball, time));
-		return;
-	    }
-	}
+    public void shoot() {
+        shootingBall.vel.x = -aimer.aim.x * power;
+        shootingBall.vel.y = -aimer.aim.y * power;
+        shootingBall.acc.x = -aimer.aim.x * spin;
+        shootingBall.acc.y = -aimer.aim.y * spin;
     }
 
     //COMPARATOR INTERFACE
@@ -581,45 +558,87 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
 
-    @Override public boolean equals(Object obj) {
-	return true;
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 13 * hash + (this.balls != null ? this.balls.hashCode() : 0);
+        hash = 13 * hash + (this.pockets != null ? this.pockets.hashCode() : 0);
+        hash = 13 * hash + (this.polygons != null ? this.polygons.hashCode() : 0);
+        hash = 13 * hash + (this.tableColor != null ? this.tableColor.hashCode() : 0);
+        hash = 13 * hash + (this.cueball != null ? this.cueball.hashCode() : 0);
+        hash = 13 * hash + (this.shootingBall != null ? this.shootingBall.hashCode() : 0);
+        hash = 13 * hash + (this.ghostBallObjectBall != null ? this.ghostBallObjectBall.hashCode() : 0);
+        hash = 13 * hash + (this.ghostBallPosition != null ? this.ghostBallPosition.hashCode() : 0);
+        return hash;
     }
 
-    public void detectPolygonCollisions(Ball ball, double t) {
-        Iterator<PoolPolygon> iter = polygons.iterator();
-        while(iter.hasNext()) {
-            PoolPolygon p = iter.next();
-            p.detectCollisions(ball, collisions, t);
+    @Override public boolean equals(Object obj) {
+        if(obj instanceof PoolPanel)
+            return true;
+        else
+            return false;
+    }
+    
+    //HIERARCHY BOUNDS INTERFACE
+    public void ancestorResized(HierarchyEvent he) {
+        height = getHeight();
+        width = getWidth();
+        
+        if(pockets != null) {
+	    pockets.get(0).pos.setLocation(borderSize , borderSize );
+	    pockets.get(1).pos.setLocation(width/2, borderSize );
+	    pockets.get(2).pos.setLocation(width - borderSize , borderSize );
+	    pockets.get(3).pos.setLocation(borderSize , height - borderSize );
+	    pockets.get(4).pos.setLocation(width/2, height - borderSize );
+	    pockets.get(5).pos.setLocation(width - borderSize, height - borderSize);
+        }
+        
+        if(polygons != null) {
+            polygons.get(0).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
+            polygons.get(0).xpoints[3] = width/2 - sidePocketSize/2;
+
+	    polygons.get(1).xpoints[0] = width/2 + sidePocketSize/2;
+	    polygons.get(1).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
+	    polygons.get(1).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
+	    polygons.get(1).xpoints[3] = width - pocketSize/2 - borderSize;
+
+	    polygons.get(2).xpoints[0] = width - borderSize;
+	    polygons.get(2).xpoints[1] = width - borderSize-railSize;
+	    polygons.get(2).xpoints[2] = width - borderSize-railSize;
+	    polygons.get(2).xpoints[3] = width - borderSize;
+	    polygons.get(2).ypoints[0] = borderSize + pocketSize/2;
+	    polygons.get(2).ypoints[1] = borderSize + pocketSize/2 + railIndent;
+	    polygons.get(2).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
+	    polygons.get(2).ypoints[3] = height - borderSize - pocketSize/2;
+
+	    polygons.get(3).xpoints[0] = width/2 + sidePocketSize/2;
+	    polygons.get(3).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
+	    polygons.get(3).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
+	    polygons.get(3).xpoints[3] = width - pocketSize/2 - borderSize;
+	    polygons.get(3).ypoints[0] = height - borderSize;
+	    polygons.get(3).ypoints[1] = height - (borderSize + railSize);
+	    polygons.get(3).ypoints[2] = height - (borderSize + railSize);
+	    polygons.get(3).ypoints[3] = height - borderSize;
+	    
+	    
+	    polygons.get(4).xpoints[0] = borderSize + pocketSize/2;
+	    polygons.get(4).xpoints[1] = borderSize + pocketSize/2 + railIndent;
+	    polygons.get(4).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
+	    polygons.get(4).xpoints[3] = width/2 - sidePocketSize/2;
+	    polygons.get(4).ypoints[0] = height - borderSize;
+	    polygons.get(4).ypoints[1] = height - (borderSize + railSize);
+	    polygons.get(4).ypoints[2] = height - (borderSize + railSize);
+	    polygons.get(4).ypoints[3] = height - borderSize;
+           
+            polygons.get(5).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
+            polygons.get(5).ypoints[3] = height - borderSize - pocketSize/2;
         }
     }
     
-    public boolean checkBounds(Ball b) {
-        if(b.sunk) {
-            return false;
-        }
-        if(b.pos.x < borderSize || b.pos.y < borderSize ||
-                b.pos.x > width - (borderSize + b.size) ||
-                b.pos.y > height - (borderSize + b.size)
-                ) {
-            
-            return true;
-        }
-        return false;
-    }
-
-    void detectPolygonCollisions(Ball ball, double t, WallCollision collision) {
-        Iterator<PoolPolygon> iter = polygons.iterator();
-        while(iter.hasNext()) {
-            PoolPolygon p = iter.next();
-            if(p == collision.poly) {
-                p.detectCollisionsWithoutWall(ball, collisions, t, collision.wall);
-            } else {
-                p.detectCollisions(ball, collisions, t);
-            }
-        }
-    }
+    public void ancestorMoved(HierarchyEvent he) { }
     
 }
+
 class SelectionModeListener implements MouseMotionListener, MouseListener {
     Ball ball;
     Point click;
@@ -658,6 +677,7 @@ class SelectionModeListener implements MouseMotionListener, MouseListener {
 	}
     }
 
+    //Unused
     public void mouseEntered(MouseEvent evt) { }
     public void mouseExited(MouseEvent evt) { }
     public void mouseClicked(MouseEvent evt) { }
@@ -670,7 +690,6 @@ class Aimer implements MouseMotionListener, MouseListener {
     boolean dragging, shooting;
     Ball cb;
     int size;
-    int length;
     Point.Double aim;
     Point.Double tracker;
     Point.Double click;
@@ -680,7 +699,6 @@ class Aimer implements MouseMotionListener, MouseListener {
 
     Aimer(int s, int l, Ball ball) {
 	size = s;
-	length = l;
 	cb = ball;
 	aim = new Point2D.Double(1,0);
 	tracker = new Point2D.Double(0,1);
@@ -741,7 +759,6 @@ class Aimer implements MouseMotionListener, MouseListener {
     public void mouseMoved(MouseEvent evt) {
 	click.setLocation(evt.getX(), evt.getY());
 	PoolPanel a = (PoolPanel)evt.getSource();
-	a.tval = click.distance(tracker.x, tracker.y);
     }
 
     public void mouseDragged(MouseEvent evt){
@@ -753,6 +770,8 @@ class Aimer implements MouseMotionListener, MouseListener {
 	    aim.y = (tracker.y - cb.getcy())/distance;
 	}
     }
+    
+    //Unused
     public void mouseEntered(MouseEvent evt) { }
     public void mouseExited(MouseEvent evt) { }
     public void mouseClicked(MouseEvent evt) { }
