@@ -3,6 +3,8 @@ package pool;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public abstract class Collision {
     double time;
@@ -27,17 +29,21 @@ public abstract class Collision {
 	    if(ball != ball1) {
 		double t = ball1.detectCollisionWith(ball);
 		t += time;
-		if(t < 1 && t > time){
+		if(t < 1 && t >= time){
 		    pp.collisions.add(new BallCollision(t, ball1, ball));
 		}
 	    }
 	}
-	pp.detectPolygonCollisions(ball1, time);
+	detectPolygonCollisions(pp, ball1);
 	pp.checkPockets(ball1, time);
     }
         
     public boolean involves(Ball b) {
         return ball1 == b;
+    }
+    
+    public void detectPolygonCollisions(PoolPanel pp, Ball x) {
+        pp.detectPolygonCollisions(x, time);
     }
 }
 
@@ -71,6 +77,7 @@ class BallCollision extends Collision {
         
         doEffects(pp);
         
+       
         //Check for new collisions involving the balls
 	ballIterator = pp.balls.iterator();
 	while(ballIterator.hasNext()) {
@@ -96,9 +103,9 @@ class BallCollision extends Collision {
 	    }
 	}
         
-	pp.detectPolygonCollisions(ball1, time);
+	detectPolygonCollisions(pp, ball1);
 	pp.checkPockets(ball1, time);
-	pp.detectPolygonCollisions(ball2, time);
+	detectPolygonCollisions(pp, ball2);
 	pp.checkPockets(ball2, time);
     }
     
@@ -136,14 +143,22 @@ class BallCollision extends Collision {
 
 class WallCollision extends Collision {
     Point2D.Double newVel;
-    public WallCollision(double t, Ball b, Point2D.Double v) {
+    PoolPolygon poly;
+    int wall;
+    public WallCollision(double t, Ball b, Point2D.Double v, PoolPolygon p, int w) {
 	time = t;
 	ball1 = b;
         newVel = v;
+        poly = p;
+        wall = w;
     }
 
     @Override public void doEffects(PoolPanel pp) {
         ball1.vel = newVel;
+    }
+    
+    @Override public void detectPolygonCollisions(PoolPanel pp, Ball x) {
+        pp.detectPolygonCollisions(x, time, this);
     }
 }
 

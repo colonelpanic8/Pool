@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -21,7 +23,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     ArrayList<PoolPolygon> polygons;
     Ball cueball, shootingBall, ghostBallObjectBall;
     Point ghostBallPosition;
-    int pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize;
+    int pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent;
     PriorityQueue<Collision> collisions;
     Aimer aimer;
     boolean selMode, sliderPower;
@@ -33,13 +35,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //Should be removed or renamed
     double tval;
     Point aPoint;
-    boolean frameSkip;
+    boolean frameSkip, err;
     
     public PoolPanel(){        
 	setBackground(new Color(48,130,100));
 	setPreferredSize(new Dimension(800,600));
 	addHierarchyBoundsListener(this);
         frameSkip = false;
+        err = false;
         height = getHeight();
         width = getWidth();
         collisionsExecuted = 0;
@@ -50,6 +53,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         pocketSize = (int)(2.2*ballSize);
         sidePocketSize = (int)(1.8*ballSize);
         railSize = 20;
+        sideIndent = 5;
         railIndent = railSize;
         borderSize = pocketSize/2 + 10;
         polygons = new ArrayList(10);
@@ -57,7 +61,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPolygons();
 	ghostBallPosition = new Point(0,0);
 	aPoint = new Point((int)(1.5*ballSize + railSize), railSize);
-	balls = new ArrayList(16);	
+	balls = new ArrayList(16);
 	cueball = new Ball(Color.WHITE, 400, 400, 1, 0, ballSize);
         shootingBall = cueball;
 	collisions = new PriorityQueue(16, this);
@@ -82,7 +86,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 	xpoints[0] = borderSize + pocketSize/2;
 	xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	xpoints[2] = width - pocketSize/2;
+	xpoints[2] = width - pocketSize/2 + sideIndent;
 	xpoints[3] = width - pocketSize/2;
 	ypoints[0] = borderSize;
 	ypoints[1] = borderSize + railSize;
@@ -91,7 +95,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
 
 	xpoints[0] = width/2 + pocketSize/2;
-	xpoints[1] = width/2 + pocketSize/2;
+	xpoints[1] = width/2 + pocketSize/2 + sideIndent;
 	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
         xpoints[3] = width - pocketSize/2 - borderSize;
         ypoints[0] = borderSize;
@@ -111,7 +115,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
 
 	xpoints[0] = width/2 + pocketSize/2;
-	xpoints[1] = width/2 + pocketSize/2;
+	xpoints[1] = width/2 + pocketSize/2 +sideIndent;
 	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
         xpoints[3] = width - pocketSize/2 - borderSize;
 	ypoints[0] = height - borderSize;
@@ -122,7 +126,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 	xpoints[0] = borderSize + pocketSize/2;
 	xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	xpoints[2] = width/2 - pocketSize/2;
+	xpoints[2] = width/2 - pocketSize/2 + sideIndent;
 	xpoints[3] = width/2 - pocketSize/2;
 	ypoints[0] = height - borderSize;
 	ypoints[1] = height - (borderSize + railSize);
@@ -166,11 +170,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    pockets.get(5).pos.setLocation(width - borderSize, height - borderSize);
         }
         if(polygons != null) {
-            polygons.get(0).xpoints[2] = width/2 - sidePocketSize/2;
+            polygons.get(0).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
             polygons.get(0).xpoints[3] = width/2 - sidePocketSize/2;
 
 	    polygons.get(1).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(1).xpoints[1] = width/2 + sidePocketSize/2;
+	    polygons.get(1).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
 	    polygons.get(1).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
 	    polygons.get(1).xpoints[3] = width - pocketSize/2 - borderSize;
 
@@ -184,7 +188,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    polygons.get(2).ypoints[3] = height - borderSize - pocketSize/2;
 
 	    polygons.get(3).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(3).xpoints[1] = width/2 + sidePocketSize/2;
+	    polygons.get(3).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
 	    polygons.get(3).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
 	    polygons.get(3).xpoints[3] = width - pocketSize/2 - borderSize;
 	    polygons.get(3).ypoints[0] = height - borderSize;
@@ -195,7 +199,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    
 	    polygons.get(4).xpoints[0] = borderSize + pocketSize/2;
 	    polygons.get(4).xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(4).xpoints[2] = width/2 - sidePocketSize/2;
+	    polygons.get(4).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
 	    polygons.get(4).xpoints[3] = width/2 - sidePocketSize/2;
 	    polygons.get(4).ypoints[0] = height - borderSize;
 	    polygons.get(4).ypoints[1] = height - (borderSize + railSize);
@@ -209,7 +213,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public void newRack() {
         Color def, other;
-        int x = width/2;
+        int x = width*2/3;
         def = Color.ORANGE.darker();
         other = Color.CYAN.darker();
         for(int i = 0; i < 5; i++) {
@@ -249,6 +253,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	g.fillRect(width-borderSize,0,borderSize,width);
         
 	g.setColor(Color.BLACK);
+        
+        //POLYGONS
+        Iterator<PoolPolygon> iterator = polygons.iterator();
+        while(iterator.hasNext()){
+	    PoolPolygon p = iterator.next();
+	    p.draw(g);
+	}
 
 	//POCKETS
 	Iterator<Pocket> pocketItr;
@@ -266,16 +277,23 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    temp.draw(g);
 	}
         
-        //POLYGONS
-        Iterator<PoolPolygon> iterator = polygons.iterator();
-        while(iterator.hasNext()){
-	    PoolPolygon p = iterator.next();
-	    p.draw(g);
-	}
-
 	//GHOST BALL AND AIMER
 	g.setColor(Color.BLACK);
-	if(Math.abs(cueball.vel.x) + Math.abs(cueball.vel.y) < 1) {
+        drawGhostBall(g);
+	
+	
+	//SPEED INDICATOR
+	g.drawString(Double.toString(tval), 100, 100);
+        
+        g.drawString(Integer.toString(modeListener.click.x), 100, 140);
+        g.drawString(Integer.toString(modeListener.click.y), 160, 140);
+        g.drawString(Integer.toString(collisionsExecuted), 160, 160);
+        g.drawString(Double.toString(power), 200, 140);
+        g.drawString(Double.toString(spin), 200, 160);
+    }
+    
+    void drawGhostBall(Graphics g) {
+        if(Math.abs(cueball.vel.x) + Math.abs(cueball.vel.y) < 1) {
 	    g.drawLine((int)cueball.getcx(), 
 		       (int)cueball.getcy(), 
 		       (int)(cueball.getcx()+(-aimer.aim.x*2000)), 
@@ -293,45 +311,84 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 			(int)(cueball.getcy() + -aimer.aim.y*2000 - -aimer.aim.x*cueball.size/2));
                         * 
                         */
-	    
+            Color color = Color.WHITE;
+            g.setColor(color);
             if (ghostBallObjectBall != null){
                 int gcx = ghostBallPosition.x + ballSize/2;
                 int gcy = ghostBallPosition.y + ballSize/2;
                 g.fillOval(ghostBallPosition.x, ghostBallPosition.y, ballSize, ballSize);
-                g.setColor(Color.white);
-		g.drawLine(gcx, gcy,
-			   gcx + 400*(int)(ghostBallObjectBall.getcx() - gcx), 
-			   gcy + 400*(int)(ghostBallObjectBall.getcy() - gcy)); 
+                Point2D.Double last = new Point2D.Double(gcx, gcy);                        
+                Point2D.Double next = new Point2D.Double(ghostBallObjectBall.getcx(), ghostBallObjectBall.getcy());                        
+                Point2D.Double unit = new Point2D.Double(ghostBallObjectBall.getcx() - gcx,
+                        ghostBallObjectBall.getcy() - gcy);
+                double horizontal = 0, vertical = 0;
+                for(int i = 0; i < 4; i++) {
+                    horizontal = Double.POSITIVE_INFINITY;
+                    vertical = Double.POSITIVE_INFINITY;
+                    
+                    if(unit.x != 0) {
+                        horizontal = (borderSize + railSize - last.x)/unit.x;
+                        if(horizontal <= .00001) {
+                            horizontal = (width - (borderSize + railSize) - last.x)/unit.x;
+                        }
+                    }
+                    if(unit.y != 0) {
+                        vertical = (borderSize + railSize - last.y)/unit.y;
+                        if(vertical <= .00001) {
+                            vertical = (height - (borderSize + railSize) - last.y)/unit.y;
+                        }
+                    }
+                    if(vertical < horizontal && vertical > 0) {
+                        next.setLocation((last.x + unit.x*vertical), (last.y+unit.y*vertical));
+                        g.drawLine((int)last.x, (int)last.y, (int)next.x, (int)(next.y));
+                        unit.y = -unit.y;
+                    } else {
+                        next.setLocation((last.x+unit.x*horizontal), (last.y+unit.y*horizontal));
+                        g.drawLine((int)last.x, (int)last.y, (int)(next.x), (int)(next.y));
+                        unit.x = -unit.x;
+                    }
+                    last.setLocation(next);
+                }
+                g.drawString(Double.toString(vertical), 300, 300);
+                g.drawString(Double.toString(horizontal), 300, 340);
 	    }
             g.setColor(Color.BLACK);
 	    g.fillOval((int)(aimer.tracker.x - aimer.size/2),
 		       (int)(aimer.tracker.y - aimer.size/2), aimer.size, aimer.size);
-	}
-	
-	//SPEED INDICATOR
-	g.drawString(Double.toString(tval), 100, 100);
-        
-        g.drawString(Integer.toString(modeListener.click.x), 100, 140);
-        g.drawString(Integer.toString(modeListener.click.y), 160, 140);
-        g.drawString(Integer.toString(collisionsExecuted), 160, 160);
-        g.drawString(Double.toString(power), 200, 140);
-        g.drawString(Double.toString(spin), 200, 160);
-        
-        
-        
+	}        
+    }
+    
+    
+    
+    public void rewind() {
+        Iterator<Ball> iter;
+	iter = balls.iterator();
+        while(iter.hasNext()) {
+            Ball ball = iter.next();
+            ball.pos.setLocation(ball.lastPos);
+            ball.vel.setLocation(ball.lastVel);
+            
+        }
     }
     
     public void actionPerformed(ActionEvent evt){
 	Iterator<Ball> iter;
 	iter = balls.iterator();
-        if(frameSkip) {
-        if(frameSkip) {
-        
-            
+        if(err) {
+            err = false;
+            frameSkip = true;
+            this.paintImmediately(0, 0, width, height);
+            rewind();
+            this.paintImmediately(0, 0, width, height);
+            return;   
         }
+        if(frameSkip) {
+            frameSkip = true;
         }
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
+            ball.lastPos.setLocation(ball.pos);
+            ball.lastVel.setLocation(ball.vel);
             detectPolygonCollisions(ball, 0);
 	    checkPockets(ball, 0);
 	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
@@ -352,12 +409,17 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 		}
 	    }
 	}
-	updateBallPositions();
+        try {
+            updateBallPositions();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(PoolPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
 	updateGhostBall();
 	aimer.doShoot(this);
 	tval = Math.sqrt(cueball.vel.x*cueball.vel.x + cueball.vel.y*cueball.vel.y);
 	this.repaint();
     }
+    
     
     public void checkOverlaps(Ball ball) {
         Iterator<Ball> ballIterator = balls.iterator();
@@ -367,15 +429,24 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                fixOverlap(ball, ball2);
             }
         }
+        Iterator<PoolPolygon> polyIterator = polygons.iterator();
+        while(polyIterator.hasNext()) {
+            PoolPolygon poly = polyIterator.next();
+            if(poly.checkOverlap(ball)) {
+                poly.color = poly.color.darker();
+                ball.color = ball.color.darker();
+                err = true;
+            }
+        }
     }
     
     public void fixOverlap(Ball a, Ball b) {
         a.color = a.color.darker();
         b.color = b.color.darker();
-        frameSkip = true;
+        err = true;
     }
     
-    public void updateBallPositions() {
+    public void updateBallPositions() throws InterruptedException {
 	Iterator<Ball> ballIterator;
 	Collision collision = collisions.poll();
 	double timePassed = 0;
@@ -390,9 +461,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             }
             timePassed = collision.time;
 	    
-	    collision.doCollision(this);
+            collision.doCollision(this);
             collisionsExecuted++;
-            this.repaint();
+            //For debugging remove later.
+            if(frameSkip) {
+                this.paintImmediately(0, 0, width, height);
+            }
 	    collision = collisions.poll();	    
 	}
         ballIterator = balls.iterator();
@@ -424,6 +498,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             checkOverlaps(ball);
         }
     }
+    
+
 
     public void updateGhostBall() {
 	Iterator<Ball> iter;
@@ -509,6 +585,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             return true;
         }
         return false;
+    }
+
+    void detectPolygonCollisions(Ball ball, double t, WallCollision collision) {
+        Iterator<PoolPolygon> iter = polygons.iterator();
+        while(iter.hasNext()) {
+            PoolPolygon p = iter.next();
+            if(p == collision.poly) {
+                p.detectCollisionsWithoutWall(ball, collisions, t, collision.wall);
+            } else {
+                p.detectCollisions(ball, collisions, t);
+            }
+        }
     }
     
 }

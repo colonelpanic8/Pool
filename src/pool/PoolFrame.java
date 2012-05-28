@@ -119,7 +119,7 @@ public class PoolFrame {
 		msp.balls.add(new Ball(Color.BLUE, width, height, 2, 2, msp.ballSize));
 		break;
 	    case 2:
-		msp.balls.add(new Ball(Color.GREEN, width, height, -1, 1, msp.ballSize));
+		msp.balls.add(new Ball(Color.GREEN, msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize));
 		break;
 	    case 3:
 		msp.balls.add(new Ball(Color.yellow, width, height, -2, 1, msp.ballSize));

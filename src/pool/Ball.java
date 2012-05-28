@@ -3,7 +3,6 @@ package pool;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 
 public class Ball {
@@ -13,9 +12,13 @@ public class Ball {
     int size;
     int alpha;
     Color color;
-    boolean sel, sunk, remove;
+    boolean sel, sunk, remove, showDirection;
+    
+    //For testing
+    Point2D.Double lastPos;
+    Point2D.Double lastVel;
     public Ball(Color col, double x, double y, double a, double b, int s){
-	pos = new Point2D.Double(x,y);
+        pos = new Point2D.Double(x,y);
 	vel = new Point2D.Double(a,b);
 	acc = new Point2D.Double(0,0);
 	color = col;
@@ -23,6 +26,9 @@ public class Ball {
 	sunk = false;
 	remove = false;
 	alpha = 255;
+        lastPos = new Point2D.Double(x,y);
+	lastVel = new Point2D.Double(a,b);
+        showDirection = true;
     }
     public double getcx(){
 	return pos.x + size/2;
@@ -42,6 +48,10 @@ public class Ball {
 	} else {
 	    g.setColor(color);
 	    g.fillOval((int)pos.x, (int)pos.y, size, size);
+            if (showDirection) {
+                g.setColor(Color.MAGENTA);
+                g.drawLine((int)getcx(), (int)getcy(), (int)(getcx() + vel.x*10), (int)(getcy() + vel.y*10));
+            }
 	}
     }
 
@@ -65,6 +75,9 @@ public class Ball {
 	} else {
 	    t = -c/b;  
 	}
+        if(Math.abs(t)<.001 && t < 0) {
+            t = 0;
+        }
 	return t; 
     }
 
@@ -102,8 +115,10 @@ public class Ball {
     
     public boolean checkOverlap(Ball ball) {
         Point2D.Double myCenter = new Point2D.Double(getcx(), getcy());
-        if(myCenter.distance(ball.getcx(), ball.getcy())+.5 < ((double)(size + ball.size))/2)
+        if(myCenter.distance(ball.getcx(), ball.getcy())+.5< ((double)(size + ball.size))/2)
             return true;
         return false; 
     }
+    
+
 }
