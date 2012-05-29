@@ -18,8 +18,8 @@ public class PoolFrame {
 	public void stateChanged(ChangeEvent evt){
 			slider = (JSlider)evt.getSource();
 			double aind = slider.getValue();
-			pp.aimer.aim.x = Math.cos((aind)*2*Math.PI/2000);
-			pp.aimer.aim.y = Math.sin((aind)*2*Math.PI/2000);
+			pp.aim.x = Math.cos((aind)*2*Math.PI/2000);
+			pp.aim.y = Math.sin((aind)*2*Math.PI/2000);
 			pp.repaint();
 	}
     }

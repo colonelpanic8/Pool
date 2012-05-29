@@ -1,23 +1,22 @@
 package pool;
 
-import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.vecmath.Color3f;
-import javax.vecmath.Point3d;
 import javax.vecmath.Vector3f;
 
 
@@ -31,9 +30,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     ArrayList<Pocket> pockets;
     ArrayList<PoolPolygon> polygons;
     PriorityQueue<Collision> collisions;
-    Aimer aimer;
-    SelectionModeListener modeListener;
-    Point ghostBallPosition;
+    Point2D.Double aim, ghostBallPosition;
     Color tableColor;
     double height, width;
     double spin, power;
@@ -91,18 +88,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         shootingBall = cueball;
         
         //Initialize mouse listeners.
-        aimer = new Aimer(25, 100, cueball);
-	modeListener = new SelectionModeListener();
         
         //Add listeners.
-        addMouseListener(aimer);
-	addMouseMotionListener(aimer);
-	addMouseListener(modeListener);
-	addMouseMotionListener(modeListener);        
 	addHierarchyBoundsListener(this);
         
         //Miscellaneous
-	ghostBallPosition = new Point(0,0);	
+	ghostBallPosition = new Point2D.Double(0,0);
+        aim = new Point2D.Double(0,0);
 	collisions = new PriorityQueue(16, this);
        
         //Start timer
@@ -139,7 +131,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         TransformGroup VpTG = universe.getViewingPlatform().getViewPlatformTransform();
         Transform3D Trfcamera = new Transform3D();
-        Trfcamera.setTranslation(new Vector3f(0f, 0.0f, 20.0f));  
+        Trfcamera.setTranslation(new Vector3f(3.0f, 3.0f, 50.0f));  
         VpTG.setTransform(Trfcamera);
         
         aimLine = new LineArray(2, GeometryArray.COORDINATES);
@@ -227,7 +219,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public void actionPerformed(ActionEvent evt){
         
         
-        //aimLine.setCoordinate(0, );
+        aimLine.setCoordinate(0, shootingBall.pos);
         
 	Iterator<Ball> iter;
 	iter = balls.iterator();
@@ -243,8 +235,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
-            ball.lastPos.setLocation(ball.pos);
-            ball.lastVel.setLocation(ball.vel);
             detectPolygonCollisions(ball, 0);
 	    checkPockets(ball, 0);
 	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
@@ -268,7 +258,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
         updateBallPositions();
 	updateGhostBall();
-	aimer.doShoot(this);	
     }
     
     public void updateBallPositions(){
@@ -281,7 +270,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    while(ballIterator.hasNext()) {
 		Ball ball = ballIterator.next();
 		ball.pos.setLocation(ball.pos.x + (collision.time-timePassed) * ball.vel.x,
-				     ball.pos.y + (collision.time-timePassed) * ball.vel.y);
+                        ball.pos.y + (collision.time-timePassed) * ball.vel.y,
+                        0);
                 
             }
             timePassed = collision.time;
@@ -294,10 +284,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	while(ballIterator.hasNext()) {
 	    Ball ball = ballIterator.next();
 	    ball.pos.setLocation(ball.pos.x + (1-timePassed)*ball.vel.x,
-				 ball.pos.y + (1-timePassed)*ball.vel.y);
+				 ball.pos.y + (1-timePassed)*ball.vel.y,
+                                 0);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
-            if(ball.vel.distance(0,0) < .15) {
+            if(ball.vel.distance(0,0) < .02) {
                 ball.vel.x = 0;
                 ball.vel.y = 0;
             } else {
@@ -329,9 +320,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
 	    if(!(ball==cueball)){
-		double a = aimer.aim.x*aimer.aim.x + aimer.aim.y*aimer.aim.y;
-		double b = 2 * (cueball.getcx()*-aimer.aim.x - ball.getcx()*-aimer.aim.x + 
-				cueball.getcy()*-aimer.aim.y - ball.getcy()*-aimer.aim.y);
+		double a = aim.x*aim.x + aim.y*aim.y;
+		double b = 2 * (cueball.getcx()*-aim.x - ball.getcx()*-aim.x + 
+				cueball.getcy()*-aim.y - ball.getcy()*-aim.y);
 		double c = cueball.getcx()*cueball.getcx() + ball.getcx()*ball.getcx() +
 		    cueball.getcy()*cueball.getcy() + ball.getcy()*ball.getcy() - 2*cueball.getcx()*ball.getcx() - 
 		    2*cueball.getcy()*ball.getcy() - (ball.size + cueball.size)*(ball.size + cueball.size)/4;
@@ -345,8 +336,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 		}
 
 		if( !(Double.isNaN(t)) && t < min && t > 0){
-		    ghostBallPosition.setLocation((int)(cueball.pos.x + t * -aimer.aim.x),
-						  (int)(cueball.pos.y + t * -aimer.aim.y));
+		    ghostBallPosition.setLocation((int)(cueball.pos.x + t * -aim.x),
+						  (int)(cueball.pos.y + t * -aim.y));
 		    ghostBallObjectBall = ball;
 		    min = t;
 		}
@@ -443,19 +434,19 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         if(Math.abs(cueball.vel.x) + Math.abs(cueball.vel.y) < 1) {
             /*g.drawLine((int)cueball.getcx(), 
 		       (int)cueball.getcy(), 
-		       (int)(cueball.getcx()+(-aimer.aim.x*2000)), 
-		       (int)(cueball.getcy()+(-aimer.aim.y*2000)));*/
+		       (int)(cueball.getcx()+(-aim.x*2000)), 
+		       (int)(cueball.getcy()+(-aim.y*2000)));*/
 	    //Additional aiming lines that were removed.
 	    
             /*
-	    g.drawLine( (int)(cueball.getcx() - -aimer.aim.y*cueball.size/2),
-			(int)(cueball.getcy() + -aimer.aim.x*cueball.size/2), 
-			(int)(cueball.getcx() + -aimer.aim.x*2000 - -aimer.aim.y*cueball.size/2), 
-			(int)(cueball.getcy() + -aimer.aim.y*2000 + -aimer.aim.x*cueball.size/2));
-	    g.drawLine( (int)(cueball.getcx() + -aimer.aim.y*cueball.size/2),
-			(int)(cueball.getcy() - -aimer.aim.x*cueball.size/2), 
-			(int)(cueball.getcx() + -aimer.aim.x*2000 + -aimer.aim.y*cueball.size/2),
-			(int)(cueball.getcy() + -aimer.aim.y*2000 - -aimer.aim.x*cueball.size/2));
+	    g.drawLine( (int)(cueball.getcx() - -aim.y*cueball.size/2),
+			(int)(cueball.getcy() + -aim.x*cueball.size/2), 
+			(int)(cueball.getcx() + -aim.x*2000 - -aim.y*cueball.size/2), 
+			(int)(cueball.getcy() + -aim.y*2000 + -aim.x*cueball.size/2));
+	    g.drawLine( (int)(cueball.getcx() + -aim.y*cueball.size/2),
+			(int)(cueball.getcy() - -aim.x*cueball.size/2), 
+			(int)(cueball.getcx() + -aim.x*2000 + -aim.y*cueball.size/2),
+			(int)(cueball.getcy() + -aim.y*2000 - -aim.x*cueball.size/2));
                         * 
                         */
             /*
@@ -489,8 +480,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 drawPoolPath(unit, last, g);
             }
             g.setColor(Color.BLACK);
-	    g.fillOval((int)(aimer.tracker.x - aimer.size/2),
-		       (int)(aimer.tracker.y - aimer.size/2), aimer.size, aimer.size);*/
+	    g.fillOval((int)(tracker.x - size/2),
+		       (int)(tracker.y - size/2), size, size);*/
 	}
     }
     
@@ -562,17 +553,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
     }
     
-    public void rewind() {
-        Iterator<Ball> iter;
-        iter = balls.iterator();
-        while(iter.hasNext()) {
-            Ball ball = iter.next();
-            ball.pos.setLocation(ball.lastPos);
-            ball.vel.setLocation(ball.lastVel);
-            
-        }
-    }
-    
     //ACTIONS
     public void newRack() {
         /*
@@ -601,10 +581,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void shoot() {
-        shootingBall.vel.x = -aimer.aim.x * power;
-        shootingBall.vel.y = -aimer.aim.y * power;
-        shootingBall.acc.x = -aimer.aim.x * spin;
-        shootingBall.acc.y = -aimer.aim.y * spin;
+        shootingBall.vel.x = -aim.x * power;
+        shootingBall.vel.y = -aim.y * power;
+        shootingBall.acc.x = -aim.x * spin;
+        shootingBall.acc.y = -aim.y * spin;
     }
     
     public Ball addBall(Color color, double x, double y, double a, double b, double s) {
@@ -704,142 +684,4 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public void ancestorMoved(HierarchyEvent he) { }
     
-}
-
-class SelectionModeListener implements MouseMotionListener, MouseListener {
-    Ball ball;
-    Point click;
-
-    public SelectionModeListener() {
-        ball = null;
-	click = new Point(0,0);
-    }
-
-    public void mousePressed(MouseEvent evt) {
-	PoolPanel pp = (PoolPanel)evt.getSource();
-	click.setLocation(evt.getX(), evt.getY());
-	if(!pp.selMode) {
-	    return;
-	}
-        Iterator<Ball> iter;
-        iter = pp.balls.iterator();
-	while(iter.hasNext()) {
-            Ball aBall = iter.next();
-	    if(click.distance(aBall.getcx(), aBall.getcy()) < aBall.size) {
-		ball = aBall;
-		aBall.vel.x = 0;
-                aBall.vel.y = 0;
-	    }
-	}	
-    }
-
-    public void mouseReleased(MouseEvent evt) {
-	ball = null;
-    }
-
-    public void mouseDragged(MouseEvent evt){
-	if(ball != null) {
-	    ball.pos.x = evt.getX() - ball.size/2;
-	    ball.pos.y = evt.getY() - ball.size/2;
-	}
-    }
-
-    //Unused
-    public void mouseEntered(MouseEvent evt) { }
-    public void mouseExited(MouseEvent evt) { }
-    public void mouseClicked(MouseEvent evt) { }
-    public void mouseMoved(MouseEvent evt) { 
-        click.setLocation(evt.getX(), evt.getY());
-    }
-}
-
-class Aimer implements MouseMotionListener, MouseListener {
-    boolean dragging, shooting;
-    Ball cb;
-    int size;
-    Point.Double aim;
-    Point.Double tracker;
-    Point.Double click;
-    int vel;
-    int acc;
-    double distance;
-
-    Aimer(int s, int l, Ball ball) {
-	size = s;
-	cb = ball;
-	aim = new Point2D.Double(1,0);
-	tracker = new Point2D.Double(0,1);
-	click = new Point2D.Double(0,1);
-	dragging = false;
-	shooting = false;
-	vel = 0;
-	acc = 2;
-    }
-
-    public void doShoot(PoolPanel pp) {
-	if(!dragging && ! shooting) {
-	    tracker.setLocation(cb.getcx(), cb.getcy());
-	}
-	if(shooting) {
-	    vel += acc;
-	    if(distance > vel) {
-		distance -= vel;
-                tracker.x = cb.getcx() + aim.x*distance;
-		tracker.y = cb.getcy() + aim.y*distance;   
-	    } else {
-                /*
-                 *shooting = false;
-                 *cb.vel.x = -aim.x*vel;
-                 *cb.vel.y = -aim.y*vel;
-                 *vel = 0;
-                 */
-                shooting = false;
-                vel = 0;        
-                pp.shoot();
-            }
-	}
-    }
-    
-    public void mousePressed(MouseEvent evt) {
-	click.setLocation(evt.getX(), evt.getY());
-	PoolPanel a = (PoolPanel)evt.getSource();
-	if(click.distance(tracker) < size && !shooting) {
-	    dragging = true;
-	}
-    }
-
-    public void mouseReleased(MouseEvent evt) {
-        PoolPanel a = (PoolPanel)evt.getSource();
-        if(a.sliderPower) {
-            if(dragging) {
-                dragging = false;
-            }
-        }
-	if(dragging) {
-	    dragging = false;
-	    if(distance > 20) {
-		shooting = true;
-	    }
-	}
-    }
-
-    public void mouseMoved(MouseEvent evt) {
-	click.setLocation(evt.getX(), evt.getY());
-	PoolPanel a = (PoolPanel)evt.getSource();
-    }
-
-    public void mouseDragged(MouseEvent evt){
-	PoolPanel a = (PoolPanel)evt.getSource();
-	if (dragging){
-	    tracker.setLocation(evt.getX(), evt.getY());
-	    distance = tracker.distance(cb.getcx(), cb.getcy());
-	    aim.x = (tracker.x - cb.getcx())/distance;
-	    aim.y = (tracker.y - cb.getcy())/distance;
-	}
-    }
-    
-    //Unused
-    public void mouseEntered(MouseEvent evt) { }
-    public void mouseExited(MouseEvent evt) { }
-    public void mouseClicked(MouseEvent evt) { }
 }

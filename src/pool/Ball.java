@@ -2,27 +2,23 @@ package pool;
 
 import com.sun.j3d.utils.geometry.Sphere;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 public class Ball {
-    Point2D.Double pos;
+    myPoint3d pos;
     Point2D.Double vel;
     Point2D.Double acc;
     double size;
     int alpha;
     Color color;
     boolean sel, sunk, remove, showDirection;
-    
-    //For testing
-    Point2D.Double lastPos;
-    Point2D.Double lastVel;
-    
+        
     //Java 3D
     BranchGroup group;
     TransformGroup transformGroup;
@@ -30,7 +26,7 @@ public class Ball {
     Transform3D transform = new Transform3D();
     
     public Ball(Color col, double x, double y, double a, double b, double s){
-        pos = new Point2D.Double(x,y);
+        pos = new Point3d(x,y,0);
 	vel = new Point2D.Double(a,b);
 	acc = new Point2D.Double(0,0);
 	color = col;
@@ -38,8 +34,6 @@ public class Ball {
 	sunk = false;
 	remove = false;
 	alpha = 255;
-        lastPos = new Point2D.Double(x,y);
-	lastVel = new Point2D.Double(a,b);
         showDirection = true;
         
         group = new BranchGroup();
@@ -129,6 +123,12 @@ public class Ball {
             return true;
         return false; 
     }
-    
+}
 
+class myPoint3d extends Point3d {
+    public void setLocation(double a, double b, double c) {
+        x = a;
+        y = b;
+        z = c;
+    }
 }
