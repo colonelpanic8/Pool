@@ -44,7 +44,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
 	    slider = (JSlider)evt.getSource();
-	    pp.power = (slider.getValue())/2.6;
+	    pp.power = (float)(slider.getValue())/25;
 	    
 	}
     }
@@ -112,21 +112,21 @@ public class PoolFrame {
 	    cc= c;
 	}
 	public void actionPerformed(ActionEvent evt){
-	    int width = msp.getWidth()/2 - 20;
-	    int height = msp.getHeight()/2 - 20;
+	    int width = 1;
+	    int height = 2;
 	    switch (cc.getSelectedIndex()) {
 	    case 1:
-		msp.balls.add(new Ball(Color.BLUE, width, height, 2, 2, msp.ballSize));
+		msp.addBall(Color.BLUE, -width, height, 0, 0, msp.ballSize);
 		break;
 	    case 2:
-		msp.balls.add(new Ball(Color.GREEN, msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize));
+		msp.addBall(Color.GREEN, msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize);
 		break;
 	    case 3:
-		msp.balls.add(new Ball(Color.yellow, width, height, -2, 1, msp.ballSize));
+		msp.addBall(Color.yellow, width, -height, 0, 0, msp.ballSize);
 		break;
 		
 	    default:
-		msp.balls.add(new Ball(Color.RED, width, height, -1, -1, msp.ballSize));
+		msp.addBall(Color.RED, -width, -height, 0, 0, msp.ballSize);
 		break;
 	    }
 	    msp.repaint();
@@ -134,7 +134,7 @@ public class PoolFrame {
     }
     public static void main(String[] args) {
 	JFrame window = new JFrame("Pool");
-	PoolPanel poolpanel = new PoolPanel(45,20);
+	PoolPanel poolpanel = new PoolPanel(2,1, 40, 40);
 	JPanel content = new JPanel();
 	JPanel south = new JPanel();
 	

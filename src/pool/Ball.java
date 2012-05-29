@@ -1,15 +1,20 @@
 package pool;
 
+import com.sun.j3d.utils.geometry.Sphere;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
+import javax.vecmath.Vector3d;
 
 public class Ball {
     Point2D.Double pos;
     Point2D.Double vel;
     Point2D.Double acc;
-    int size;
+    double size;
     int alpha;
     Color color;
     boolean sel, sunk, remove, showDirection;
@@ -17,7 +22,14 @@ public class Ball {
     //For testing
     Point2D.Double lastPos;
     Point2D.Double lastVel;
-    public Ball(Color col, double x, double y, double a, double b, int s){
+    
+    //Java 3D
+    BranchGroup group;
+    TransformGroup transformGroup;
+    Sphere sphere;
+    Transform3D transform = new Transform3D();
+    
+    public Ball(Color col, double x, double y, double a, double b, double s){
         pos = new Point2D.Double(x,y);
 	vel = new Point2D.Double(a,b);
 	acc = new Point2D.Double(0,0);
@@ -29,31 +41,29 @@ public class Ball {
         lastPos = new Point2D.Double(x,y);
 	lastVel = new Point2D.Double(a,b);
         showDirection = true;
+        
+        group = new BranchGroup();
+        transformGroup = new TransformGroup();
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        sphere = new Sphere((float)size/2);
+        transformGroup.addChild(sphere);
+        draw3D();
+        group.addChild(transformGroup);
     }
+    
     public double getcx(){
 	return pos.x + size/2;
     }
+    
     public double getcy(){
 	return pos.y + size/2;
     }
-    public void draw(Graphics g) {
-	if(sunk) {
-	    alpha -= 5;
-	    if(alpha > 0) {
-		g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-		g.fillOval((int)pos.x, (int)pos.y, size, size);
-	    } else {
-		remove = true;
-	    }
-	} else {
-	    g.setColor(color);
-	    g.fillOval((int)pos.x, (int)pos.y, size, size);
-            if (showDirection) {
-                g.setColor(Color.MAGENTA);
-                g.drawLine((int)getcx(), (int)getcy(), (int)(getcx() + vel.x*10), (int)(getcy() + vel.y*10));
-            }
-	}
+    
+    public final void draw3D() {
+        transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));
+        transformGroup.setTransform(transform);
     }
+    
 
     public double detectCollisionWith(Ball ball) {
 	// a b c are the terms of a quadratic.  at^2 + bt + c  This code uses the quadratic equation to check for collisions.
