@@ -134,7 +134,7 @@ public class PoolFrame {
     }
     public static void main(String[] args) {
 	JFrame window = new JFrame("Pool");
-	PoolPanel poolpanel = new PoolPanel(.25,1, 40, 40);
+	PoolPanel poolpanel = new PoolPanel(.25,1, 40, 25);
 	JPanel content = new JPanel();
 	JPanel south = new JPanel();
 	

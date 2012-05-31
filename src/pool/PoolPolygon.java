@@ -1,24 +1,42 @@
 package pool;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.geom.Point2D;
 import java.util.PriorityQueue;
+import javax.media.j3d.*;
+import javax.vecmath.Point3d;
 
-public class PoolPolygon extends Polygon {
+public class PoolPolygon extends Polygon2D {
     Color color;
+    QuadArray vertices;
+    BranchGroup group;
     
-    public PoolPolygon(int[] xpoints, int[] ypoints, int npoints, Color c) {
+    
+    public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, Color c, double ballsize) {
         super(xpoints, ypoints, npoints);
         color = c;
+        
+        vertices = new QuadArray ((npoints+1)*4, QuadArray.COORDINATES);
+        int j = 0;
+        for(int i = 0; i < npoints - 1; i++) {
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], ballsize));
+            vertices.setCoordinate (j++, new Point3d (xpoints[i], ypoints[i], -ballsize));
+            vertices.setCoordinate (j++, new Point3d(xpoints[i+1], ypoints[i+1], -ballsize));
+            vertices.setCoordinate (j++, new Point3d (xpoints[i+1], ypoints[i+1], ballsize));
+        }
+        
+        int i = 0;
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
+
+    	group = new BranchGroup();
+        group.addChild(new Shape3D(vertices, new Appearance()));
     }
     
-    public void draw(Graphics g) {
-        g.setColor(color);
-        g.fillPolygon(this);
-    }
+    
     
     public boolean checkOverlap(Ball ball) {
         Point2D.Double a = new Point.Double(xpoints[npoints-1], ypoints[npoints-1]);        
@@ -44,8 +62,8 @@ public class PoolPolygon extends Polygon {
         boolean minIsPoint = false;
         Point2D.Double minVel = new Point2D.Double(0,0);
         Point2D.Double newVel = new Point2D.Double(0,0);
-        Point a = new Point(xpoints[npoints-1], ypoints[npoints-1]);
-        Point b = new Point(xpoints[0],ypoints[0]);
+        Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
+        Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
@@ -80,8 +98,8 @@ public class PoolPolygon extends Polygon {
         int minWall = -1;
         Point2D.Double minVel = new Point2D.Double(0,0);
         Point2D.Double newVel = new Point2D.Double(0,0);
-        Point a = new Point(xpoints[npoints-1], ypoints[npoints-1]);
-        Point b = new Point(xpoints[0],ypoints[0]);
+        Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
+        Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
@@ -114,7 +132,7 @@ public class PoolPolygon extends Polygon {
     
     
     
-    public static double detectWallCollision(Point a, Point b, Ball ball, Point2D.Double res) {
+    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, Ball ball, Point2D.Double res) {
 	Point2D.Double unit, trans, aInNewBasis, bInNewBasis, velInNewBasis, posInNewBasis;
 	double dist = a.distance(b);
 	unit          = new Point2D.Double((a.x-b.x)/dist,
@@ -132,9 +150,9 @@ public class PoolPolygon extends Polygon {
 	double t;
 	if (velInNewBasis.y != 0) {
             if(aInNewBasis.y > posInNewBasis.y){
-                t = (aInNewBasis.y-(ball.size/2)-posInNewBasis.y)/velInNewBasis.y;
+                t = (aInNewBasis.y-(ball.size)-posInNewBasis.y)/velInNewBasis.y;
             } else {
-                t = (aInNewBasis.y+(ball.size/2)-posInNewBasis.y)/velInNewBasis.y;
+                t = (aInNewBasis.y+(ball.size)-posInNewBasis.y)/velInNewBasis.y;
             }
 	} else {
 	    return Double.POSITIVE_INFINITY;

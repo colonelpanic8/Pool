@@ -14,7 +14,6 @@ import javax.media.j3d.*;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.vecmath.*;
-import quicktime.qd3d.math.Quaternion;
 
 
 
@@ -45,12 +44,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //Colors
     Color3f white;
-    CameraRotater cr = new CameraRotater(this,0);
+    CameraController cr = new CameraController(this);
     
     int ticks = 0;
     
     //INITIALIZATION
-    public PoolPanel(double bs, double rs, double h, double w) {
+    public PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
         height = h;
         width = w;
@@ -101,10 +100,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	collisions = new PriorityQueue(16, this);
        
         //Start timer
-	Timer timer = new Timer(15, this);
+	Timer timer = new Timer(60, this);
 	timer.start();
-        
-        ChangeBasis changeBasis = new ChangeBasis(new Vector3f(1.0f, 1.0f, 1.0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(0.0f,0.0f, 1.0f));
+               
     }
     
     
@@ -115,12 +113,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         universe = new SimpleUniverse(canvas);
         
         //Light
-        //BoundingBox bounds = new BoundingBox();
-        //bounds.setLower(-width/2, -height/2, -3);
-        //bounds.setUpper(width/2, height/2, 3);
-        BoundingSphere bounds = new BoundingSphere(new Point3d(), 100.0);
+        BoundingBox bounds = new BoundingBox();
+        bounds.setLower(-width/2-borderSize, -height/2-borderSize, -3);
+        bounds.setUpper(width/2+borderSize, height/2+borderSize, 3);
+        //BoundingSphere bounds = new BoundingSphere(new Point3d(), 100.0);
         group = new BranchGroup();
-        Color3f lightColor = new Color3f(1.0f, 0.0f, 0.2f);
+        Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
         Vector3f lightDirection = new Vector3f(4.0f, -7.0f, -12.0f);        
         DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
         light.setInfluencingBounds(bounds);
@@ -131,7 +129,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ambientLight.setInfluencingBounds(bounds);
         group.addChild(ambientLight);
         
-        Background bg = new Background(new Color3f(1.0f, 1.0f, 1.0f));
+        Background bg = new Background(new Color3f(0.0f, 1.0f, 1.0f));
         bg.setApplicationBounds(bounds);
         group.addChild(bg);
         
@@ -158,21 +156,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         transformGroup.addChild(aimLine);
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         
-        //
-        Appearance polygon1Appearance = new Appearance();
-        polygon1Appearance.setColoringAttributes(ca);
-        QuadArray polygon1 = new QuadArray (8, QuadArray.COORDINATES);
-    	polygon1.setCoordinate (0, new Point3f (0f, 0f, 0f));
-    	polygon1.setCoordinate (1, new Point3f (2f, 0f, 0f));
-    	polygon1.setCoordinate (2, new Point3f (2f, 3f, 0f));
-    	polygon1.setCoordinate (3, new Point3f (0f, 3f, 0f));
-    	polygon1.setCoordinate (4, new Point3f (0f, 0f, 1f));
-    	polygon1.setCoordinate (5, new Point3f (2f, 0f, 1f));
-    	polygon1.setCoordinate (6, new Point3f (2f, 3f, 1f));
-    	polygon1.setCoordinate (7, new Point3f (0f, 3f, 1f));
-        group.addChild(new Shape3D(polygon1,polygon1Appearance));
-        group.addChild(new Shape3D(polygon1,polygon1Appearance));
-    
+        
         //
         
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);        
@@ -194,69 +178,75 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public void initPolygons() {
 	Color color = tableColor.darker();
-        int[] xpoints, ypoints;
-	xpoints = new int[4];
-	ypoints = new int[4];
-        /*
-	xpoints[0] = (borderSize + pocketSize/2);
-	xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	xpoints[2] = width - pocketSize/2 + sideIndent;
-	xpoints[3] = width - pocketSize/2;
-	ypoints[0] = borderSize;
-	ypoints[1] = borderSize + railSize;
-	ypoints[2] = borderSize + railSize;
-	ypoints[3] = borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
-
-	xpoints[0] = width/2 + pocketSize/2;
-	xpoints[1] = width/2 + pocketSize/2 + sideIndent;
-	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-        xpoints[3] = width - pocketSize/2 - borderSize;
-        ypoints[0] = borderSize;
-	ypoints[1] = borderSize + railSize;
-	ypoints[2] = borderSize + railSize;
-	ypoints[3] = borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+        double[] xpoints, ypoints;
+	xpoints = new double[4];
+	ypoints = new double[4];
         
-	xpoints[0] = width - borderSize - pocketSize/2;
-        xpoints[1] = width - borderSize - railSize;
-        xpoints[2] = width - borderSize- railSize;
-        xpoints[3] = width - borderSize;
-	ypoints[0] = borderSize + pocketSize/2;
-	ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	ypoints[2] = height - borderSize - railIndent;
-	ypoints[3] = height - borderSize - pocketSize/2;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
-
-	xpoints[0] = width/2 + pocketSize/2;
-	xpoints[1] = width/2 + pocketSize/2 +sideIndent;
-	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-        xpoints[3] = width - pocketSize/2 - borderSize;
-	ypoints[0] = height - borderSize;
-	ypoints[1] = height - (borderSize + railSize);
-	ypoints[2] = height - (borderSize + railSize);
-	ypoints[3] = height - borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
-
-	xpoints[0] = borderSize + pocketSize/2;
-	xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	xpoints[2] = width/2 - pocketSize/2 + sideIndent;
-	xpoints[3] = width/2 - pocketSize/2;
-	ypoints[0] = height - borderSize;
-	ypoints[1] = height - (borderSize + railSize);
-	ypoints[2] = height - (borderSize + railSize);
-	ypoints[3] = height - borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+	xpoints[0] = -width/2 + (pocketSize/2);
+	xpoints[1] = -width/2 + (pocketSize/2 + railIndent);
+	xpoints[2] = -(pocketSize/2 + sideIndent);
+	xpoints[3] = -pocketSize/2;
         
-	xpoints[0] = borderSize;
-        xpoints[1] = borderSize+railSize;
-        xpoints[2] = borderSize+railSize;
-        xpoints[3] = borderSize;
-        ypoints[0] = borderSize + pocketSize/2;
-	ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	ypoints[2] = height - borderSize - railIndent;
-	ypoints[3] = height - borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));*/
+	ypoints[0] = height/2;
+	ypoints[1] = height/2 - railSize;
+	ypoints[2] = height/2 - railSize;
+	ypoints[3] = height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[0] = (pocketSize/2);
+	xpoints[1] = (pocketSize/2 + sideIndent);
+	xpoints[2] = width/2-(pocketSize/2 + railIndent);
+	xpoints[3] = width/2-pocketSize/2;
+        
+	ypoints[0] = height/2;
+	ypoints[1] = height/2 - railSize;
+	ypoints[2] = height/2 - railSize;
+	ypoints[3] = height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[0] = width/2 ;
+	xpoints[1] = width/2 - railSize;
+	xpoints[2] = width/2 - railSize;
+	xpoints[3] = width/2;
+        
+	ypoints[0] = height/2 - pocketSize/2;
+	ypoints[1] = height/2 - (pocketSize/2 + railIndent);
+	ypoints[2] = (pocketSize/2 + railIndent) - height/2;
+	ypoints[3] = pocketSize/2-height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);                
+        
+        xpoints[3] = -width/2 + (pocketSize/2);
+	xpoints[2] = -width/2 + (pocketSize/2 + railIndent);
+	xpoints[1] = -(pocketSize/2 + sideIndent);
+	xpoints[0] = -pocketSize/2;
+        
+	ypoints[3] = -height/2;
+	ypoints[2] = -height/2 + railSize;
+	ypoints[1] = -height/2 + railSize;
+	ypoints[0] = -height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[3] = (pocketSize/2);
+	xpoints[2] = (pocketSize/2 + sideIndent);
+	xpoints[1] = width/2-(pocketSize/2 + railIndent);
+	xpoints[0] = width/2-pocketSize/2;
+        
+	ypoints[3] = -height/2;
+	ypoints[2] = -height/2 + railSize;
+	ypoints[1] = -height/2 + railSize;
+	ypoints[0] = -height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[3] = -width/2 ;
+	xpoints[2] = -width/2 + railSize;
+	xpoints[1] = -width/2 + railSize;
+	xpoints[0] = -width/2;
+        
+	ypoints[3] = height/2 - pocketSize/2;
+	ypoints[2] = height/2 - (pocketSize/2 + railIndent);
+	ypoints[1] = (pocketSize/2 + railIndent) - height/2;
+	ypoints[0] = pocketSize/2-height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
     }
 
     public void initPockets() {
@@ -270,34 +260,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //SIMULATION
     public void actionPerformed(ActionEvent evt){
-        
-        /*Quat4f inv = new Quat4f();
-        Quat4f q = new Quat4f(0.0f,
-                1.0f,
-                0.0f, 
-                30.0f);
-        inv.inverse(q);
-        Quat4f posQ = new Quat4f((float)cameraPosition.x,
-                (float)cameraPosition.y,
-                (float)cameraPosition.z,
-                (float)0);
-        
-        q.mul(posQ);        
-        q.mul(inv);
-        cameraPosition.x = q.x;
-        cameraPosition.y = q.y;
-        cameraPosition.z = q.z;
-        
-        cameraPosition.scale(10.0f);
-        
-        TransformGroup VpTG = universe.getViewingPlatform().getViewPlatformTransform();
-        Transform3D Trfcamera = new Transform3D();
-        Trfcamera.lookAt(cameraPosition, new Point3d(0.0,0.0,0.0), new Vector3d(0.0,1.0,0.0));
-        Trfcamera.invert();
-        VpTG.setTransform(Trfcamera);*/
-        this.repaint();
-        
-        
+        this.repaint();                
         if(shootingBall != null) {
             Transform3D transform;
             transform = new Transform3D();
@@ -478,50 +441,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         g.drawString(Float.toString(cr.upVector.x), 0, getHeight()-20);
         g.drawString(Float.toString(cr.upVector.y), 100, getHeight()-20);
         g.drawString(Float.toString(cr.upVector.z), 200, getHeight()-20);
-        /*
-        //BORDER
-	g.setColor(Color.DARK_GRAY);
-	g.fillRect(0,0,width,borderSize);
-	g.fillRect(0,0,borderSize,width);
-	g.fillRect(0,height-borderSize,width,borderSize);
-	g.fillRect(width-borderSize,0,borderSize,width);
-        
-	g.setColor(Color.BLACK);
-        
-        //POLYGONS
-        Iterator<PoolPolygon> iterator = polygons.iterator();
-        while(iterator.hasNext()){
-	    PoolPolygon p = iterator.next();
-	    p.draw(g);
-	}
-
-	//POCKETS
-	Iterator<Pocket> pocketItr;
-	pocketItr = pockets.iterator();
-	while(pocketItr.hasNext()) {
-	    Pocket pocket = pocketItr.next();
-	    pocket.draw(g);
-	}        
-	
-	//BALLS
-	Iterator<Ball> iter = balls.iterator();
-	while(iter.hasNext()){
-	    Ball temp = iter.next();
-	    temp.draw(g);
-	}
-        
-	//GHOST BALL AND AIMER
-	g.setColor(Color.BLACK);
-        drawGhostBall(g);
-		
-        /*
-         * Draw information on screen.
-         * g.drawString(Integer.toString(modeListener.click.x), 100, 140);
-         * g.drawString(Integer.toString(modeListener.click.y), 160, 140);
-         * g.drawString(Integer.toString(collisionsExecuted), 160, 160);
-         * g.drawString(Double.toString(power), 200, 140);
-         * g.drawString(Double.toString(spin), 200, 160);
-        */        
     }
     
     void drawGhostBall(Graphics g) {
@@ -683,6 +602,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         balls.add(ball);
         return ball;
     }
+    
+    public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints, Color c, double ballsize) {
+        PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, c, ballsize);
+        universe.addBranchGraph(poly.group);
+        polygons.add(poly);
+        return poly;
+        
+    }
 
     //COMPARATOR INTERFACE
     public int compare(Object a, Object b) {
@@ -720,56 +647,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //HIERARCHY BOUNDS INTERFACE
     public void ancestorResized(HierarchyEvent he) {        
         canvas.setSize(getWidth(), getHeight()-40);
-        /*
-        if(pockets != null) {
-	    pockets.get(0).pos.setLocation(borderSize , borderSize );
-	    pockets.get(1).pos.setLocation(width/2, borderSize );
-	    pockets.get(2).pos.setLocation(width - borderSize , borderSize );
-	    pockets.get(3).pos.setLocation(borderSize , height - borderSize );
-	    pockets.get(4).pos.setLocation(width/2, height - borderSize );
-	    pockets.get(5).pos.setLocation(width - borderSize, height - borderSize);
-        }
-        
-        if(polygons != null) {
-            polygons.get(0).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
-            polygons.get(0).xpoints[3] = width/2 - sidePocketSize/2;
-
-	    polygons.get(1).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(1).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
-	    polygons.get(1).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-	    polygons.get(1).xpoints[3] = width - pocketSize/2 - borderSize;
-
-	    polygons.get(2).xpoints[0] = width - borderSize;
-	    polygons.get(2).xpoints[1] = width - borderSize-railSize;
-	    polygons.get(2).xpoints[2] = width - borderSize-railSize;
-	    polygons.get(2).xpoints[3] = width - borderSize;
-	    polygons.get(2).ypoints[0] = borderSize + pocketSize/2;
-	    polygons.get(2).ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(2).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
-	    polygons.get(2).ypoints[3] = height - borderSize - pocketSize/2;
-
-	    polygons.get(3).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(3).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
-	    polygons.get(3).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-	    polygons.get(3).xpoints[3] = width - pocketSize/2 - borderSize;
-	    polygons.get(3).ypoints[0] = height - borderSize;
-	    polygons.get(3).ypoints[1] = height - (borderSize + railSize);
-	    polygons.get(3).ypoints[2] = height - (borderSize + railSize);
-	    polygons.get(3).ypoints[3] = height - borderSize;
-	    
-	    
-	    polygons.get(4).xpoints[0] = borderSize + pocketSize/2;
-	    polygons.get(4).xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(4).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
-	    polygons.get(4).xpoints[3] = width/2 - sidePocketSize/2;
-	    polygons.get(4).ypoints[0] = height - borderSize;
-	    polygons.get(4).ypoints[1] = height - (borderSize + railSize);
-	    polygons.get(4).ypoints[2] = height - (borderSize + railSize);
-	    polygons.get(4).ypoints[3] = height - borderSize;
-           
-            polygons.get(5).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
-            polygons.get(5).ypoints[3] = height - borderSize - pocketSize/2;
-        }*/
     }
     
     public void ancestorMoved(HierarchyEvent he) { }
@@ -778,90 +655,77 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
 }
 
-class CameraRotater implements MouseMotionListener, MouseListener {
+class CameraController implements MouseMotionListener, MouseListener {
     PoolPanel pp;
-    double scale;
     Point click = new Point(0,0);
     Transform3D transform = new Transform3D();
-    Vector3f cameraPosition = new Vector3f(0f, 0f, 10f);
+    Vector3f cameraPosition = new Vector3f(0f, 0f, 1.0f);
     Vector3f upVector = new Vector3f(0f, 1f, 0f);
-    Vector3f last = new Vector3f(cameraPosition);
-    Quat4f curr = new Quat4f(1.0f,1.0f,1.0f,0f);
-    ChangeBasis cb;
-    Vector3f out = new Vector3f(upVector);
+    Vector3d upVec = new Vector3d(upVector);
+    Point3d cameraPos = new Point3d(cameraPosition);
+    Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
+    float cameraDistance = 30.0f;
+    ChangeBasis changeBasis;
 
-    public CameraRotater(PoolPanel p, double s) {
-        pp = p;        
-        scale = s;
+    public CameraController(PoolPanel p) {
+        pp = p;
     }
     
     public void mouseDragged(MouseEvent me) {
-        Canvas3D canvas = (Canvas3D) me.getSource();
-        float x,y;        
-        x = ((float)(click.x - me.getX()))/(canvas.getWidth()/2);
-        y = ((float)(click.y - me.getY()))/(canvas.getHeight()/2);
-
-        float z2 = 1 - x * x - y * y;
-        float z = (float) (z2 > 0 ? Math.sqrt(z2) : 0);         
+        //Determine the point z for the current rotation given the click x, y.
+        float x,y;
+        x = ((float)(me.getX() - click.x))/(pp.canvas.getWidth()/2);
+        y = ((float)(click.y - me.getY()))/(pp.canvas.getHeight()/2);
+        float _z = 1 - x * x - y * y;
+        float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
         Vector3f point = new Vector3f(x,y,z);
         point.normalize();
-        cb.transform(point);               
+        changeBasis.transform(point);
         
+        //Get the axis and angle of rotation.
         Vector3f axis = new Vector3f();
         float angle;
         axis.cross(point, cameraPosition);
-        angle = point.angle(cameraPosition);
-        pp.universe.getViewingPlatform().getViewPlatformTransform().getTransform(transform);       
-       
+        angle = point.angle(cameraPosition);       
         axis.normalize();
         
-        
-        Quat4f inv = new Quat4f();
-        
+        //Calculate the quarternion that represents this rotation and its inverse.
         axis.scale((float)Math.sin(angle)/2);
+        rotation.set(axis.x,
+                     axis.y,
+                     axis.z, 
+                     (float)Math.cos(angle)/2);
+        inverse.inverse(rotation);
         
-        Quat4f q = new Quat4f(axis.x,
-                axis.y,
-                axis.z, 
-                (float)Math.cos(angle)/2);
-        inv.inverse(q);
-        Quat4f posQ = new Quat4f((float)cameraPosition.x,
-                (float)cameraPosition.y,
-                (float)cameraPosition.z,
-                (float)0);
-        q.mul(posQ);
-        q.mul(inv);
-        curr.mul(q);
+        //Rotate the camera, store the result in point.
+        vector.set(cameraPosition.x,
+                   cameraPosition.y,
+                   cameraPosition.z,
+                   0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);        
+        cameraPos.x = vector.x;
+        cameraPos.y = vector.y;
+        cameraPos.z = vector.z;
         
-        out.x = q.x;
-        out.y = q.y;
-        out.z = q.z;                                                                
+        //Rotate the upVector.
+        vector.set(upVector.x,
+                   upVector.y,
+                   upVector.z,
+                   0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);
         
-        q.set(axis.x,
-              axis.y,
-              axis.z, 
-              (float)Math.cos(angle)/2);
-        posQ.set((float)upVector.x,
-                (float)upVector.y,
-                (float)upVector.z,
-                (float)0);
+        upVec.x = vector.x;
+        upVec.y = vector.y;
+        upVec.z = vector.z;
         
-        q.mul(posQ);
-        q.mul(inv);
+        //Scale point by the camera distance.        
+        cameraPos.scale(cameraDistance);
         
-        last.x = q.x;
-        last.y = q.y;
-        last.z = q.z;
-        last.normalize();
-                                           
-                
-        out.scale(10);
-        
-        transform.lookAt(new Point3d((float)out.x, (float)out.y, (float)out.z), new Point3d(0.0f,0.0f,0.0f),
-                new Vector3d(last.x, last.y, last.z));
+        //Set the transform
+        transform.lookAt(cameraPos, new Point3d(0.0f,0.0f,0.0f), upVec);
         transform.invert();
-        
-        
         pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);
         
     }
@@ -871,7 +735,7 @@ class CameraRotater implements MouseMotionListener, MouseListener {
         Vector3f sideVector = new Vector3f(), camVec = new Vector3f();
         camVec.normalize(cameraPosition);
         sideVector.cross(upVector, camVec);
-        cb = new ChangeBasis(sideVector, upVector, camVec,
+        changeBasis = new ChangeBasis(sideVector, upVector, camVec,
                 new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(0.0f, 0.0f, 1.0f));
        
     }
@@ -887,8 +751,9 @@ class CameraRotater implements MouseMotionListener, MouseListener {
 
 
     public void mouseReleased(MouseEvent me) {
-        cameraPosition.set(out);
-        upVector.set(last);
+        cameraPosition.set(cameraPos);
+        cameraPosition.normalize();
+        upVector.set(upVec);
     }
 
     public void mouseEntered(MouseEvent me) {
