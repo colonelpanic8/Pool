@@ -45,6 +45,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //Colors
     Color3f white;
+    CameraRotater cr = new CameraRotater(this,0);
     
     int ticks = 0;
     
@@ -168,8 +169,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         Trfcamera.invert();
         VpTG.setTransform(Trfcamera);
         
-        CameraRotater cr;
-        cr = new CameraRotater(this, .04);
         canvas.addMouseListener(cr);
         canvas.addMouseMotionListener(cr);
     }
@@ -252,6 +251,34 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //SIMULATION
     public void actionPerformed(ActionEvent evt){
+        
+        /*Quat4f inv = new Quat4f();
+        Quat4f q = new Quat4f(0.0f,
+                1.0f,
+                0.0f, 
+                30.0f);
+        inv.inverse(q);
+        Quat4f posQ = new Quat4f((float)cameraPosition.x,
+                (float)cameraPosition.y,
+                (float)cameraPosition.z,
+                (float)0);
+        
+        q.mul(posQ);        
+        q.mul(inv);
+        cameraPosition.x = q.x;
+        cameraPosition.y = q.y;
+        cameraPosition.z = q.z;
+        
+        cameraPosition.scale(10.0f);
+        
+        TransformGroup VpTG = universe.getViewingPlatform().getViewPlatformTransform();
+        Transform3D Trfcamera = new Transform3D();
+        Trfcamera.lookAt(cameraPosition, new Point3d(0.0,0.0,0.0), new Vector3d(0.0,1.0,0.0));
+        Trfcamera.invert();
+        VpTG.setTransform(Trfcamera);*/
+        this.repaint();
+        
+        
         if(shootingBall != null) {
             Transform3D transform;
             transform = new Transform3D();
@@ -423,7 +450,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //DRAWING 
     @Override public void paintComponent(Graphics g){
-	super.paintComponent(g);        
+	super.paintComponent(g);
+        g.setColor(Color.BLACK);
+        g.drawString(Float.toString(cr.cameraPosition.x), 0, getHeight());
+        g.drawString(Float.toString(cr.cameraPosition.y), 100, getHeight());
+        g.drawString(Float.toString(cr.cameraPosition.z), 200, getHeight());
+        
+        g.drawString(Float.toString(cr.upVector.x), 0, getHeight()-20);
+        g.drawString(Float.toString(cr.upVector.y), 100, getHeight()-20);
+        g.drawString(Float.toString(cr.upVector.z), 200, getHeight()-20);
         /*
         //BORDER
 	g.setColor(Color.DARK_GRAY);
@@ -665,7 +700,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //HIERARCHY BOUNDS INTERFACE
     public void ancestorResized(HierarchyEvent he) {        
-        canvas.setSize(getWidth(), getHeight()-10);
+        canvas.setSize(getWidth(), getHeight()-40);
         /*
         if(pockets != null) {
 	    pockets.get(0).pos.setLocation(borderSize , borderSize );
@@ -746,10 +781,14 @@ class CameraRotater implements MouseMotionListener, MouseListener {
         Point2D.Double p = new Point2D.Double(me.getX(), me.getY());                
         float x,y;
         
-        x = lastClick.x - me.getX();
+        x = (float) (p.x / (canvas.getWidth()/2));
+        y = (float) (p.y / (canvas.getHeight()/2));
+ 
+        // Translate 0,0 to the center
+        x = x - 1;
         
         // Flip so +Y is up instead of down
-        y = lastClick.y - me.getY();
+        y = 1 - y;
                        
         float z2 = 1 - x * x - y * y;
         float z = (float) (z2 > 0 ? Math.sqrt(z2) : 0);
@@ -763,14 +802,14 @@ class CameraRotater implements MouseMotionListener, MouseListener {
         inv.inverse(curr);
         trans.mul(inv);
         
-        point.set(trans.x, trans.y, trans.z);
+        //point.set(trans.x, trans.y, trans.z);
         
         
         pp.universe.getViewingPlatform().getViewPlatformTransform().getTransform(transform);
         
         Vector3f out = new Vector3f();
         
-        transform.get(trans, out);
+        out.z = 1.0f;
         
         Vector3f axis = new Vector3f();
         float angle;        
@@ -802,6 +841,8 @@ class CameraRotater implements MouseMotionListener, MouseListener {
         out.y = q.y;
         out.z = q.z;
         
+        
+        
         q.set(axis.x,
               axis.y,
               axis.z, 
@@ -825,19 +866,22 @@ class CameraRotater implements MouseMotionListener, MouseListener {
               axis.y,
               axis.z, 
               (float)Math.cos(angle)/2);
-        posQ.set((float)parComp.x,
-                (float)parComp.y,
-                (float)parComp.z,
+        posQ.set((float)0.0,
+                (float)1.0,
+                (float)0.0,
                 (float)0);
         
         q.mul(posQ);
         q.mul(inv);
         
-        upVector.set(q.x + upVector.x-parComp.x, q.y + upVector.y-parComp.y, q.z + upVector.z-parComp.z);
+        upVector.x = q.x;
+        upVector.y = q.y;
+        upVector.z = q.z;
+        upVector.normalize();
                                            
                 
         out.scale(10);
-        
+        cameraPosition.set(out);
         
         transform.lookAt(new Point3d((float)out.x, (float)out.y, (float)out.z), new Point3d(0.0f,0.0f,0.0f),
                 new Vector3d(upVector.x, upVector.y, upVector.z));
