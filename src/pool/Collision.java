@@ -3,8 +3,6 @@ package pool;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public abstract class Collision {
     double time;
@@ -119,8 +117,8 @@ class BallCollision extends Collision {
 	    }
 	}
 	//Collision effects
-	double xdif = ball2.getcx() - ball1.getcx();
-	double ydif = ball2.getcy() - ball1.getcy();
+	double xdif = ball2.pos.x - ball1.pos.x;
+	double ydif = ball2.pos.y - ball1.pos.y;
 	double dist = Math.sqrt(xdif*xdif + ydif*ydif);
 	double xp = xdif/dist;
 	double yp = ydif/dist;
@@ -173,9 +171,9 @@ class PointCollision extends Collision {
 
     @Override public void doEffects(PoolPanel pp) {
 	Point2D.Double unit, trans, temp, res;
-	double dist = point.distance(ball1.getcx(), ball1.getcy());
-	unit = new Point2D.Double((point.x - ball1.getcx())/dist,
-				  (point.y - ball1.getcy())/dist );
+	double dist = point.distance(ball1.pos.x, ball1.pos.y);
+	unit = new Point2D.Double((point.x - ball1.pos.x)/dist,
+				  (point.y - ball1.pos.y)/dist );
 	trans = new Point2D.Double(1/(unit.x + unit.y*unit.y/unit.x), 1/(unit.y + unit.x*unit.x/unit.y));
 	temp = new Point2D.Double(trans.x*ball1.vel.x, trans.y*ball1.vel.x);
 	temp.x += trans.y*ball1.vel.y;

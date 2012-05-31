@@ -44,7 +44,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
 	    slider = (JSlider)evt.getSource();
-	    pp.power = (float)(slider.getValue())/25;
+	    pp.power = (float)(slider.getValue())/100;
 	    
 	}
     }
@@ -134,7 +134,7 @@ public class PoolFrame {
     }
     public static void main(String[] args) {
 	JFrame window = new JFrame("Pool");
-	PoolPanel poolpanel = new PoolPanel(2,1, 40, 40);
+	PoolPanel poolpanel = new PoolPanel(.25,1, 40, 40);
 	JPanel content = new JPanel();
 	JPanel south = new JPanel();
 	

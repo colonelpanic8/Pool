@@ -26,7 +26,7 @@ public class Ball {
     Transform3D transform = new Transform3D();
     
     public Ball(Color col, double x, double y, double a, double b, double s){
-        pos = new Point3d(x,y,0);
+        pos = new myPoint3d(x,y,(double)0);
 	vel = new Point2D.Double(a,b);
 	acc = new Point2D.Double(0,0);
 	color = col;
@@ -39,18 +39,10 @@ public class Ball {
         group = new BranchGroup();
         transformGroup = new TransformGroup();
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        sphere = new Sphere((float)size/2);
+        sphere = new Sphere((float)size);
         transformGroup.addChild(sphere);
         draw3D();
         group.addChild(transformGroup);
-    }
-    
-    public double getcx(){
-	return pos.x + size/2;
-    }
-    
-    public double getcy(){
-	return pos.y + size/2;
     }
     
     public final void draw3D() {
@@ -64,13 +56,13 @@ public class Ball {
 	double a = ( (ball.vel.x) * (ball.vel.x) + (vel.x) * (vel.x) - 2*(ball.vel.x)*(vel.x) +
 		     (ball.vel.y)*(ball.vel.y) + (vel.y) * (vel.y) - 2*(ball.vel.y)*(vel.y) );
 	
-	double b = 2 * ( (ball.getcx() * ball.vel.x) + (getcx() * vel.x) - (ball.getcx() * vel.x) -
-			 (getcx() * ball.vel.x) + (ball.getcy() * ball.vel.y) + (getcy() * vel.y) - 
-			 (ball.getcy() * vel.y) - (getcy() * ball.vel.y) );
+	double b = 2 * ( (ball.pos.x * ball.vel.x) + (pos.x * vel.x) - (ball.pos.x * vel.x) -
+			 (pos.x * ball.vel.x) + (ball.pos.y * ball.vel.y) + (pos.y * vel.y) - 
+			 (ball.pos.y * vel.y) - (pos.y * ball.vel.y) );
 	
-	double c = ball.getcx() * ball.getcx() + getcx() * getcx() - 2 * (getcx() * ball.getcx()) +
-	    ball.getcy() * ball.getcy() + getcy() * getcy() - 2 * (getcy() * ball.getcy())
-	    - (size+ball.size)*(size+ball.size)/4;
+	double c = ball.pos.x * ball.pos.x + pos.x * pos.x - 2 * (pos.x * ball.pos.x) +
+                   ball.pos.y * ball.pos.y + pos.y * pos.y - 2 * (pos.y * ball.pos.y) -
+                   (size+ball.size)*(size+ball.size);
 	double t;
 	if (a !=0 ){
 	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);  // These are the two solutions to the quadratic equation.
@@ -88,9 +80,9 @@ public class Ball {
     public double detectCollisionWith(Point p) {
 	double a,b,c,t;
 	a = vel.y*vel.y + vel.x*vel.x;
-	b = 2*(vel.y*(getcy()-p.y) + vel.x*(getcx() - p.x));
-	c = p.x*p.x + p.y*p.y - 2*p.x*getcx() - 2*p.y*getcy() +
-	    getcy()*getcy() + getcx()*getcx() - size*size/4;
+	b = 2*(vel.y*(pos.y-p.y) + vel.x*(pos.x - p.x));
+	c = p.x*p.x + p.y*p.y - 2*p.x*pos.x - 2*p.y*pos.y +
+	    pos.y*pos.y + pos.x*pos.x - size*size/4;
 	if (a !=0 ){
 	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
 	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
@@ -104,9 +96,9 @@ public class Ball {
     public double detectCollisionWith(Point p, int distance) {
 	double a,b,c,t;
 	a = vel.y*vel.y + vel.x*vel.x;
-	b = 2*(vel.y*(getcy()-p.y) + vel.x*(getcx() - p.x));
-	c = p.x*p.x + p.y*p.y - 2*p.x*getcx() - 2*p.y*getcy()
-	    + getcy()*getcy() + getcx()*getcx() - distance*distance;
+	b = 2*(vel.y*(pos.y-p.y) + vel.x*(pos.x - p.x));
+	c = p.x*p.x + p.y*p.y - 2*p.x*pos.x - 2*p.y*pos.y
+	    + pos.y*pos.y + pos.x*pos.x - distance*distance;
 	if (a !=0 ){
 	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
 	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
@@ -118,14 +110,18 @@ public class Ball {
     }
     
     public boolean checkOverlap(Ball ball) {
-        Point2D.Double myCenter = new Point2D.Double(getcx(), getcy());
-        if(myCenter.distance(ball.getcx(), ball.getcy())+.5< ((double)(size + ball.size))/2)
+        Point2D.Double myCenter = new Point2D.Double(pos.x, pos.y);
+        if(myCenter.distance(ball.pos.x, ball.pos.y)+.5< ((double)(size + ball.size))/2)
             return true;
         return false; 
     }
 }
 
 class myPoint3d extends Point3d {
+    public myPoint3d(double a, double b, double c) {
+        super(a,b,c);
+    }
+    
     public void setLocation(double a, double b, double c) {
         x = a;
         y = b;

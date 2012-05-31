@@ -23,7 +23,7 @@ public class PoolPolygon extends Polygon {
     public boolean checkOverlap(Ball ball) {
         Point2D.Double a = new Point.Double(xpoints[npoints-1], ypoints[npoints-1]);        
         Point2D.Double b = new Point.Double(xpoints[0], ypoints[0]);        
-        Point2D.Double center = new Point2D.Double(ball.getcx(), ball.getcy());
+        Point2D.Double center = new Point2D.Double(ball.pos.x, ball.pos.y);
         double min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
@@ -123,8 +123,8 @@ public class PoolPolygon extends Polygon {
 					   1/(unit.y + unit.x*unit.x/unit.y));
 	velInNewBasis = new Point2D.Double(trans.x*ball.vel.x + trans.y*ball.vel.y,
 					   trans.y*ball.vel.x - trans.x*ball.vel.y);
-	posInNewBasis = new Point2D.Double(trans.x*ball.getcx() + trans.y*ball.getcy(),
-					   trans.y*ball.getcx() - trans.x*ball.getcy());
+	posInNewBasis = new Point2D.Double(trans.x*ball.pos.x + trans.y*ball.pos.y,
+					   trans.y*ball.pos.x - trans.x*ball.pos.y);
 	aInNewBasis   = new Point2D.Double(trans.x*a.x + trans.y*a.y,
 					   trans.y*a.x - trans.x*a.y);
 	bInNewBasis   = new Point2D.Double(trans.x*b.x + trans.y*b.y,
