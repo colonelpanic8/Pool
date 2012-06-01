@@ -5,6 +5,7 @@ import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.PriorityQueue;
 import javax.media.j3d.*;
+import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 
 public class PoolPolygon extends Polygon2D {
@@ -19,7 +20,7 @@ public class PoolPolygon extends Polygon2D {
         
         vertices = new QuadArray ((npoints+1)*4, QuadArray.COORDINATES);
         int j = 0;
-        double height = 0;
+        double height = ballsize;
         for(int i = 0; i < npoints - 1; i++) {
             vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], height));
             vertices.setCoordinate (j++, new Point3d (xpoints[i], ypoints[i], -ballsize));
@@ -34,7 +35,10 @@ public class PoolPolygon extends Polygon2D {
         vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
 
     	group = new BranchGroup();
-        group.addChild(new Shape3D(vertices, new Appearance()));
+        Appearance appearance = new Appearance();
+        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, 0.0f, 0.0f), ColoringAttributes.SHADE_FLAT);
+        appearance.setColoringAttributes(ca);
+        group.addChild(new Shape3D(vertices, appearance));
     }
     
     

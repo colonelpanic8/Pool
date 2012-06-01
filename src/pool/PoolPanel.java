@@ -6,13 +6,11 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.*;
 import java.awt.geom.Point2D;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import javax.media.j3d.*;
-import javax.swing.Action;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.vecmath.*;
@@ -46,7 +44,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //Colors
     Color3f white;
-    CameraController cr = new CameraController(this);
+    CameraController cameraController = new CameraController(this);
     
     int ticks = 0;
     
@@ -57,8 +55,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         width = w;
         ballSize = bs;
         railSize = rs;
-        pocketSize = (2.2*ballSize);
-        sidePocketSize = (1.8*ballSize);
+        pocketSize = (4.0*ballSize);
+        sidePocketSize = (3.0*ballSize);
         borderSize = pocketSize/2 + 10;
         railIndent = railSize;
         sideIndent = railIndent/4;
@@ -98,11 +96,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         //Miscellaneous
 	ghostBallPosition = new myPoint3d(0,0,0);
-        aim = new myPoint3d(0,0,0);
+        aim = new myPoint3d(1.0, 0.0, 0.0);
 	collisions = new PriorityQueue(16, this);
        
         //Start timer
-	Timer timer = new Timer(60, this);
+	Timer timer = new Timer(30, this);
 	timer.start();
                
     }
@@ -131,7 +129,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ambientLight.setInfluencingBounds(bounds);
         group.addChild(ambientLight);
         
-        Background bg = new Background(new Color3f(0.0f, 1.0f, 1.0f));
+        Background bg = new Background(new Color3f(1.0f, 1.0f, 1.0f));
         bg.setApplicationBounds(bounds);
         group.addChild(bg);
         
@@ -172,11 +170,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         Trfcamera.invert();
         VpTG.setTransform(Trfcamera);
         
-        canvas.addMouseListener(cr);
-        canvas.addMouseMotionListener(cr);
-        canvas.addKeyListener(cr);
-        
-        
+        canvas.addMouseListener(this.cameraController);
+        canvas.addMouseMotionListener(this.cameraController);
+        canvas.addKeyListener(this.cameraController);                
     }        
     
     public void initPolygons() {
@@ -187,8 +183,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
 	xpoints[0] = -width/2 + (pocketSize/2);
 	xpoints[1] = -width/2 + (pocketSize/2 + railIndent);
-	xpoints[2] = -(pocketSize/2 + sideIndent);
-	xpoints[3] = -pocketSize/2;
+	xpoints[2] = -(sidePocketSize/2 + sideIndent);
+	xpoints[3] = -sidePocketSize/2;
         
 	ypoints[0] = height/2;
 	ypoints[1] = height/2 - railSize;
@@ -196,8 +192,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[3] = height/2;
         this.addPolygon(xpoints, ypoints, 4, color, ballSize);
         
-        xpoints[0] = (pocketSize/2);
-	xpoints[1] = (pocketSize/2 + sideIndent);
+        xpoints[0] = (sidePocketSize/2);
+	xpoints[1] = (sidePocketSize/2 + sideIndent);
 	xpoints[2] = width/2-(pocketSize/2 + railIndent);
 	xpoints[3] = width/2-pocketSize/2;
         
@@ -220,8 +216,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         xpoints[3] = -width/2 + (pocketSize/2);
 	xpoints[2] = -width/2 + (pocketSize/2 + railIndent);
-	xpoints[1] = -(pocketSize/2 + sideIndent);
-	xpoints[0] = -pocketSize/2;
+	xpoints[1] = -(sidePocketSize/2 + sideIndent);
+	xpoints[0] = -sidePocketSize/2;
         
 	ypoints[3] = -height/2;
 	ypoints[2] = -height/2 + railSize;
@@ -229,8 +225,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[0] = -height/2;
         this.addPolygon(xpoints, ypoints, 4, color, ballSize);
         
-        xpoints[3] = (pocketSize/2);
-	xpoints[2] = (pocketSize/2 + sideIndent);
+        xpoints[3] = (sidePocketSize/2);
+	xpoints[2] = (sidePocketSize/2 + sideIndent);
 	xpoints[1] = width/2-(pocketSize/2 + railIndent);
 	xpoints[0] = width/2-pocketSize/2;
         
@@ -437,13 +433,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     @Override public void paintComponent(Graphics g){
 	super.paintComponent(g);
         g.setColor(Color.BLACK);
-        g.drawString(Float.toString(cr.cameraPosition.x), 0, getHeight());
-        g.drawString(Float.toString(cr.cameraPosition.y), 100, getHeight());
-        g.drawString(Float.toString(cr.cameraPosition.z), 200, getHeight());
+        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight());
+        g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight());
+        g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight());
         
-        g.drawString(Float.toString(cr.upVector.x), 0, getHeight()-20);
-        g.drawString(Float.toString(cr.upVector.y), 100, getHeight()-20);
-        g.drawString(Float.toString(cr.upVector.z), 200, getHeight()-20);
+        g.drawString(Float.toString(cameraController.upVector.x), 0, getHeight()-20);
+        g.drawString(Float.toString(cameraController.upVector.y), 100, getHeight()-20);
+        g.drawString(Float.toString(cameraController.upVector.z), 200, getHeight()-20);
     }
     
     void drawGhostBall(Graphics g) {
@@ -567,29 +563,32 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //ACTIONS
     public void newRack() {
-        /*
+        
         Color def, other;
-        int x = width*2/3;
+        double x = width/8;
         def = Color.ORANGE.darker();
         other = Color.CYAN.darker();
         for(int i = 0; i < 5; i++) {
-            int y = height/2 - i*ballSize/2;
+            double y = -i*ballSize;
             for(int j = 0; j <= i; j++) {
                 if(j == 1 && i == 2) {
                     balls.add(new Ball(Color.BLACK, x, y, 0, 0, ballSize));
                     def = Color.CYAN.darker();
                     other = Color.ORANGE.darker();
                 } else if((i+j)%2 == 0) {
-                    balls.add(new Ball(def, x, y, 0, 0, ballSize));
+                    this.addBall(def, x, y, 0, 0, ballSize);
                 } else {
-                    balls.add(new Ball(other, x, y, 0, 0, ballSize));
+                    this.addBall(other, x, y, 0, 0, ballSize);
                 }
                 y += ballSize+1; 
             }
             x += 2 + ballSize*Math.sqrt(3)/2;
         }
-        cueball.pos.setLocation(width/4, height/2);
-        cueball.vel.setLocation(0,0);*/
+        cueball.pos.set(-width/4, 0, 0);
+        cueball.vel.setLocation(0,0);
+        aim.x = -1.0;
+        aim.y = 0.0;
+        this.cameraController.snapToShootingBall();
     }
     
     public void shoot() {
@@ -658,10 +657,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
 }
 
-
-
-
-
 class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
     PoolPanel pp;
@@ -691,6 +686,46 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
 
     public CameraController(PoolPanel p) {
         pp = p;
+    }
+    
+    public void snapToShootingBall() {
+        cameraTrans.set(pp.shootingBall.pos);
+        cameraTranslation.set(cameraTrans);
+        cameraPosition.set(pp.aim);
+        double angle = .1;
+        Vector3f aimPerp = new Vector3f();
+        aimPerp.x = (float) pp.aim.y;
+        aimPerp.y = (float) -pp.aim.x;
+        aimPerp.z = (float) pp.aim.z;
+        
+        aimPerp.scale((float)Math.sin(angle)/2);
+        
+        rotation.set(aimPerp.x,
+                     aimPerp.y,
+                     aimPerp.z, 
+                     (float)Math.cos(angle)/2);
+        inverse.inverse(rotation);
+        //Rotate the upVector.
+        vector.set(cameraPosition.x,
+                cameraPosition.y,
+                cameraPosition.z,
+                0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);
+        
+        cameraPosition.x = vector.x;
+        cameraPosition.y = vector.y;
+        cameraPosition.z = vector.z;        
+                
+        cameraPosition.normalize();
+        cameraPos.set(cameraPosition);
+        cameraPos.scale(cameraDistance);
+        cameraPos.scaleAdd(1.0, cameraTrans);
+        upVector.set(0.0f, 0.0f, 1.0f);
+        upVec.set(upVector);
+        transform.lookAt(cameraPos, cameraTrans, upVec);
+        transform.invert();
+        pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);        
     }
     
     public void mouseDragged(MouseEvent me) {
@@ -728,8 +763,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         cameraPos.scaleAdd(1f, cameraTrans);
         transform.lookAt(cameraPos, cameraTrans, upVec);
         transform.invert();
-        pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);
-        
+        pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);        
     }
     
     public void doTranslation(float x, float y) {
@@ -832,16 +866,6 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         cameraDistance = camDistance;
     }
     
-    public void mouseClicked(MouseEvent me) { }
-    
-    public void mouseMoved(MouseEvent me) { }
-
-    public void mouseEntered(MouseEvent me) { }
-
-    public void mouseExited(MouseEvent me) { }
-
-    public void keyTyped(KeyEvent ke) { }
-
     public void keyPressed(KeyEvent ke) {
         float x = keyXSensitivity, y = keyYSensitivity;
         switch(ke.getKeyCode()) {
@@ -884,6 +908,16 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     }
 
     public void keyReleased(KeyEvent ke) { }
+    
+    public void mouseClicked(MouseEvent me) { }
+    
+    public void mouseMoved(MouseEvent me) { }
+
+    public void mouseEntered(MouseEvent me) { }
+
+    public void mouseExited(MouseEvent me) { }
+
+    public void keyTyped(KeyEvent ke) { }
 
 
 }

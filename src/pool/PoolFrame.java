@@ -86,12 +86,23 @@ public class PoolFrame {
 	    JButton b = (JButton)evt.getSource();
 	    pp.sliderPower = !pp.sliderPower;
 	    if(pp.sliderPower) {
-		b.setLabel("Slider Power");
+		b.setLabel("Slider Mode");
 	    } else {
-		b.setLabel("Drag Power");
+		b.setLabel("Drag Mode");
 	    }
 	}
     }
+    
+    public static class SnapListener implements ActionListener{
+	PoolPanel pp;
+	boolean enabled;
+	public SnapListener(PoolPanel a){
+	    pp = a;
+	}
+	public void actionPerformed(ActionEvent evt){
+            pp.cameraController.snapToShootingBall();
+	}
+    }        
     
     public static class MakeRackListener implements ActionListener{
 	PoolPanel pp;
@@ -176,6 +187,12 @@ public class PoolFrame {
         JSlider spin = new JSlider(-100,100,0);
         SpinListener spinListener = new SpinListener(poolpanel);
         spin.addChangeListener(spinListener);
+        
+        JButton snap = new JButton("Snap");
+	SnapListener snapListener = new SnapListener(poolpanel);
+	snap.addActionListener(snapListener);
+        
+        
                 
 	
 	
@@ -185,6 +202,7 @@ public class PoolFrame {
 	content.add(poolpanel, BorderLayout.CENTER);
 	content.add(angle, BorderLayout.NORTH);
 	content.add(power, BorderLayout.EAST);
+        south.add(snap);
         south.add(makeRack);
         south.add(powerMode);
 	south.add(selMode);
