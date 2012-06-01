@@ -431,15 +431,36 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //DRAWING 
     @Override public void paintComponent(Graphics g){
+        /*
 	super.paintComponent(g);
         g.setColor(Color.BLACK);
-        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight());
-        g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight());
-        g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight());
+        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
+        g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
+        g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
         
-        g.drawString(Float.toString(cameraController.upVector.x), 0, getHeight()-20);
-        g.drawString(Float.toString(cameraController.upVector.y), 100, getHeight()-20);
-        g.drawString(Float.toString(cameraController.upVector.z), 200, getHeight()-20);
+        g.drawString(Double.toString(cameraController.cameraPos.x), 0, getHeight());
+        g.drawString(Double.toString(cameraController.cameraPos.y), 100, getHeight());
+        g.drawString(Double.toString(cameraController.cameraPos.z), 200, getHeight());
+        
+        g.drawString(Float.toString(cameraController.upVector.x), 300, getHeight()-20);
+        g.drawString(Float.toString(cameraController.upVector.y), 400, getHeight()-20);
+        g.drawString(Float.toString(cameraController.upVector.z), 500, getHeight()-20);
+        
+        g.drawString(Double.toString(cameraController.upVec.x), 300, getHeight());
+        g.drawString(Double.toString(cameraController.upVec.y), 400, getHeight());
+        g.drawString(Double.toString(cameraController.upVec.z), 500, getHeight());
+        
+        g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
+        g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
+        g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
+                                        
+        g.drawString(Double.toString(cameraController.cameraTrans.x), 600, getHeight());
+        g.drawString(Double.toString(cameraController.cameraTrans.y), 700, getHeight());
+        g.drawString(Double.toString(cameraController.cameraTrans.z), 800, getHeight());
+        */
+        
+        
+        
     }
     
     void drawGhostBall(Graphics g) {
@@ -580,9 +601,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 } else {
                     this.addBall(other, x, y, 0, 0, ballSize);
                 }
-                y += ballSize+1; 
+                y += 2*ballSize; 
             }
-            x += 2 + ballSize*Math.sqrt(3)/2;
+            x += 2*ballSize*Math.sqrt(3)/2;
         }
         cueball.pos.set(-width/4, 0, 0);
         cueball.vel.setLocation(0,0);
@@ -676,6 +697,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     //User configuration
     int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
     float zoomSensitivity = 20f;
+    float translationSensitivity = 4f;
     float keyYSensitivity = .05f;
     float keyXSensitivity = .05f;
     
@@ -767,7 +789,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     }
     
     public void doTranslation(float x, float y) {
-        Vector3f point = new Vector3f(-x*4,-y*4,0);
+        Vector3f point = new Vector3f(-x*translationSensitivity,-y*translationSensitivity,0);
         changeBasis.transform(point);
         cameraTrans.set(cameraTranslation);
         cameraTrans.scaleAdd(1f, point);

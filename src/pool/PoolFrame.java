@@ -44,7 +44,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
 	    slider = (JSlider)evt.getSource();
-	    pp.power = (float)(slider.getValue())/100;
+	    pp.power = (float)(slider.getValue())/40;
 	    
 	}
     }
