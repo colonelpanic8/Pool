@@ -161,9 +161,9 @@ class WallCollision extends Collision {
 }
 
 class PointCollision extends Collision {
-    Point point;
+    Point2D.Double point;
     
-    public PointCollision(double t, Point p, Ball b) {
+    public PointCollision(double t, Point2D.Double p, Ball b) {
 	time = t;
 	ball1 = b;
 	point = p;

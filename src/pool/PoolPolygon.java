@@ -89,8 +89,7 @@ public class PoolPolygon extends Polygon2D {
         }
         if(min + timePassed < 1) {
             if(minIsPoint) {
-                Point p = new Point((int)minVel.x, (int)minVel.y);
-                collisions.add(new PointCollision(min + timePassed, p, ball));              
+                collisions.add(new PointCollision(min + timePassed, minVel, ball));              
             } else {
                 collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
             }
@@ -127,8 +126,7 @@ public class PoolPolygon extends Polygon2D {
         }
         if(min + timePassed < 1) {
             if(minIsPoint) {
-                Point p = new Point((int)minVel.x, (int)minVel.y);
-                collisions.add(new PointCollision(min + timePassed, p, ball));              
+                collisions.add(new PointCollision(min + timePassed, minVel, ball));              
             } else {
                 collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
             }

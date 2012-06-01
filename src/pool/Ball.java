@@ -11,6 +11,9 @@ import javax.vecmath.*;
 public class Ball {
     myPoint3d pos;
     Point2D.Double vel;
+    myPoint3d lpos;
+    Point2D.Double lvel;
+    
     Point2D.Double acc;
     double size;
     int alpha;
@@ -27,6 +30,8 @@ public class Ball {
     public Ball(Color col, double x, double y, double a, double b, double s){
         pos = new myPoint3d(x,y,(double)0);
 	vel = new Point2D.Double(a,b);
+        lpos = new myPoint3d(x,y,(double)0);
+	lvel = new Point2D.Double(a,b);
 	acc = new Point2D.Double(0,0);
 	size = s;
         color = col;
@@ -51,6 +56,9 @@ public class Ball {
     public Ball(Appearance appearance, double x, double y, double a, double b, double s){
         pos = new myPoint3d(x,y,(double)0);
 	vel = new Point2D.Double(a,b);
+        lpos = new myPoint3d(x,y,(double)0);
+	lvel = new Point2D.Double(a,b);
+        
 	acc = new Point2D.Double(0,0);
 	size = s;
 	sunk = false;
@@ -153,7 +161,7 @@ public class Ball {
     
     public boolean checkOverlap(Ball ball) {
         Point2D.Double myCenter = new Point2D.Double(pos.x, pos.y);
-        if(myCenter.distance(ball.pos.x, ball.pos.y)+.5< ((double)(size + ball.size)))
+        if(myCenter.distance(ball.pos.x, ball.pos.y)< ((double)(size + ball.size)))
             return true;
         return false; 
     }

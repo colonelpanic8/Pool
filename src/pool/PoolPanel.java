@@ -258,6 +258,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	pockets.add(new Pocket(width - borderSize, height - borderSize , pocketSize));
     }
     
+    public void rewind() {
+       Iterator<Ball> iter = balls.iterator();
+        while(iter.hasNext()) {
+	    Ball ball = iter.next();
+            ball.pos.set(ball.lpos);
+            ball.vel.setLocation(ball.lvel);
+        }                
+    }
+    
     //SIMULATION
     public void actionPerformed(ActionEvent evt){
         this.repaint();                
@@ -276,14 +285,19 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         validate();
         if(err) {
             err = false;
+            rewind();
             frameSkip = true;
-            return;   
         }
         if(frameSkip) {
             frameSkip = true;
         }
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
+            //
+            ball.lpos.set(ball.pos);
+            ball.lvel.setLocation(ball.vel);
+                    
+            //
             detectPolygonCollisions(ball, 0);
 	    checkPockets(ball, 0);
 	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
@@ -601,7 +615,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         def = Color.ORANGE.darker();
         other = Color.CYAN.darker();
         for(int i = 0; i < 5; i++) {
-            double y = -i*ballSize;
+            double y = -i*ballSize + .01;
             for(int j = 0; j <= i; j++) {
                 if(j == 1 && i == 2) {
                     balls.add(new Ball(Color.BLACK, x, y, 0, 0, ballSize));
@@ -614,7 +628,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 }
                 y += 2*ballSize; 
             }
-            x += 2*ballSize*Math.sqrt(3)/2;
+            x += 2*ballSize*Math.sqrt(3)/2+.01;
         }
         cueball.pos.set(-width/4, 0, 0);
         cueball.vel.setLocation(0,0);
