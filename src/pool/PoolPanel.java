@@ -6,11 +6,13 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.*;
 import java.awt.geom.Point2D;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import javax.media.j3d.*;
+import javax.swing.Action;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.vecmath.*;
@@ -655,33 +657,94 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
 }
 
-class CameraController implements MouseMotionListener, MouseListener {
+
+
+
+class CameraController implements MouseMotionListener, MouseListener, Action {
+
     PoolPanel pp;
     Point click = new Point(0,0);
     Transform3D transform = new Transform3D();
-    Vector3f cameraPosition = new Vector3f(0f, 0f, 1.0f);
+    Vector3f cameraPosition = new Vector3f(0f, 0f, 1f);
     Vector3f upVector = new Vector3f(0f, 1f, 0f);
+    Point3f cameraTranslation = new Point3f();
     Vector3d upVec = new Vector3d(upVector);
     Point3d cameraPos = new Point3d(cameraPosition);
+    Point3d cameraTrans = new Point3d();
     Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
-    float cameraDistance = 30.0f;
+    float cameraDistance = 10.0f;
+    float camDistance = cameraDistance;
     ChangeBasis changeBasis;
+    
+    //User configuration
+    int mode = TRANSLATION_MODE;
+    float zoomSensitivity = 20f;
+    
+    //Constants
+    static final int TRANSLATION_MODE = 0;
+    static final int ZOOM_MODE = 1;
 
     public CameraController(PoolPanel p) {
         pp = p;
     }
     
     public void mouseDragged(MouseEvent me) {
-        //Determine the point z for the current rotation given the click x, y.
         float x,y;
         x = ((float)(me.getX() - click.x))/(pp.canvas.getWidth()/2);
         y = ((float)(click.y - me.getY()))/(pp.canvas.getHeight()/2);
-        float _z = 1 - x * x - y * y;
-        float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
-        Vector3f point = new Vector3f(x,y,z);
-        point.normalize();
-        changeBasis.transform(point);
+        if(me.getButton() == MouseEvent.BUTTON1) {
+            //Determine the point z for the current rotation given the click x, y.            
+            float _z = 1 - x * x - y * y;
+            float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
+            Vector3f point = new Vector3f(x,y,z);
+            point.normalize();
+            changeBasis.transform(point);
+            doRotate(point);
+        } else {
+            camDistance = cameraDistance;
+            switch(mode) {
+	    case TRANSLATION_MODE:            
+		Vector3f point = new Vector3f(-x*4,-y*4,0);
+		changeBasis.transform(point);
+		cameraTrans.set(cameraTranslation);
+		cameraTrans.scaleAdd(1f, point);                    
+		break;
+	    case ZOOM_MODE:
+		camDistance = cameraDistance-y*zoomSensitivity;
+		Vector3f axis = new Vector3f();
+		axis.set(cameraPosition);
+		float angle = -x;
+		axis.scale((float)Math.sin(angle)/2);
+		rotation.set(axis.x,
+			     axis.y,
+			     axis.z, 
+			     (float)Math.cos(angle)/2);
+		inverse.inverse(rotation);
+		//Rotate the upVector.
+		vector.set(upVector.x,
+			   upVector.y,
+			   upVector.z,
+			   0f);
+		vector.mul(rotation,vector);
+		vector.mul(inverse);
+		
+		upVec.x = vector.x;
+		upVec.y = vector.y;
+		upVec.z = vector.z;                   
+		break;
+            }            
+            cameraPos.set(cameraPosition);
+            cameraPos.scale(camDistance);
+        }
+        //Set the transform
+        cameraPos.scaleAdd(1f, cameraTrans);
+        transform.lookAt(cameraPos, cameraTrans, upVec);
+        transform.invert();
+        pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);
         
+    }
+        
+    public void doRotate(Vector3f point) {        
         //Get the axis and angle of rotation.
         Vector3f axis = new Vector3f();
         float angle;
@@ -692,16 +755,16 @@ class CameraController implements MouseMotionListener, MouseListener {
         //Calculate the quarternion that represents this rotation and its inverse.
         axis.scale((float)Math.sin(angle)/2);
         rotation.set(axis.x,
-                     axis.y,
-                     axis.z, 
-                     (float)Math.cos(angle)/2);
+		     axis.y,
+		     axis.z, 
+		     (float)Math.cos(angle)/2);
         inverse.inverse(rotation);
         
         //Rotate the camera, store the result in point.
         vector.set(cameraPosition.x,
                    cameraPosition.y,
                    cameraPosition.z,
-                   0f);
+		   0f);
         vector.mul(rotation,vector);
         vector.mul(inverse);        
         cameraPos.x = vector.x;
@@ -710,9 +773,9 @@ class CameraController implements MouseMotionListener, MouseListener {
         
         //Rotate the upVector.
         vector.set(upVector.x,
-                   upVector.y,
-                   upVector.z,
-                   0f);
+		   upVector.y,
+		   upVector.z,
+		   0f);
         vector.mul(rotation,vector);
         vector.mul(inverse);
         
@@ -721,13 +784,7 @@ class CameraController implements MouseMotionListener, MouseListener {
         upVec.z = vector.z;
         
         //Scale point by the camera distance.        
-        cameraPos.scale(cameraDistance);
-        
-        //Set the transform
-        transform.lookAt(cameraPos, new Point3d(0.0f,0.0f,0.0f), upVec);
-        transform.invert();
-        pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);
-        
+        cameraPos.scale(cameraDistance);                
     }
     
     public void mousePressed(MouseEvent me) {
@@ -736,78 +793,100 @@ class CameraController implements MouseMotionListener, MouseListener {
         camVec.normalize(cameraPosition);
         sideVector.cross(upVector, camVec);
         changeBasis = new ChangeBasis(sideVector, upVector, camVec,
-                new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(0.0f, 0.0f, 1.0f));
+                      new Vector3f(1.0f, 0.0f, 0.0f),
+                      new Vector3f(0.0f, 1.0f, 0.0f), 
+                      new Vector3f(0.0f, 0.0f, 1.0f));
        
-    }
-
-
-    public void mouseClicked(MouseEvent me) {
-
-    }
-    
-    public void mouseMoved(MouseEvent me) {
-        
-    }
-
+    }  
 
     public void mouseReleased(MouseEvent me) {
         cameraPosition.set(cameraPos);
         cameraPosition.normalize();
         upVector.set(upVec);
+        cameraTranslation.set(cameraTrans);
+        cameraDistance = camDistance;
+    }
+    
+    public void mouseClicked(MouseEvent me) { }
+    
+    public void mouseMoved(MouseEvent me) { }
+
+    public void mouseEntered(MouseEvent me) { }
+
+    public void mouseExited(MouseEvent me) { }
+
+    public void actionPerformed(ActionEvent ae) {
+        
     }
 
-    public void mouseEntered(MouseEvent me) {
-
+    public Object getValue(String string) {
+        return null;
     }
 
-    public void mouseExited(MouseEvent me) {
+    public void putValue(String string, Object o) {
+        
+    }
 
+    public void setEnabled(boolean bln) {
+        
+    }
+
+    public boolean isEnabled() {
+        return true;
+    }
+
+    public void addPropertyChangeListener(PropertyChangeListener pl) {
+        
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener pl) {
+        
     }
     
 }
 
 class ChangeBasis extends Matrix3f {
     public ChangeBasis(Vector3f a, Vector3f b, Vector3f c,
-            Vector3f x, Vector3f y, Vector3f z) {
+		       Vector3f x, Vector3f y, Vector3f z) {
         m00 = -(a.x*(z.z*y.y - y.z*z.y) + a.y*(y.z*z.x - z.z*y.x) + a.z*(z.y*y.x - y.y*z.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m10 = -(a.x*(x.z*z.y - z.z*x.y) + a.y*(z.z*x.x - x.z*z.x) + a.z*(x.y*z.x - z.y*x.x))/
-                (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m20 = -(a.x*(y.z*x.y - x.z*y.y) + a.y*(x.z*y.x - y.z*x.x) + a.z*(y.y*x.x  - x.y*y.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
         m01 = -(b.x*(z.z*y.y - y.z*z.y) + b.y*(y.z*z.x - z.z*y.x) + b.z*(z.y*y.x - y.y*z.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m11 = -(b.x*(x.z*z.y - z.z*x.y) + b.y*(z.z*x.x - x.z*z.x) + b.z*(x.y*z.x - z.y*x.x))/
-                (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m21 = -(b.x*(y.z*x.y - x.z*y.y) + b.y*(x.z*y.x - y.z*x.x) + b.z*(y.y*x.x  - x.y*y.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
         m02 = -(c.x*(z.z*y.y - y.z*z.y) + c.y*(y.z*z.x - z.z*y.x) + c.z*(z.y*y.x - y.y*z.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m12 = -(c.x*(x.z*z.y - z.z*x.y) + c.y*(z.z*x.x - x.z*z.x) + c.z*(x.y*z.x - z.y*x.x))/
-                (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m22 = -(c.x*(y.z*x.y - x.z*y.y) + c.y*(x.z*y.x - y.z*x.x) + c.z*(y.y*x.x  - x.y*y.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));         
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));         
     }
     
     public ChangeBasis(Vector3f x, Vector3f y, Vector3f z) {
         m00 = -((z.z*y.y - y.z*z.y))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m10 = -((x.z*z.y - z.z*x.y))/
-                (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m20 = -((y.z*x.y - x.z*y.y))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
         m01 = -((y.z*z.x - z.z*y.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m11 = -((z.z*x.x - x.z*z.x))/
-                (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m21 = -((x.z*y.x - y.z*x.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
         m02 = -((z.y*y.x - y.y*z.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m12 = -((x.y*z.x - z.y*x.x))/
-                (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m22 = -((y.y*x.x  - x.y*y.x))/
-                (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
     }
     
 }

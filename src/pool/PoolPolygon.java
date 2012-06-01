@@ -19,18 +19,19 @@ public class PoolPolygon extends Polygon2D {
         
         vertices = new QuadArray ((npoints+1)*4, QuadArray.COORDINATES);
         int j = 0;
+        double height = 0;
         for(int i = 0; i < npoints - 1; i++) {
-            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], ballsize));
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], height));
             vertices.setCoordinate (j++, new Point3d (xpoints[i], ypoints[i], -ballsize));
             vertices.setCoordinate (j++, new Point3d(xpoints[i+1], ypoints[i+1], -ballsize));
-            vertices.setCoordinate (j++, new Point3d (xpoints[i+1], ypoints[i+1], ballsize));
+            vertices.setCoordinate (j++, new Point3d (xpoints[i+1], ypoints[i+1], height));
         }
         
         int i = 0;
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
 
     	group = new BranchGroup();
         group.addChild(new Shape3D(vertices, new Appearance()));
