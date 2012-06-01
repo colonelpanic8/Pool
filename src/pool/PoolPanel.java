@@ -174,6 +174,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         canvas.addMouseListener(cr);
         canvas.addMouseMotionListener(cr);
+        canvas.addKeyListener(cr);
         
         
     }        
@@ -660,7 +661,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 
 
-class CameraController implements MouseMotionListener, MouseListener, Action {
+
+class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
     PoolPanel pp;
     Point click = new Point(0,0);
@@ -677,12 +679,15 @@ class CameraController implements MouseMotionListener, MouseListener, Action {
     ChangeBasis changeBasis;
     
     //User configuration
-    int mode = TRANSLATION_MODE;
+    int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
     float zoomSensitivity = 20f;
+    float keyYSensitivity = .05f;
+    float keyXSensitivity = .05f;
     
     //Constants
-    static final int TRANSLATION_MODE = 0;
-    static final int ZOOM_MODE = 1;
+    static final int TRANSLATION = 0;
+    static final int ZOOM_ROLL = 1;
+    static final int ROTATION = 2;
 
     public CameraController(PoolPanel p) {
         pp = p;
@@ -692,59 +697,82 @@ class CameraController implements MouseMotionListener, MouseListener, Action {
         float x,y;
         x = ((float)(me.getX() - click.x))/(pp.canvas.getWidth()/2);
         y = ((float)(click.y - me.getY()))/(pp.canvas.getHeight()/2);
+        camDistance = cameraDistance;
         if(me.getButton() == MouseEvent.BUTTON1) {
-            //Determine the point z for the current rotation given the click x, y.            
-            float _z = 1 - x * x - y * y;
-            float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
-            Vector3f point = new Vector3f(x,y,z);
-            point.normalize();
-            changeBasis.transform(point);
-            doRotate(point);
-        } else {
-            camDistance = cameraDistance;
-            switch(mode) {
-	    case TRANSLATION_MODE:            
-		Vector3f point = new Vector3f(-x*4,-y*4,0);
-		changeBasis.transform(point);
-		cameraTrans.set(cameraTranslation);
-		cameraTrans.scaleAdd(1f, point);                    
+            switch(leftClickMode) {
+            case ROTATION:
+                doRotation(x,y);
+                break;
+	    case TRANSLATION:            
+		doTranslation(x,y);                 
 		break;
-	    case ZOOM_MODE:
-		camDistance = cameraDistance-y*zoomSensitivity;
-		Vector3f axis = new Vector3f();
-		axis.set(cameraPosition);
-		float angle = -x;
-		axis.scale((float)Math.sin(angle)/2);
-		rotation.set(axis.x,
-			     axis.y,
-			     axis.z, 
-			     (float)Math.cos(angle)/2);
-		inverse.inverse(rotation);
-		//Rotate the upVector.
-		vector.set(upVector.x,
-			   upVector.y,
-			   upVector.z,
-			   0f);
-		vector.mul(rotation,vector);
-		vector.mul(inverse);
-		
-		upVec.x = vector.x;
-		upVec.y = vector.y;
-		upVec.z = vector.z;                   
+	    case ZOOM_ROLL:
+		doZoomRoll(x,y);                 
 		break;
             }            
-            cameraPos.set(cameraPosition);
-            cameraPos.scale(camDistance);
+        } else {
+            switch(rightClickMode) {
+            case ROTATION:
+                doRotation(x,y);
+                break;
+	    case TRANSLATION:            
+		doTranslation(x,y);                 
+		break;
+	    case ZOOM_ROLL:
+		doZoomRoll(x,y);                 
+		break;
+            }                                    
         }
         //Set the transform
+        cameraPos.scale(camDistance);
         cameraPos.scaleAdd(1f, cameraTrans);
         transform.lookAt(cameraPos, cameraTrans, upVec);
         transform.invert();
         pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);
         
     }
+    
+    public void doTranslation(float x, float y) {
+        Vector3f point = new Vector3f(-x*4,-y*4,0);
+        changeBasis.transform(point);
+        cameraTrans.set(cameraTranslation);
+        cameraTrans.scaleAdd(1f, point);
+        cameraPos.set(cameraPosition);
+    }
+    
+    public void doZoomRoll(float x, float y) {
+        camDistance = Math.abs(cameraDistance - y*zoomSensitivity);
+        Vector3f axis = new Vector3f();
+        axis.set(cameraPosition);
+        float angle = x;
+        axis.scale((float)Math.sin(angle)/2);
+        rotation.set(axis.x,
+                axis.y,
+                axis.z, 
+                (float)Math.cos(angle)/2);
+        inverse.inverse(rotation);
+        //Rotate the upVector.
+        vector.set(upVector.x,
+                upVector.y,
+                upVector.z,
+                0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);
         
-    public void doRotate(Vector3f point) {        
+        upVec.x = vector.x;
+        upVec.y = vector.y;
+        upVec.z = vector.z;
+        cameraPos.set(cameraPosition);
+    }
+        
+    public void doRotation(float x, float y) { 
+        //Determine the point z for the current rotation given the click x, y.            
+        float _z = 1 - x * x - y * y;
+        float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
+        Vector3f point = new Vector3f(x,y,z);
+        point.normalize();
+        changeBasis.transform(point);
+        
         //Get the axis and angle of rotation.
         Vector3f axis = new Vector3f();
         float angle;
@@ -781,10 +809,7 @@ class CameraController implements MouseMotionListener, MouseListener, Action {
         
         upVec.x = vector.x;
         upVec.y = vector.y;
-        upVec.z = vector.z;
-        
-        //Scale point by the camera distance.        
-        cameraPos.scale(cameraDistance);                
+        upVec.z = vector.z;                      
     }
     
     public void mousePressed(MouseEvent me) {
@@ -815,34 +840,52 @@ class CameraController implements MouseMotionListener, MouseListener, Action {
 
     public void mouseExited(MouseEvent me) { }
 
-    public void actionPerformed(ActionEvent ae) {
-        
+    public void keyTyped(KeyEvent ke) { }
+
+    public void keyPressed(KeyEvent ke) {
+        float x = keyXSensitivity, y = keyYSensitivity;
+        switch(ke.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                x *= 0;
+                y *= 1;
+                break;
+            case KeyEvent.VK_DOWN:
+                x *= 0;
+                y *= -1;
+                break;
+            case KeyEvent.VK_LEFT:
+                x *= 1;
+                y *= 0;
+                break;
+            case KeyEvent.VK_RIGHT:
+                x *= -1;
+                y *= 0;
+                break;
+            default:
+                return;
+        }
+        switch(keyPressMode) {
+            case ROTATION:
+                doRotation(x,y);
+                break;
+	    case TRANSLATION:            
+		doTranslation(x,y);                 
+		break;
+	    case ZOOM_ROLL:
+		doZoomRoll(x,y);                 
+		break;
+        }
+        cameraPos.scale(camDistance);
+        cameraPos.scaleAdd(1f, cameraTrans);
+        transform.lookAt(cameraPos, cameraTrans, upVec);
+        transform.invert();
+        pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);
+        mouseReleased(null);
     }
 
-    public Object getValue(String string) {
-        return null;
-    }
+    public void keyReleased(KeyEvent ke) { }
 
-    public void putValue(String string, Object o) {
-        
-    }
 
-    public void setEnabled(boolean bln) {
-        
-    }
-
-    public boolean isEnabled() {
-        return true;
-    }
-
-    public void addPropertyChangeListener(PropertyChangeListener pl) {
-        
-    }
-
-    public void removePropertyChangeListener(PropertyChangeListener pl) {
-        
-    }
-    
 }
 
 class ChangeBasis extends Matrix3f {
