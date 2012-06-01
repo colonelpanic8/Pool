@@ -36,7 +36,7 @@ public class PoolPolygon extends Polygon2D {
 
     	group = new BranchGroup();
         Appearance appearance = new Appearance();
-        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, 0.0f, 0.0f), ColoringAttributes.SHADE_FLAT);
+        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, 1.0f, 0.0f), ColoringAttributes.SHADE_FLAT);
         appearance.setColoringAttributes(ca);
         group.addChild(new Shape3D(vertices, appearance));
     }
@@ -55,7 +55,7 @@ public class PoolPolygon extends Polygon2D {
                 min = temp;
             a.setLocation(b);
         }
-        if(min < ball.size/2){
+        if(min <= ball.size){
             return true;
         }
         return false;

@@ -1,5 +1,6 @@
 package pool;
 
+import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -302,7 +303,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 		    iter.remove();
 		}
 	    }
-            ball.draw3D();
 	}
         updateBallPositions();
 	updateGhostBall();
@@ -317,9 +317,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             ballIterator = balls.iterator();
 	    while(ballIterator.hasNext()) {
 		Ball ball = ballIterator.next();
-		ball.pos.setLocation(ball.pos.x + (collision.time-timePassed) * ball.vel.x,
-                        ball.pos.y + (collision.time-timePassed) * ball.vel.y,
-                        0);
+		ball.move(collision.time-timePassed);
                 
             }
             timePassed = collision.time;
@@ -331,12 +329,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ballIterator = balls.iterator();
 	while(ballIterator.hasNext()) {
 	    Ball ball = ballIterator.next();
-	    ball.pos.setLocation(ball.pos.x + (1-timePassed)*ball.vel.x,
-				 ball.pos.y + (1-timePassed)*ball.vel.y,
-                                 0);
+	    ball.move(1-timePassed);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
-            if(ball.vel.distance(0,0) < .02) {
+            if(ball.vel.distance(0,0) < .001) {
                 ball.vel.x = 0;
                 ball.vel.y = 0;
             } else {
@@ -352,11 +348,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             }
             
 	}
+        
         ballIterator = balls.iterator();
+        
         while(ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
             checkOverlaps(ball);
-            ball.draw3D();
         }
     }
     
@@ -431,36 +428,51 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //DRAWING 
     @Override public void paintComponent(Graphics g){
-        /*
-	super.paintComponent(g);
-        g.setColor(Color.BLACK);
-        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
-        g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
-        g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
         
-        g.drawString(Double.toString(cameraController.cameraPos.x), 0, getHeight());
-        g.drawString(Double.toString(cameraController.cameraPos.y), 100, getHeight());
-        g.drawString(Double.toString(cameraController.cameraPos.z), 200, getHeight());
-        
-        g.drawString(Float.toString(cameraController.upVector.x), 300, getHeight()-20);
-        g.drawString(Float.toString(cameraController.upVector.y), 400, getHeight()-20);
-        g.drawString(Float.toString(cameraController.upVector.z), 500, getHeight()-20);
-        
-        g.drawString(Double.toString(cameraController.upVec.x), 300, getHeight());
-        g.drawString(Double.toString(cameraController.upVec.y), 400, getHeight());
-        g.drawString(Double.toString(cameraController.upVec.z), 500, getHeight());
-        
+        /*super.paintComponent(g);
         g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
         g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
         g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
-                                        
-        g.drawString(Double.toString(cameraController.cameraTrans.x), 600, getHeight());
-        g.drawString(Double.toString(cameraController.cameraTrans.y), 700, getHeight());
-        g.drawString(Double.toString(cameraController.cameraTrans.z), 800, getHeight());
-        */
-        
-        
-        
+        * */
+        /*
+        super.paintComponent(g);
+        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
+         */
+                 /*
+        g.setColor(Color.BLACK);
+        g.drawString(Float.toString(cueball.rotation.x), 0, getHeight()-20);
+         g.drawString(Float.toString(cueball.rotation.y), 100, getHeight()-20);
+         g.drawString(Float.toString(cueball.rotation.z), 200, getHeight()-20);*/
+        /*
+         * This was removed for performance reasons.
+         * super.paintComponent(g);
+         g.setColor(Color.BLACK);
+          g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
+         * 
+         * g.drawString(Double.toString(cameraController.cameraPos.x), 0, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraPos.y), 100, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraPos.z), 200, getHeight());
+         * 
+         * g.drawString(Float.toString(cameraController.upVector.x), 300, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.upVector.y), 400, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.upVector.z), 500, getHeight()-20);
+         * 
+         * g.drawString(Double.toString(cameraController.upVec.x), 300, getHeight());
+         * g.drawString(Double.toString(cameraController.upVec.y), 400, getHeight());
+         * g.drawString(Double.toString(cameraController.upVec.z), 500, getHeight());
+         * 
+         * g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
+         * 
+         * g.drawString(Double.toString(cameraController.cameraTrans.x), 600, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraTrans.y), 700, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraTrans.z), 800, getHeight());
+         */                        
     }
     
     void drawGhostBall(Graphics g) {
@@ -568,8 +580,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         while(polyIterator.hasNext()) {
             PoolPolygon poly = polyIterator.next();
             if(poly.checkOverlap(ball)) {
-                poly.color = poly.color.darker();
-                ball.color = ball.color.darker();
+
                 err = true;
             }
         }
@@ -620,7 +631,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public Ball addBall(Color color, double x, double y, double a, double b, double s) {
-        Ball ball = new Ball(color, x, y, a, b, s);
+        Texture texImage = new TextureLoader("eb.jpg",this).getTexture();        
+        Appearance appearance = new Appearance();
+        appearance.setTexture(texImage);
+        Ball ball = new Ball(appearance, x, y, a, b, s);
         universe.addBranchGraph(ball.group);        
         balls.add(ball);
         return ball;
@@ -693,6 +707,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     float cameraDistance = 10.0f;
     float camDistance = cameraDistance;
     ChangeBasis changeBasis;
+    boolean updateCameraPos;
     
     //User configuration
     int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
@@ -720,12 +735,12 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         aimPerp.y = (float) -pp.aim.x;
         aimPerp.z = (float) pp.aim.z;
         
-        aimPerp.scale((float)Math.sin(angle)/2);
+        aimPerp.scale((float)Math.sin(angle/2));
         
         rotation.set(aimPerp.x,
                      aimPerp.y,
                      aimPerp.z, 
-                     (float)Math.cos(angle)/2);
+                     (float)Math.cos(angle/2));
         inverse.inverse(rotation);
         //Rotate the upVector.
         vector.set(cameraPosition.x,
@@ -782,8 +797,9 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         }
         //Set the transform
         cameraPos.scale(camDistance);
-        cameraPos.scaleAdd(1f, cameraTrans);
-        transform.lookAt(cameraPos, cameraTrans, upVec);
+        Point3d transCameraPos = new Point3d(cameraPos);
+        transCameraPos.add(cameraTrans);
+        transform.lookAt(transCameraPos, cameraTrans, upVec);
         transform.invert();
         pp.universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);        
     }
@@ -792,7 +808,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         Vector3f point = new Vector3f(-x*translationSensitivity,-y*translationSensitivity,0);
         changeBasis.transform(point);
         cameraTrans.set(cameraTranslation);
-        cameraTrans.scaleAdd(1f, point);
+        cameraTrans.scaleAdd(1f, new Vector3d(point));
         cameraPos.set(cameraPosition);
     }
     
@@ -801,11 +817,11 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         Vector3f axis = new Vector3f();
         axis.set(cameraPosition);
         float angle = x;
-        axis.scale((float)Math.sin(angle)/2);
+        axis.scale((float)Math.sin(angle/2));
         rotation.set(axis.x,
                 axis.y,
                 axis.z, 
-                (float)Math.cos(angle)/2);
+                (float)Math.cos(angle/2));
         inverse.inverse(rotation);
         //Rotate the upVector.
         vector.set(upVector.x,
@@ -837,11 +853,11 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         axis.normalize();
         
         //Calculate the quarternion that represents this rotation and its inverse.
-        axis.scale((float)Math.sin(angle)/2);
+        axis.scale((float)Math.sin(angle/2));
         rotation.set(axis.x,
 		     axis.y,
 		     axis.z, 
-		     (float)Math.cos(angle)/2);
+		     (float)Math.cos(angle/2));
         inverse.inverse(rotation);
         
         //Rotate the camera, store the result in point.
@@ -866,9 +882,13 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         upVec.x = vector.x;
         upVec.y = vector.y;
         upVec.z = vector.z;                      
+        updateCameraPos = true;
     }
     
     public void mousePressed(MouseEvent me) {
+        if(cameraPosition.length() > 1 ) {
+            cameraPosition.normalize();
+        }
         click.setLocation(me.getX(), me.getY());
         Vector3f sideVector = new Vector3f(), camVec = new Vector3f();
         camVec.normalize(cameraPosition);
@@ -881,8 +901,11 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     }  
 
     public void mouseReleased(MouseEvent me) {
-        cameraPosition.set(cameraPos);
-        cameraPosition.normalize();
+        if(updateCameraPos) {
+            cameraPosition.set(cameraPos);
+            cameraPosition.normalize();
+            updateCameraPos = false;
+        }
         upVector.set(upVec);
         cameraTranslation.set(cameraTrans);
         cameraDistance = camDistance;
