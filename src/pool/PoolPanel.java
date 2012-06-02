@@ -169,13 +169,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         //Add ghost ball aiming line
         Appearance appearance = new Appearance();
+        LineAttributes la = new LineAttributes();
+        la.setLineWidth(1.0f);
+        ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
         appearance.setColoringAttributes(ca);
-        appearance.setLineAttributes(dashLa);
-        ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);        
-        ghostBallLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
-        ghostBallLine = new Shape3D(aimLineGeometry, app);
-        ghostBallLine.setAppearance(appearance);
+        appearance.setLineAttributes(la);
+        appearance.setRenderingAttributes(ra);
+        ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
+        ghostBallLineGeometry.setCoordinate(0, new Point3f(1.0f, 0.0f, 0.0f));
+        ghostBallLineGeometry.setCoordinate(1, new Point3f(0.0f, 1.0f, 0.0f));
+        ghostBallLine = new Shape3D(ghostBallLineGeometry, appearance);
         //ghostBallLine.setAppearance(ghostBallAppearance);
+        ghostBallLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
         ghostBallLine.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
         ghostBallLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
         group.addChild(ghostBallLine);
@@ -503,30 +508,21 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 
                 //Draw the trajectory of the object ball.
                 Point3f start = new Point3f(ghostBallObjectBall.pos);
-                drawPoolPath(unit, start, numberOfAimLines, ghostBallLineGeometry, 0);
-                
-                
+                drawPoolPath(unit, start, numberOfAimLines, ghostBallLineGeometry, 0);                                
                 
                 //Determine which of the two perpendicular directions the shooting ball will travel in.
                 unit.set(shootingBallUnit);
-                shootingBallUnit.set((float)(ghostBallPosition.x - shootingBall.pos.x),
-                                     (float)(ghostBallPosition.y - shootingBall.pos.y),
-                                     0.0f);
-                shootingBallUnit.normalize();
-                Vector3f temp = new Vector3f(shootingBallUnit.y, -shootingBallUnit.x, 0.0f);
-                ChangeBasis changeBasis = new ChangeBasis(temp, shootingBallUnit, new Vector3f(0.0f,0.0f,1.0f));
-                
-                temp.set(ghostBallPosition);
-                changeBasis.transform(temp);
-                start.set(shootingBallUnit);
-                changeBasis.transform(start);
-                if((temp.y < 0) != (temp.y-start.y < 0)){
+                shootingBallUnit.set(unit.y, -unit.x, unit.z);
+                Vector3f temp = new Vector3f((float)(shootingBall.pos.x - ghostBallPosition.x),
+                                             (float)(shootingBall.pos.y - ghostBallPosition.y),
+                                             0.0f);
+                float angle = Math.abs(shootingBallUnit.angle(temp));
+                if(angle < Math.PI/2) {
                     shootingBallUnit.scale(-1f);
-                }
+                }               
                 
                 //Draw the path of the shooting ball.
-                start.set(ghostBallPosition);
-                shootingBallUnit.set(unit.y, -unit.x, unit.z);
+                start.set(ghostBallPosition);               
                 drawPoolPath(shootingBallUnit, start, numberOfAimLines, aimLineGeometry, 1);
                 Transform3D transform = new Transform3D();
                 transform.setTranslation(ghostBallPosition);
@@ -642,7 +638,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         return ball;
     }
     
-    public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints, Color c, double ballsize) {
+    public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
+            Color c, double ballsize) {
         PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, c, ballsize);
         universe.addBranchGraph(poly.group);
         polygons.add(poly);
@@ -671,8 +668,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         int hash = 5;
         hash = 13 * hash + (this.balls != null ? this.balls.hashCode() : 0);
         hash = 13 * hash + (this.pockets != null ? this.pockets.hashCode() : 0);
@@ -787,8 +783,8 @@ class PoolCameraController extends CameraController {
 
 class ChangeBasis extends Matrix3f {
     
-    public ChangeBasis(Vector3f a, Vector3f b, Vector3f c,
-		       Vector3f x, Vector3f y, Vector3f z) {
+    public ChangeBasis(Tuple3f a, Tuple3f b, Tuple3f c,
+		       Tuple3f x, Tuple3f y, Tuple3f z) {
         m00 = -(a.x*(z.z*y.y - y.z*z.y) + a.y*(y.z*z.x - z.z*y.x) + a.z*(z.y*y.x - y.y*z.x))/
 	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m10 = -(a.x*(x.z*z.y - z.z*x.y) + a.y*(z.z*x.x - x.z*z.x) + a.z*(x.y*z.x - z.y*x.x))/
@@ -809,7 +805,7 @@ class ChangeBasis extends Matrix3f {
 	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));         
     }
     
-    public ChangeBasis(Vector3f x, Vector3f y, Vector3f z) {
+    public ChangeBasis(Tuple3f x, Tuple3f y, Tuple3f z) {
         m00 = -((z.z*y.y - y.z*z.y))/
 	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m10 = -((x.z*z.y - z.z*x.y))/

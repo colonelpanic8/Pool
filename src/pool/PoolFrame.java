@@ -31,7 +31,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
             JSlider slider = (JSlider)evt.getSource();
-            pp.spin = (double)(slider.getValue())/200;
+            pp.spin = (double)(slider.getValue())/2000;
 	}
     }
     
@@ -184,7 +184,7 @@ public class PoolFrame {
 	power.addChangeListener(plist);
 	power.setOrientation(JSlider.VERTICAL);
         
-        JSlider spin = new JSlider(-100,100,0);
+        JSlider spin = new JSlider(-25,25,0);
         SpinListener spinListener = new SpinListener(poolpanel);
         spin.addChangeListener(spinListener);
         
