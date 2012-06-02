@@ -18,8 +18,8 @@ public class PoolFrame {
 	public void stateChanged(ChangeEvent evt){
 			slider = (JSlider)evt.getSource();
 			double aind = slider.getValue();
-			pp.aimer.aim.x = Math.cos((aind)*2*Math.PI/2000);
-			pp.aimer.aim.y = Math.sin((aind)*2*Math.PI/2000);
+			pp.aim.x = Math.cos((aind)*2*Math.PI/2000);
+			pp.aim.y = Math.sin((aind)*2*Math.PI/2000);
 			pp.repaint();
 	}
     }
@@ -31,7 +31,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
             JSlider slider = (JSlider)evt.getSource();
-            pp.spin = (double)(slider.getValue())/200;
+            pp.spin = (double)(slider.getValue())/1000;
 	}
     }
     
@@ -44,7 +44,7 @@ public class PoolFrame {
 	}
 	public void stateChanged(ChangeEvent evt){
 	    slider = (JSlider)evt.getSource();
-	    pp.power = (slider.getValue())/2.6;
+	    pp.power = (float)(slider.getValue())/100;
 	    
 	}
     }
@@ -86,12 +86,23 @@ public class PoolFrame {
 	    JButton b = (JButton)evt.getSource();
 	    pp.sliderPower = !pp.sliderPower;
 	    if(pp.sliderPower) {
-		b.setLabel("Slider Power");
+		b.setLabel("Slider Mode");
 	    } else {
-		b.setLabel("Drag Power");
+		b.setLabel("Drag Mode");
 	    }
 	}
     }
+    
+    public static class SnapListener implements ActionListener{
+	PoolPanel pp;
+	boolean enabled;
+	public SnapListener(PoolPanel a){
+	    pp = a;
+	}
+	public void actionPerformed(ActionEvent evt){
+            pp.cameraController.snapToShootingBall();
+	}
+    }        
     
     public static class MakeRackListener implements ActionListener{
 	PoolPanel pp;
@@ -112,21 +123,21 @@ public class PoolFrame {
 	    cc= c;
 	}
 	public void actionPerformed(ActionEvent evt){
-	    int width = msp.getWidth()/2 - 20;
-	    int height = msp.getHeight()/2 - 20;
+	    int width = 1;
+	    int height = 2;
 	    switch (cc.getSelectedIndex()) {
 	    case 1:
-		msp.balls.add(new Ball(Color.BLUE, width, height, 2, 2, msp.ballSize));
+		msp.addBall(-width, height, 0, 0, msp.ballSize);
 		break;
 	    case 2:
-		msp.balls.add(new Ball(Color.GREEN, msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize));
+		msp.addBall(msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize);
 		break;
 	    case 3:
-		msp.balls.add(new Ball(Color.yellow, width, height, -2, 1, msp.ballSize));
+		msp.addBall(width, -height, 0, 0, msp.ballSize);
 		break;
 		
 	    default:
-		msp.balls.add(new Ball(Color.RED, width, height, -1, -1, msp.ballSize));
+		msp.addBall(-width, -height, 0, 0, msp.ballSize);
 		break;
 	    }
 	    msp.repaint();
@@ -134,7 +145,7 @@ public class PoolFrame {
     }
     public static void main(String[] args) {
 	JFrame window = new JFrame("Pool");
-	PoolPanel poolpanel = new PoolPanel(45,20);
+	PoolPanel poolpanel = new PoolPanel(.3,.35, 25, 13);
 	JPanel content = new JPanel();
 	JPanel south = new JPanel();
 	
@@ -173,9 +184,15 @@ public class PoolFrame {
 	power.addChangeListener(plist);
 	power.setOrientation(JSlider.VERTICAL);
         
-        JSlider spin = new JSlider(-100,100,0);
+        JSlider spin = new JSlider(-25,25,0);
         SpinListener spinListener = new SpinListener(poolpanel);
         spin.addChangeListener(spinListener);
+        
+        JButton snap = new JButton("Snap");
+	SnapListener snapListener = new SnapListener(poolpanel);
+	snap.addActionListener(snapListener);
+        
+        
                 
 	
 	
@@ -185,6 +202,7 @@ public class PoolFrame {
 	content.add(poolpanel, BorderLayout.CENTER);
 	content.add(angle, BorderLayout.NORTH);
 	content.add(power, BorderLayout.EAST);
+        south.add(snap);
         south.add(makeRack);
         south.add(powerMode);
 	south.add(selMode);

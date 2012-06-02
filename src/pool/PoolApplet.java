@@ -21,7 +21,7 @@ public class PoolApplet extends JApplet {
  
     @Override
 	public void init() {
-		PoolPanel poolpanel = new PoolPanel(45,20);
+		PoolPanel poolpanel = new PoolPanel(45,20, 40, 40);
 		JPanel content = new JPanel();
 		JPanel south = new JPanel();
 

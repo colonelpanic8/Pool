@@ -1,72 +1,93 @@
 package pool;
 
+import com.sun.j3d.utils.geometry.Sphere;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import javax.media.j3d.Appearance;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
+import javax.vecmath.*;
 
 public class Ball {
-    Point2D.Double pos;
+    Appearance appearance;
+    Point3d pos;
     Point2D.Double vel;
+    Point3d lpos;
+    Point2D.Double lvel;
+    
     Point2D.Double acc;
-    int size;
+    double size;
     int alpha;
     Color color;
     boolean sel, sunk, remove, showDirection;
+        
+    //Java 3D
+    BranchGroup group;
+    TransformGroup transformGroup;
+    Sphere sphere;
+    Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
+    Transform3D transform = new Transform3D();                
     
-    //For testing
-    Point2D.Double lastPos;
-    Point2D.Double lastVel;
-    public Ball(Color col, double x, double y, double a, double b, int s){
-        pos = new Point2D.Double(x,y);
+    public Ball(Appearance app, double x, double y, double a, double b, double s){
+        pos = new Point3d(x,y,(double)0);
 	vel = new Point2D.Double(a,b);
+        lpos = new Point3d(x,y,(double)0);
+	lvel = new Point2D.Double(a,b);
+        appearance = app;
 	acc = new Point2D.Double(0,0);
-	color = col;
 	size = s;
 	sunk = false;
 	remove = false;
 	alpha = 255;
-        lastPos = new Point2D.Double(x,y);
-	lastVel = new Point2D.Double(a,b);
-        showDirection = true;
+        showDirection = true;         
+        
+        group = new BranchGroup();
+        transformGroup = new TransformGroup();
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS, appearance);
+        transformGroup.addChild(sphere);
+        rotation.w = 1.0f;
+        transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));
+        transformGroup.setTransform(transform);
+        group.addChild(transformGroup);
     }
-    public double getcx(){
-	return pos.x + size/2;
+    
+    public final void move(double t) {
+        pos.x += vel.x*t;
+        pos.y += vel.y*t;
+        double angle = (vel.distance(0.0,0.0)*t/size);
+        Vector3f velPerp = new Vector3f((float)-vel.y, (float)vel.x, 0f);
+        velPerp.normalize();
+        velPerp.scale((float)Math.sin(angle/2));
+        velRotation.set(velPerp.x,
+                     velPerp.y,
+                     0, 
+                     (float)Math.cos(angle/2));
+        
+        if(vel.distance(0.0,0.0) > 0) {
+            rotation.mul(velRotation, rotation);
+        }
+        
+        transform.setRotation(rotation);
+        transform.setTranslation(new Vector3d(pos));                
+        transformGroup.setTransform(transform);
     }
-    public double getcy(){
-	return pos.y + size/2;
-    }
-    public void draw(Graphics g) {
-	if(sunk) {
-	    alpha -= 5;
-	    if(alpha > 0) {
-		g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-		g.fillOval((int)pos.x, (int)pos.y, size, size);
-	    } else {
-		remove = true;
-	    }
-	} else {
-	    g.setColor(color);
-	    g.fillOval((int)pos.x, (int)pos.y, size, size);
-            if (showDirection) {
-                g.setColor(Color.MAGENTA);
-                g.drawLine((int)getcx(), (int)getcy(), (int)(getcx() + vel.x*10), (int)(getcy() + vel.y*10));
-            }
-	}
-    }
+    
 
     public double detectCollisionWith(Ball ball) {
 	// a b c are the terms of a quadratic.  at^2 + bt + c  This code uses the quadratic equation to check for collisions.
 	double a = ( (ball.vel.x) * (ball.vel.x) + (vel.x) * (vel.x) - 2*(ball.vel.x)*(vel.x) +
-		     (ball.vel.y)*(ball.vel.y) + (vel.y) * (vel.y) - 2*(ball.vel.y)*(vel.y) );
+		     (ball.vel.y) * (ball.vel.y) + (vel.y) * (vel.y) - 2*(ball.vel.y)*(vel.y) );
 	
-	double b = 2 * ( (ball.getcx() * ball.vel.x) + (getcx() * vel.x) - (ball.getcx() * vel.x) -
-			 (getcx() * ball.vel.x) + (ball.getcy() * ball.vel.y) + (getcy() * vel.y) - 
-			 (ball.getcy() * vel.y) - (getcy() * ball.vel.y) );
+	double b = 2 * ((ball.pos.x * ball.vel.x) + (pos.x * vel.x) - (ball.pos.x * vel.x) -
+                (pos.x * ball.vel.x) + (ball.pos.y * ball.vel.y) + (pos.y * vel.y) - 
+                (ball.pos.y * vel.y) - (pos.y * ball.vel.y));
 	
-	double c = ball.getcx() * ball.getcx() + getcx() * getcx() - 2 * (getcx() * ball.getcx()) +
-	    ball.getcy() * ball.getcy() + getcy() * getcy() - 2 * (getcy() * ball.getcy())
-	    - (size+ball.size)*(size+ball.size)/4;
+	double c = ball.pos.x * ball.pos.x + pos.x * pos.x - 2 * (pos.x * ball.pos.x) +
+                   ball.pos.y * ball.pos.y + pos.y * pos.y - 2 * (pos.y * ball.pos.y) -
+                   (size+ball.size)*(size+ball.size);
 	double t;
 	if (a !=0 ){
 	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);  // These are the two solutions to the quadratic equation.
@@ -81,12 +102,12 @@ public class Ball {
 	return t; 
     }
 
-    public double detectCollisionWith(Point p) {
+    public double detectCollisionWith(Point2D.Double p) {
 	double a,b,c,t;
 	a = vel.y*vel.y + vel.x*vel.x;
-	b = 2*(vel.y*(getcy()-p.y) + vel.x*(getcx() - p.x));
-	c = p.x*p.x + p.y*p.y - 2*p.x*getcx() - 2*p.y*getcy() +
-	    getcy()*getcy() + getcx()*getcx() - size*size/4;
+	b = 2*(vel.y*(pos.y-p.y) + vel.x*(pos.x - p.x));
+	c = p.x*p.x + p.y*p.y - 2*p.x*pos.x - 2*p.y*pos.y +
+	    pos.y*pos.y + pos.x*pos.x - size*size;
 	if (a !=0 ){
 	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
 	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
@@ -97,12 +118,12 @@ public class Ball {
 	return t;
     }
 
-    public double detectCollisionWith(Point p, int distance) {
+    public double detectCollisionWith(Point2D.Double p, double distance) {
 	double a,b,c,t;
 	a = vel.y*vel.y + vel.x*vel.x;
-	b = 2*(vel.y*(getcy()-p.y) + vel.x*(getcx() - p.x));
-	c = p.x*p.x + p.y*p.y - 2*p.x*getcx() - 2*p.y*getcy()
-	    + getcy()*getcy() + getcx()*getcx() - distance*distance;
+	b = 2*(vel.y*(pos.y-p.y) + vel.x*(pos.x - p.x));
+	c = p.x*p.x + p.y*p.y - 2*p.x*pos.x - 2*p.y*pos.y
+	    + pos.y*pos.y + pos.x*pos.x - distance*distance;
 	if (a !=0 ){
 	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
 	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
@@ -114,11 +135,9 @@ public class Ball {
     }
     
     public boolean checkOverlap(Ball ball) {
-        Point2D.Double myCenter = new Point2D.Double(getcx(), getcy());
-        if(myCenter.distance(ball.getcx(), ball.getcy())+.5< ((double)(size + ball.size))/2)
+        Point2D.Double myCenter = new Point2D.Double(pos.x, pos.y);
+        if(myCenter.distance(ball.pos.x, ball.pos.y)< ((double)(size + ball.size)))
             return true;
         return false; 
     }
-    
-
 }
