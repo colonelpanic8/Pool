@@ -18,7 +18,7 @@ public class PoolPolygon extends Polygon2D {
         super(xpoints, ypoints, npoints);
         color = c;
         
-        vertices = new QuadArray ((npoints+1)*4, QuadArray.COORDINATES);
+        vertices = new QuadArray ((npoints+2)*4, QuadArray.COORDINATES);
         int j = 0;
         double height = ballsize;
         for(int i = 0; i < npoints - 1; i++) {
@@ -28,15 +28,32 @@ public class PoolPolygon extends Polygon2D {
             vertices.setCoordinate (j++, new Point3d (xpoints[i+1], ypoints[i+1], height));
         }
         
-        int i = 0;
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
-        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], height));
+        for(int i = 0; i < npoints; i++) {
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], height));
+        }
+        
+        for(int i = npoints-1; i >= 0; i--) {
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], -ballsize));
+        }
+        
+        vertices.setCoordinate (j++, new Point3d(xpoints[0], ypoints[0], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[npoints-1], ypoints[npoints-1], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[npoints-1], ypoints[npoints-1], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[0], ypoints[0], -ballsize));
+        
+        
+        
+        /*int i = 0;
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));*/
+        
+        
 
     	group = new BranchGroup();
         Appearance appearance = new Appearance();
-        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, 1.0f, 0.0f), ColoringAttributes.SHADE_FLAT);
+        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, .5f, 0.5f), ColoringAttributes.SHADE_FLAT);
         appearance.setColoringAttributes(ca);
         group.addChild(new Shape3D(vertices, appearance));
     }
