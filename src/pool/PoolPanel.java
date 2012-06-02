@@ -62,6 +62,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //Colors
     Color3f white;
     Color3f turqoise;
+    Color3f darkGreen;
+    Color3f darkBlue;
     
     int numberOfAimLines = 3;
     
@@ -74,7 +76,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         railSize = rs;
         pocketSize = (2.2*ballSize);
         sidePocketSize = (1.8*ballSize);
-        borderSize = pocketSize/2 + 10;
+        borderSize = pocketSize + .4;
         railIndent = railSize;
         sideIndent = railIndent/4;
         pocketDepth = 1.0f;
@@ -104,7 +106,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         //Initialize table items.
         initPockets();
         initPolygons();
-        initBorders();
+        initTable();
         cueball = addBall(0, 0, 0, 0, ballSize);
         shootingBall = cueball;        
         
@@ -284,11 +286,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         pockets.add(new Pocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, appearance));
         */
         pockets.add(new Pocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-	pockets.add(new Pocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
+        pockets.add(new Pocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
+        pockets.add(new Pocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
         pockets.add(new Pocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
 	pockets.add(new Pocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new Pocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new Pocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));
+        pockets.add(new Pocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
         iter = pockets.iterator();
         while(iter.hasNext()) {
             Pocket pocket = iter.next();
@@ -296,18 +298,74 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
-    private void initBorders() {
-        BranchGroup g = new BranchGroup();
-        Solid solid = new Solid();
-        solid.setData(DefaultCoordinates.DEFAULT_CYLINDER_VERTICES,
-                      DefaultCoordinates.DEFAULT_CYLINDER_COORDINATES, white);
+    private void initTable() {
+        Pocket pocket;
+        BooleanModeller bm;        
+        BranchGroup borderGroup = new BranchGroup();
+        Solid solid1 = new Solid();
         Solid solid2 = new Solid();
-        solid2.setData(DefaultCoordinates.DEFAULT_CYLINDER_VERTICES,
-                      DefaultCoordinates.DEFAULT_CYLINDER_COORDINATES, white);
-        solid2.scale(.5, 1f, .5);
-        BooleanModeller bm = new BooleanModeller(solid, solid2);        
-        g.addChild(bm.getDifference());        
-        universe.addBranchGraph(g);   
+        darkGreen = new Color3f(0.0f, 0.5f, 0.0f);
+        darkBlue = new Color3f(0.0f, 0.0f, 0.5f);
+        
+        //Top border
+        solid1.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid1.scale(width + 2*borderSize, borderSize, ballSize*2);
+        
+        //Bottom
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid2.scale(width + 2*borderSize, borderSize, ballSize*2);
+
+        
+        solid1.translate(0, height/2 + borderSize/2);
+        solid2.translate(0, -(height/2 + borderSize/2));
+        bm = new BooleanModeller(solid1, solid2);
+        solid1 = bm.getUnion();
+        
+        //Left
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid2.scale(borderSize, height, ballSize*2);
+        solid2.translate(-(width/2 + borderSize/2) ,0);
+        
+        bm = new BooleanModeller(solid1, solid2);
+        solid1 = bm.getUnion();
+        
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid2.scale(borderSize, height, ballSize*2);
+        solid2.translate(width/2 + borderSize/2,0);
+        
+        bm = new BooleanModeller(solid1, solid2);
+        solid1 = bm.getUnion();
+        
+        //Table
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkGreen);
+        solid2.scale(width, height, ballSize/2);
+        
+        for(int i = 0; i < 6; i++) {            
+            pocket = pockets.get(i);
+            pocket.inner.translate(pocket.pos.x, pocket.pos.y);
+            pocket.inner.rotate(Math.PI/2, 0);
+            bm = new BooleanModeller(solid1, pocket.inner);
+            solid1 = bm.getDifference();
+        }
+        borderGroup.addChild(solid1);
+        
+        //Table
+        TransformGroup tg = new TransformGroup();
+        Vector3f shift = new Vector3f(0.0f, 0.0f, (float)-ballSize*3/2);
+        Transform3D transform = new Transform3D();
+        transform.setTranslation(shift);
+        tg.setTransform(transform);
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkGreen);
+        solid2.scale(width, height, ballSize);        
+        for(int i = 0; i < 6; i++) {            
+            pocket = pockets.get(i);
+            bm = new BooleanModeller(solid2, pocket.inner);
+            solid2 = bm.getDifference();
+        }
+        tg.addChild(solid2);
+        borderGroup.addChild(tg);
+        universe.addBranchGraph(borderGroup);
+        
     }
     
     //SIMULATION

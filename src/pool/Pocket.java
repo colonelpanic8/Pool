@@ -14,7 +14,8 @@ public class Pocket {
     Point2D.Double pos;
     float size;
     TransformGroup transformGroup = new TransformGroup();
-    BranchGroup group = new BranchGroup();    
+    BranchGroup group = new BranchGroup();
+    Solid inner = new Solid();
         
     public Pocket(double x, double y, double s, float h, float bs, Appearance ap) {
         Cylinder cylinder;
@@ -38,7 +39,7 @@ public class Pocket {
     }
     
     public Pocket(double x, double y, double s, float h, float bs, Color3f color) {
-        Solid outer = new Solid(), inner = new Solid(), base = new Solid();
+        Solid outer = new Solid(), base = new Solid();
         pos = new Point2D.Double(x,y);
         Matrix3f matrix = new Matrix3f();
         matrix.rotX((float)Math.PI/2);
@@ -56,7 +57,7 @@ public class Pocket {
         darkest.scale((float).65);
         base.setData(DefaultCoordinates.DEFAULT_CYLINDER_VERTICES,
                       DefaultCoordinates.DEFAULT_CYLINDER_COORDINATES, darkest);
-        inner.scale(s, h, s);
+        inner.scale(s, 2*h, s);
         outer.scale(s+.1,h,s+.1);
         base.scale(s+.1,.2,s+.1);
         base.translate(0, -h/2+.1);
