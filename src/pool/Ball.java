@@ -118,7 +118,7 @@ public class Ball {
 	return t;
     }
 
-    public double detectCollisionWith(Point p, int distance) {
+    public double detectCollisionWith(Point2D.Double p, double distance) {
 	double a,b,c,t;
 	a = vel.y*vel.y + vel.x*vel.x;
 	b = 2*(vel.y*(pos.y-p.y) + vel.x*(pos.x - p.x));

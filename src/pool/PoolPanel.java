@@ -9,7 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -41,9 +40,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     BranchGroup group;
     
     //Aim
-    Shape3D aimLine;
+    Shape3D aimLine;    
     LineArray aimLineGeometry;
     Point3d aim;
+    RenderingAttributes aimLineRA;
     
     //Ghostball
     TransformGroup ghostBallTransformGroup = new TransformGroup();
@@ -52,7 +52,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     Appearance ghostBallAppearance;
     Shape3D ghostBallLine;
     LineArray ghostBallLineGeometry;
-    RenderingAttributes ra = new RenderingAttributes();
+    RenderingAttributes ghostBallRA = new RenderingAttributes();
     
     //Colors
     Color3f white;
@@ -66,7 +66,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         width = w;
         ballSize = bs;
         railSize = rs;
-        pocketSize = (6.0*ballSize);
+        pocketSize = (5.0*ballSize);
         sidePocketSize = (3.0*ballSize);
         borderSize = pocketSize/2 + 10;
         railIndent = railSize;
@@ -142,44 +142,45 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         //Add aiming line.
         white = new Color3f(1.0f, 1.0f, 1.0f);
-        Appearance app = new Appearance();
+        Appearance appearance = new Appearance();
         ColoringAttributes ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
         LineAttributes dashLa = new LineAttributes();
+        aimLineRA = new RenderingAttributes();
         dashLa.setLineWidth(1.0f);
-        app.setColoringAttributes(ca);
-        app.setLineAttributes(dashLa);
+        appearance.setColoringAttributes(ca);
+        appearance.setLineAttributes(dashLa);
+        appearance.setRenderingAttributes(aimLineRA);
+        aimLineRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+        appearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
         //dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
         aimLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
         aimLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
-        aimLine = new Shape3D(aimLineGeometry, app);
+        aimLine = new Shape3D(aimLineGeometry, appearance);
         aimLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
         group.addChild(aimLine);
         
         //Add ghost ball.        
         ghostBallAppearance = new Appearance();
-        RenderingAttributes invisible = new RenderingAttributes();
-        ra.setVisible(false);
-        ra.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+        ghostBallRA.setVisible(false);
+        ghostBallRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
         ghostBallAppearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
-        ghostBallAppearance.setRenderingAttributes(ra);
+        ghostBallAppearance.setRenderingAttributes(ghostBallRA);
         ghostBall = new Sphere((float)ballSize, Sphere.ENABLE_APPEARANCE_MODIFY, ghostBallAppearance);
         ghostBallTransformGroup.addChild(ghostBall);
         ghostBallTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         group.addChild(ghostBallTransformGroup);
         
         //Add ghost ball aiming line
-        Appearance appearance = new Appearance();
+        appearance = new Appearance();
         LineAttributes la = new LineAttributes();
         la.setLineWidth(1.0f);
-        ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
         appearance.setColoringAttributes(ca);
         appearance.setLineAttributes(la);
-        appearance.setRenderingAttributes(ra);
+        appearance.setRenderingAttributes(ghostBallRA);
         ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
         ghostBallLineGeometry.setCoordinate(0, new Point3f(1.0f, 0.0f, 0.0f));
         ghostBallLineGeometry.setCoordinate(1, new Point3f(0.0f, 1.0f, 0.0f));
         ghostBallLine = new Shape3D(ghostBallLineGeometry, appearance);
-        //ghostBallLine.setAppearance(ghostBallAppearance);
         ghostBallLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
         ghostBallLine.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
         ghostBallLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
@@ -264,12 +265,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
 
     void initPockets() {
-	pockets.add(new Pocket(borderSize , borderSize , pocketSize));
-	pockets.add(new Pocket(width/2, borderSize , sidePocketSize));
-	pockets.add(new Pocket(width - borderSize , borderSize , pocketSize));
-	pockets.add(new Pocket(borderSize , height - borderSize , pocketSize));
-	pockets.add(new Pocket(width/2, height - borderSize , sidePocketSize));
-	pockets.add(new Pocket(width - borderSize, height - borderSize , pocketSize));
+	pockets.add(new Pocket(width,  height,  pocketSize));
+	pockets.add(new Pocket(-width, height,  pocketSize));
+        pockets.add(new Pocket(width,  -height, pocketSize));
+	pockets.add(new Pocket(-width, -height, pocketSize));
+        pockets.add(new Pocket(0.0,    -height, sidePocketSize));
+        pockets.add(new Pocket(0.0,    height,  sidePocketSize));
     }
     
     //SIMULATION
@@ -479,7 +480,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     void doAim() {        
-        if(shootingBall != null && shootingBall.vel.distance(0.0, 0.0) < .01) {                                
+        if(shootingBall != null && shootingBall.vel.distance(0.0, 0.0) < .01) {
+            aimLineRA.setVisible(true);
             if(ghostBallObjectBall == null) {
                 Vector3f unit = new Vector3f();
                 unit.set(aim);
@@ -487,10 +489,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 unit.normalize();
                 Point3f start = new Point3f(shootingBall.pos);
                 drawPoolPath(unit, start, numberOfAimLines, aimLineGeometry,0);
-                ra.setVisible(false);
+                ghostBallRA.setVisible(false);
             } else {
                 //Set the ghost ball to be visible.
-                ra.setVisible(true);
+                ghostBallRA.setVisible(true);
                 
                 //Set the first line to be a line from the shooting ball to the location of the ghost ball.
                 aimLineGeometry.setCoordinate(0, shootingBall.pos);
@@ -625,7 +627,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         shootingBall.vel.y = -aim.y * power;
         shootingBall.acc.x = -aim.x * spin;
         shootingBall.acc.y = -aim.y * spin;
-        ra.setVisible(false);
+        ghostBallRA.setVisible(false);
+        aimLineRA.setVisible(false);
     }
     
     public Ball addBall(double x, double y, double a, double b, double s) {
