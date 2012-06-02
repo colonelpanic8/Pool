@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package pool;
 
 import com.sun.j3d.utils.universe.SimpleUniverse;
@@ -27,7 +23,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     float cameraDistance = 34f;
     float camDistance = cameraDistance;
     ChangeBasis changeBasis;
-    boolean updateCameraeraPos;
+    boolean updateCameraPos;
     
     //User configuration
     int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
@@ -171,7 +167,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
         upVec.x = vector.x;
         upVec.y = vector.y;
         upVec.z = vector.z;                      
-        updateCameraeraPos = true;
+        updateCameraPos = true;
     }
     
     public void mousePressed(MouseEvent me) {
@@ -190,10 +186,10 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     }  
 
     public void mouseReleased(MouseEvent me) {
-        if(updateCameraeraPos) {
+        if(updateCameraPos) {
             cameraPosition.set(cameraPos);
             cameraPosition.normalize();
-            updateCameraeraPos = false;
+            updateCameraPos = false;
         }
         upVector.set(upVec);
         cameraTranslation.set(cameraTrans);

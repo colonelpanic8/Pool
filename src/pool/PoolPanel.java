@@ -5,8 +5,10 @@ import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Point;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,8 +18,6 @@ import javax.media.j3d.*;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.vecmath.*;
-
-
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
     
@@ -41,20 +41,23 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     BranchGroup group;
     
     //Aim
-    TransformGroup aimTransformGroup;
     Shape3D aimLine;
     LineArray aimLineGeometry;
-    myPoint3d aim;
+    Point3d aim;
     
     //Ghostball
     TransformGroup ghostBallTransformGroup = new TransformGroup();
     Sphere ghostBall;
     Vector3f ghostBallPosition;
+    Appearance ghostBallAppearance;
+    Shape3D ghostBallLine;
+    LineArray ghostBallLineGeometry;
+    RenderingAttributes ra = new RenderingAttributes();
     
     //Colors
     Color3f white;
     
-    int numberOfAimLines = 2;
+    int numberOfAimLines = 3;
     
     //INITIALIZATION
     public PoolPanel(double bs, double rs, double w, double h) {
@@ -94,7 +97,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         //Initialize table items.
         initPockets();
         initPolygons();
-        cueball = addBall(Color.WHITE, 0, 0, 0, 0, ballSize);
+        cueball = addBall(0, 0, 0, 0, ballSize);
         shootingBall = cueball;
         
         //Initialize mouse listeners.
@@ -104,7 +107,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         //Miscellaneous
 	ghostBallPosition = new Vector3f(0,0,0);
-        aim = new myPoint3d(1.0, 0.0, 0.0);
+        aim = new Point3d(1.0, 0.0, 0.0);
 	collisions = new PriorityQueue(16, this);
        
         //Start timer
@@ -118,13 +121,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration());
         add("Center", canvas);
         universe = new SimpleUniverse(canvas);
+        group = new BranchGroup();
         
-        //Light
+        //Create the bounding box for the game.
         BoundingBox bounds = new BoundingBox();
         bounds.setLower(-width/2-borderSize, -height/2-borderSize, -3);
         bounds.setUpper(width/2+borderSize, height/2+borderSize, 3);
-        //BoundingSphere bounds = new BoundingSphere(new Point3d(), 100.0);
-        group = new BranchGroup();
+        
+        //Create light sources.
         Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
         Vector3f lightDirection = new Vector3f(4.0f, -7.0f, -12.0f);        
         DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
@@ -134,37 +138,47 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         Color3f ambientColor = new Color3f(1.0f, 1.0f, 1.0f);        
         AmbientLight ambientLight = new AmbientLight(ambientColor);
         ambientLight.setInfluencingBounds(bounds);
-        group.addChild(ambientLight);
-        
+        group.addChild(ambientLight);        
         
         //Add aiming line.
-        white = new Color3f(1.0f, 1.0f, 1.0f);       
-        aimTransformGroup = new TransformGroup();
-        Transform3D transform = new Transform3D();
-        transform.setTranslation(new Vector3d(0.0, 0.0, 0.0));
-        aimTransformGroup.setTransform(transform);
+        white = new Color3f(1.0f, 1.0f, 1.0f);
         Appearance app = new Appearance();
         ColoringAttributes ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
         LineAttributes dashLa = new LineAttributes();
         dashLa.setLineWidth(1.0f);
         app.setColoringAttributes(ca);
         app.setLineAttributes(dashLa);
-        dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
-        aimLineGeometry = new LineArray(2, LineArray.COORDINATES);
+        //dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
+        aimLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
         aimLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
         aimLine = new Shape3D(aimLineGeometry, app);
         aimLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        aimTransformGroup.addChild(aimLine);
-        aimTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        aimTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);        
-        group.addChild(aimTransformGroup);                
+        group.addChild(aimLine);
         
-        //Add GhostBall.
-        white = new Color3f(1.0f, 1.0f, 1.0f);
-        ghostBall = new Sphere((float)ballSize);
+        //Add ghost ball.        
+        ghostBallAppearance = new Appearance();
+        RenderingAttributes invisible = new RenderingAttributes();
+        ra.setVisible(false);
+        ra.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+        ghostBallAppearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
+        ghostBallAppearance.setRenderingAttributes(ra);
+        ghostBall = new Sphere((float)ballSize, Sphere.ENABLE_APPEARANCE_MODIFY, ghostBallAppearance);
         ghostBallTransformGroup.addChild(ghostBall);
         ghostBallTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         group.addChild(ghostBallTransformGroup);
+        
+        //Add ghost ball aiming line
+        Appearance appearance = new Appearance();
+        appearance.setColoringAttributes(ca);
+        appearance.setLineAttributes(dashLa);
+        ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);        
+        ghostBallLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
+        ghostBallLine = new Shape3D(aimLineGeometry, app);
+        ghostBallLine.setAppearance(appearance);
+        //ghostBallLine.setAppearance(ghostBallAppearance);
+        ghostBallLine.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
+        ghostBallLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        group.addChild(ghostBallLine);
         
         //Finalize 3D setup, initialize camera control.
         universe.addBranchGraph(group);        
@@ -462,14 +476,58 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     void doAim() {        
         if(shootingBall != null && shootingBall.vel.distance(0.0, 0.0) < .01) {                                
             if(ghostBallObjectBall == null) {
-                Point3d line = (Point3d) aim.clone();
-                line.scale(-30);
-                line.add(shootingBall.pos);
-                aimLineGeometry.setCoordinate(0, shootingBall.pos);
-                aimLineGeometry.setCoordinate(1, line);            
+                Vector3f unit = new Vector3f();
+                unit.set(aim);
+                unit.scale(-1f);
+                unit.normalize();
+                Point3f start = new Point3f(shootingBall.pos);
+                drawPoolPath(unit, start, numberOfAimLines, aimLineGeometry,0);
+                ra.setVisible(false);
             } else {
+                //Set the ghost ball to be visible.
+                ra.setVisible(true);
+                
+                //Set the first line to be a line from the shooting ball to the location of the ghost ball.
                 aimLineGeometry.setCoordinate(0, shootingBall.pos);
                 aimLineGeometry.setCoordinate(1, new Point3f(ghostBallPosition));
+                
+                //Determine the unit vectors that describe the trajectory of the object ball.
+                Vector3f unit = new Vector3f();
+                unit.set((float)(ghostBallObjectBall.pos.x - ghostBallPosition.x),
+                         (float)(ghostBallObjectBall.pos.y - ghostBallPosition.y),
+                         0.0f);               
+                unit.normalize();
+                //Store unit in shootingBallUnit as it will get overwritten by drawPoolPath.
+
+                Vector3f shootingBallUnit = new Vector3f(unit);
+                
+                //Draw the trajectory of the object ball.
+                Point3f start = new Point3f(ghostBallObjectBall.pos);
+                drawPoolPath(unit, start, numberOfAimLines, ghostBallLineGeometry, 0);
+                
+                
+                
+                //Determine which of the two perpendicular directions the shooting ball will travel in.
+                unit.set(shootingBallUnit);
+                shootingBallUnit.set((float)(ghostBallPosition.x - shootingBall.pos.x),
+                                     (float)(ghostBallPosition.y - shootingBall.pos.y),
+                                     0.0f);
+                shootingBallUnit.normalize();
+                Vector3f temp = new Vector3f(shootingBallUnit.y, -shootingBallUnit.x, 0.0f);
+                ChangeBasis changeBasis = new ChangeBasis(temp, shootingBallUnit, new Vector3f(0.0f,0.0f,1.0f));
+                
+                temp.set(ghostBallPosition);
+                changeBasis.transform(temp);
+                start.set(shootingBallUnit);
+                changeBasis.transform(start);
+                if((temp.y < 0) != (temp.y-start.y < 0)){
+                    shootingBallUnit.scale(-1f);
+                }
+                
+                //Draw the path of the shooting ball.
+                start.set(ghostBallPosition);
+                shootingBallUnit.set(unit.y, -unit.x, unit.z);
+                drawPoolPath(shootingBallUnit, start, numberOfAimLines, aimLineGeometry, 1);
                 Transform3D transform = new Transform3D();
                 transform.setTranslation(ghostBallPosition);
                 ghostBallTransformGroup.setTransform(transform);
@@ -508,67 +566,62 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
     
-    void drawPoolPath(Point2D.Double unit, Point2D.Double last, Graphics g) {
-        Point2D.Double next = new Point2D.Double();
-        double horizontal = 0, vertical = 0;
-        for(int i = 0; i < numberOfAimLines; i++) {
+    void drawPoolPath(Vector3f unit, Point3f last, int numLines, LineArray array, int offset) {
+        Point3d next = new Point3d();
+        double horizontal, vertical;
+        for(int i = offset; i < numLines; i++) {
             horizontal = Double.POSITIVE_INFINITY;
             vertical = Double.POSITIVE_INFINITY;
             
             if(unit.x != 0) {
-                horizontal = (borderSize + railSize - last.x)/unit.x;
+                horizontal = (width/2 - (railSize + ballSize) - last.x)/unit.x;
                 if(horizontal <= .00001) {
-                    horizontal = (width - (borderSize + railSize) - last.x)/unit.x;
+                    horizontal = ((railSize + ballSize) - width/2 - last.x)/unit.x;
                 }
             }
             if(unit.y != 0) {
-                vertical = (borderSize + railSize - last.y)/unit.y;
+                vertical = (height/2 - (railSize + ballSize) - last.y)/unit.y;
                 if(vertical <= .00001) {
-                    vertical = (height - (borderSize + railSize) - last.y)/unit.y;
+                    vertical = ((railSize + ballSize) - height/2 - last.y)/unit.y;
                 }
             }
             if(vertical < horizontal && vertical > 0) {
-                next.setLocation((last.x + unit.x*vertical), (last.y+unit.y*vertical));
-                g.drawLine((int)last.x, (int)last.y, (int)next.x, (int)(next.y));
+                next.set((last.x + unit.x*vertical), (last.y+unit.y*vertical), 0);                
                 unit.y = -unit.y;
             } else {
-                next.setLocation((last.x+unit.x*horizontal), (last.y+unit.y*horizontal));
-                g.drawLine((int)last.x, (int)last.y, (int)(next.x), (int)(next.y));
+                next.set((last.x+unit.x*horizontal), (last.y+unit.y*horizontal), 0);
                 unit.x = -unit.x;
             }
-            last.setLocation(next);
+            array.setCoordinate(2*i, last);
+            array.setCoordinate(2*i + 1, next);
+            last.set(next);
         }        
     }
     
     //ACTIONS
-    public void newRack() {
-        
-        Color def, other;
+    public void newRack() {        
         cueball.pos.set(-width/4, 0, 0);
         cueball.vel.setLocation(0,0);
         cueball.move(0.0);
+        aim.x = -1.0;
+        aim.y = 0.0;
+        doAim();
         this.cameraController.overheadView();
         double x = width/8;
-        def = Color.ORANGE.darker();
-        other = Color.CYAN.darker();
         for(int i = 0; i < 5; i++) {
             double y = -i*ballSize + .01;
             for(int j = 0; j <= i; j++) {
                 if(j == 1 && i == 2) {
-                    balls.add(new Ball(Color.BLACK, x, y, 0, 0, ballSize));
-                    def = Color.CYAN.darker();
-                    other = Color.ORANGE.darker();
+
                 } else if((i+j)%2 == 0) {
-                    this.addBall(def, x, y, 0, 0, ballSize);
+                    this.addBall(x, y, 0, 0, ballSize);
                 } else {
-                    this.addBall(other, x, y, 0, 0, ballSize);
+                    this.addBall(x, y, 0, 0, ballSize);
                 }
                 y += 2*ballSize; 
             }
             x += 2*ballSize*Math.sqrt(3)/2+.01;
-        }               
-        aim.x = -1.0;
-        aim.y = 0.0;
+        }                       
     }
      
     public void shoot() {
@@ -576,9 +629,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         shootingBall.vel.y = -aim.y * power;
         shootingBall.acc.x = -aim.x * spin;
         shootingBall.acc.y = -aim.y * spin;
+        ra.setVisible(false);
     }
     
-    public Ball addBall(Color color, double x, double y, double a, double b, double s) {
+    public Ball addBall(double x, double y, double a, double b, double s) {
         Texture texImage = new TextureLoader("1.jpg",this).getTexture();        
         Appearance appearance = new Appearance();
         appearance.setTexture(texImage);
@@ -716,6 +770,8 @@ class PoolCameraController extends CameraController {
                 
         cameraPosition.normalize();
         cameraPos.set(cameraPosition);
+        upVector.set(0.0f, 0.0f, 1.0f);
+        upVec.set(upVector);    
         updateCamera();
     }
     
@@ -775,4 +831,3 @@ class ChangeBasis extends Matrix3f {
     }
     
 }
-    

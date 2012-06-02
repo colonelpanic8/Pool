@@ -1,17 +1,20 @@
 package pool;
 
 import com.sun.j3d.utils.geometry.Sphere;
-import com.sun.j3d.utils.image.TextureLoader;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.geom.Point2D;
-import javax.media.j3d.*;
+import javax.media.j3d.Appearance;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
 import javax.vecmath.*;
 
 public class Ball {
-    myPoint3d pos;
+    Appearance appearance;
+    Point3d pos;
     Point2D.Double vel;
-    myPoint3d lpos;
+    Point3d lpos;
     Point2D.Double lvel;
     
     Point2D.Double acc;
@@ -25,48 +28,20 @@ public class Ball {
     TransformGroup transformGroup;
     Sphere sphere;
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
-    Transform3D transform = new Transform3D();
+    Transform3D transform = new Transform3D();                
     
-    public Ball(Color col, double x, double y, double a, double b, double s){
-        pos = new myPoint3d(x,y,(double)0);
+    public Ball(Appearance app, double x, double y, double a, double b, double s){
+        pos = new Point3d(x,y,(double)0);
 	vel = new Point2D.Double(a,b);
-        lpos = new myPoint3d(x,y,(double)0);
+        lpos = new Point3d(x,y,(double)0);
 	lvel = new Point2D.Double(a,b);
-	acc = new Point2D.Double(0,0);
-	size = s;
-        color = col;
-	sunk = false;
-	remove = false;
-	alpha = 255;
-        showDirection = true;
-        
-        group = new BranchGroup();
-        transformGroup = new TransformGroup();
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        sphere = new Sphere((float)size);
-        transformGroup.addChild(sphere);
-        rotation.w = 1.0f;
-        transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));
-        transformGroup.setTransform(transform);
-        group.addChild(transformGroup);
-    }
-            
-    
-    public Ball(Appearance appearance, double x, double y, double a, double b, double s){
-        pos = new myPoint3d(x,y,(double)0);
-	vel = new Point2D.Double(a,b);
-        lpos = new myPoint3d(x,y,(double)0);
-	lvel = new Point2D.Double(a,b);
-        
+        appearance = app;
 	acc = new Point2D.Double(0,0);
 	size = s;
 	sunk = false;
 	remove = false;
 	alpha = 255;
-        showDirection = true;
-        
- 
+        showDirection = true;         
         
         group = new BranchGroup();
         transformGroup = new TransformGroup();
@@ -164,17 +139,5 @@ public class Ball {
         if(myCenter.distance(ball.pos.x, ball.pos.y)< ((double)(size + ball.size)))
             return true;
         return false; 
-    }
-}
-
-class myPoint3d extends Point3d {
-    public myPoint3d(double a, double b, double c) {
-        super(a,b,c);
-    }
-    
-    public void setLocation(double a, double b, double c) {
-        x = a;
-        y = b;
-        z = c;
     }
 }

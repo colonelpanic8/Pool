@@ -127,17 +127,17 @@ public class PoolFrame {
 	    int height = 2;
 	    switch (cc.getSelectedIndex()) {
 	    case 1:
-		msp.addBall(Color.BLUE, -width, height, 0, 0, msp.ballSize);
+		msp.addBall(-width, height, 0, 0, msp.ballSize);
 		break;
 	    case 2:
-		msp.addBall(Color.GREEN, msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize);
+		msp.addBall(msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize);
 		break;
 	    case 3:
-		msp.addBall(Color.yellow, width, -height, 0, 0, msp.ballSize);
+		msp.addBall(width, -height, 0, 0, msp.ballSize);
 		break;
 		
 	    default:
-		msp.addBall(Color.RED, -width, -height, 0, 0, msp.ballSize);
+		msp.addBall(-width, -height, 0, 0, msp.ballSize);
 		break;
 	    }
 	    msp.repaint();
