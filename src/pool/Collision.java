@@ -33,7 +33,7 @@ public abstract class Collision {
 	    }
 	}
 	detectPolygonCollisions(pp, ball1);
-	pp.checkPockets(ball1, time);
+	pp.detectPocketCollisions(ball1, time);
     }
         
     public boolean involves(Ball b) {
@@ -102,9 +102,9 @@ class BallCollision extends Collision {
 	}
         
 	detectPolygonCollisions(pp, ball1);
-	pp.checkPockets(ball1, time);
+	pp.detectPocketCollisions(ball1, time);
 	detectPolygonCollisions(pp, ball2);
-	pp.checkPockets(ball2, time);
+	pp.detectPocketCollisions(ball2, time);
     }
     
     @Override public void doEffects(PoolPanel pp) {
