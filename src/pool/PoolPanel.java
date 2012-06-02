@@ -1,59 +1,89 @@
 package pool;
 
+import com.sun.j3d.utils.geometry.Sphere;
+import com.sun.j3d.utils.image.TextureLoader;
+import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Point;
-import java.awt.event.*;
-import java.awt.geom.Point2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
+import javax.media.j3d.*;
 import javax.swing.JPanel;
 import javax.swing.Timer;
-
-
+import javax.vecmath.*;
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
-    int pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent;
+    
+    double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent;
     boolean selMode, sliderPower;
     Ball cueball, shootingBall, ghostBallObjectBall;
     ArrayList<Ball> balls;
     ArrayList<Pocket> pockets;
     ArrayList<PoolPolygon> polygons;
     PriorityQueue<Collision> collisions;
-    Aimer aimer;
-    SelectionModeListener modeListener;
-    Point ghostBallPosition;
     Color tableColor;
-    int height, width;
+    double height, width;
     double spin, power;
     int collisionsExecuted;
     boolean frameSkip, err;
     
+    //Java3D
+    Canvas3D canvas;
+    SimpleUniverse universe;
+    PoolCameraController cameraController;
+    BranchGroup group;
+    
+    //Aim
+    Shape3D aimLine;    
+    LineArray aimLineGeometry;
+    Point3d aim;
+    RenderingAttributes aimLineRA;
+    
+    //Ghostball
+    TransformGroup ghostBallTransformGroup = new TransformGroup();
+    Sphere ghostBall;
+    Vector3f ghostBallPosition;
+    Appearance ghostBallAppearance;
+    Shape3D ghostBallLine;
+    LineArray ghostBallLineGeometry;
+    RenderingAttributes ghostBallRA = new RenderingAttributes();
+    
+    //Colors
+    Color3f white;
+    
+    int numberOfAimLines = 3;
+    
     //INITIALIZATION
-    public PoolPanel(int bs, int rs) {
+    public PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
+        height = h;
+        width = w;
         ballSize = bs;
         railSize = rs;
-        pocketSize = (int)(2.2*ballSize);
-        sidePocketSize = (int)(1.8*ballSize);
+        pocketSize = (5.0*ballSize);
+        sidePocketSize = (3.0*ballSize);
         borderSize = pocketSize/2 + 10;
         railIndent = railSize;
         sideIndent = railIndent/4;
         
-        //Initialize boolean values
+        //Initialize boolean values.
         selMode = false;
         sliderPower = false;        
         frameSkip = false;
         err = false;
         
-        //Set component color
+        //Set component color.
         tableColor = new Color(48,130,100);
 	setBackground(tableColor);
         
-        //Initialize other primitives
-        power = 70;
+        //Initialize other primitives.
+        power = .1;
         spin = 0;
         collisionsExecuted = 0;
         
@@ -62,129 +92,208 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         pockets = new ArrayList(6);
         polygons = new ArrayList(10);
         
+        init3D();
+        
         //Initialize table items.
         initPockets();
         initPolygons();
-        cueball = new Ball(Color.WHITE, 400, 400, 1, 0, ballSize);
-        balls.add(cueball);
+        cueball = addBall(0, 0, 0, 0, ballSize);
         shootingBall = cueball;
         
-        //Initialize mouse listeners
-        aimer = new Aimer(25, 100, cueball);
-	modeListener = new SelectionModeListener();
+        //Initialize mouse listeners.
         
-        //Add listeners
-        addMouseListener(aimer);
-	addMouseMotionListener(aimer);
-	addMouseListener(modeListener);
-	addMouseMotionListener(modeListener);        
+        //Add listeners.
 	addHierarchyBoundsListener(this);
         
         //Miscellaneous
-	ghostBallPosition = new Point(0,0);	
+	ghostBallPosition = new Vector3f(0,0,0);
+        aim = new Point3d(1.0, 0.0, 0.0);
 	collisions = new PriorityQueue(16, this);
        
         //Start timer
-	Timer timer = new Timer(15, this);
+	Timer timer = new Timer(30, this);
 	timer.start();
-        
+               
     }
     
-    public void initPolygons() {
+    void init3D() {
+        //Initialize Java 3D components.
+        canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration());
+        add("Center", canvas);
+        universe = new SimpleUniverse(canvas);
+        group = new BranchGroup();
+        
+        //Create the bounding box for the game.
+        BoundingBox bounds = new BoundingBox();
+        bounds.setLower(-width/2-borderSize, -height/2-borderSize, -3);
+        bounds.setUpper(width/2+borderSize, height/2+borderSize, 3);
+        
+        //Create light sources.
+        Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
+        Vector3f lightDirection = new Vector3f(4.0f, -7.0f, -12.0f);        
+        DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
+        light.setInfluencingBounds(bounds);
+        group.addChild(light);
+        
+        Color3f ambientColor = new Color3f(1.0f, 1.0f, 1.0f);        
+        AmbientLight ambientLight = new AmbientLight(ambientColor);
+        ambientLight.setInfluencingBounds(bounds);
+        group.addChild(ambientLight);        
+        
+        //Add aiming line.
+        white = new Color3f(1.0f, 1.0f, 1.0f);
+        Appearance appearance = new Appearance();
+        ColoringAttributes ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
+        LineAttributes dashLa = new LineAttributes();
+        aimLineRA = new RenderingAttributes();
+        dashLa.setLineWidth(1.0f);
+        appearance.setColoringAttributes(ca);
+        appearance.setLineAttributes(dashLa);
+        appearance.setRenderingAttributes(aimLineRA);
+        aimLineRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+        appearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
+        //dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
+        aimLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
+        aimLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
+        aimLine = new Shape3D(aimLineGeometry, appearance);
+        aimLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        group.addChild(aimLine);
+        
+        //Add ghost ball.        
+        ghostBallAppearance = new Appearance();
+        ghostBallRA.setVisible(false);
+        ghostBallRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
+        ghostBallAppearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
+        ghostBallAppearance.setRenderingAttributes(ghostBallRA);
+        ghostBall = new Sphere((float)ballSize, Sphere.ENABLE_APPEARANCE_MODIFY, ghostBallAppearance);
+        ghostBallTransformGroup.addChild(ghostBall);
+        ghostBallTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        group.addChild(ghostBallTransformGroup);
+        
+        //Add ghost ball aiming line
+        appearance = new Appearance();
+        LineAttributes la = new LineAttributes();
+        la.setLineWidth(1.0f);
+        appearance.setColoringAttributes(ca);
+        appearance.setLineAttributes(la);
+        appearance.setRenderingAttributes(ghostBallRA);
+        ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
+        ghostBallLineGeometry.setCoordinate(0, new Point3f(1.0f, 0.0f, 0.0f));
+        ghostBallLineGeometry.setCoordinate(1, new Point3f(0.0f, 1.0f, 0.0f));
+        ghostBallLine = new Shape3D(ghostBallLineGeometry, appearance);
+        ghostBallLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
+        ghostBallLine.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
+        ghostBallLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        group.addChild(ghostBallLine);
+        
+        //Finalize 3D setup, initialize camera control.
+        universe.addBranchGraph(group);        
+        cameraController = new PoolCameraController(this);                      
+    }        
+    
+    void initPolygons() {
 	Color color = tableColor.darker();
-        int[] xpoints, ypoints;
-	xpoints = new int[4];
-	ypoints = new int[4];
-
-	xpoints[0] = borderSize + pocketSize/2;
-	xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	xpoints[2] = width - pocketSize/2 + sideIndent;
-	xpoints[3] = width - pocketSize/2;
-	ypoints[0] = borderSize;
-	ypoints[1] = borderSize + railSize;
-	ypoints[2] = borderSize + railSize;
-	ypoints[3] = borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
-
-	xpoints[0] = width/2 + pocketSize/2;
-	xpoints[1] = width/2 + pocketSize/2 + sideIndent;
-	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-        xpoints[3] = width - pocketSize/2 - borderSize;
-        ypoints[0] = borderSize;
-	ypoints[1] = borderSize + railSize;
-	ypoints[2] = borderSize + railSize;
-	ypoints[3] = borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+        double[] xpoints, ypoints;
+	xpoints = new double[4];
+	ypoints = new double[4];
         
-	xpoints[0] = width - borderSize - pocketSize/2;
-        xpoints[1] = width - borderSize - railSize;
-        xpoints[2] = width - borderSize- railSize;
-        xpoints[3] = width - borderSize;
-	ypoints[0] = borderSize + pocketSize/2;
-	ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	ypoints[2] = height - borderSize - railIndent;
-	ypoints[3] = height - borderSize - pocketSize/2;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
-
-	xpoints[0] = width/2 + pocketSize/2;
-	xpoints[1] = width/2 + pocketSize/2 +sideIndent;
-	xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-        xpoints[3] = width - pocketSize/2 - borderSize;
-	ypoints[0] = height - borderSize;
-	ypoints[1] = height - (borderSize + railSize);
-	ypoints[2] = height - (borderSize + railSize);
-	ypoints[3] = height - borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
-
-	xpoints[0] = borderSize + pocketSize/2;
-	xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	xpoints[2] = width/2 - pocketSize/2 + sideIndent;
-	xpoints[3] = width/2 - pocketSize/2;
-	ypoints[0] = height - borderSize;
-	ypoints[1] = height - (borderSize + railSize);
-	ypoints[2] = height - (borderSize + railSize);
-	ypoints[3] = height - borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+	xpoints[0] = -width/2 + (pocketSize/2);
+	xpoints[1] = -width/2 + (pocketSize/2 + railIndent);
+	xpoints[2] = -(sidePocketSize/2 + sideIndent);
+	xpoints[3] = -sidePocketSize/2;
         
-	xpoints[0] = borderSize;
-        xpoints[1] = borderSize+railSize;
-        xpoints[2] = borderSize+railSize;
-        xpoints[3] = borderSize;
-        ypoints[0] = borderSize + pocketSize/2;
-	ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	ypoints[2] = height - borderSize - railIndent;
-	ypoints[3] = height - borderSize;
-        polygons.add(new PoolPolygon(xpoints, ypoints, 4, color));
+	ypoints[0] = height/2;
+	ypoints[1] = height/2 - railSize;
+	ypoints[2] = height/2 - railSize;
+	ypoints[3] = height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[0] = (sidePocketSize/2);
+	xpoints[1] = (sidePocketSize/2 + sideIndent);
+	xpoints[2] = width/2-(pocketSize/2 + railIndent);
+	xpoints[3] = width/2-pocketSize/2;
+        
+	ypoints[0] = height/2;
+	ypoints[1] = height/2 - railSize;
+	ypoints[2] = height/2 - railSize;
+	ypoints[3] = height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[0] = width/2 ;
+	xpoints[1] = width/2 - railSize;
+	xpoints[2] = width/2 - railSize;
+	xpoints[3] = width/2;
+        
+	ypoints[0] = height/2 - pocketSize/2;
+	ypoints[1] = height/2 - (pocketSize/2 + railIndent);
+	ypoints[2] = (pocketSize/2 + railIndent) - height/2;
+	ypoints[3] = pocketSize/2-height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);                
+        
+        xpoints[3] = -width/2 + (pocketSize/2);
+	xpoints[2] = -width/2 + (pocketSize/2 + railIndent);
+	xpoints[1] = -(sidePocketSize/2 + sideIndent);
+	xpoints[0] = -sidePocketSize/2;
+        
+	ypoints[3] = -height/2;
+	ypoints[2] = -height/2 + railSize;
+	ypoints[1] = -height/2 + railSize;
+	ypoints[0] = -height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[3] = (sidePocketSize/2);
+	xpoints[2] = (sidePocketSize/2 + sideIndent);
+	xpoints[1] = width/2-(pocketSize/2 + railIndent);
+	xpoints[0] = width/2-pocketSize/2;
+        
+	ypoints[3] = -height/2;
+	ypoints[2] = -height/2 + railSize;
+	ypoints[1] = -height/2 + railSize;
+	ypoints[0] = -height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        
+        xpoints[3] = -width/2 ;
+	xpoints[2] = -width/2 + railSize;
+	xpoints[1] = -width/2 + railSize;
+	xpoints[0] = -width/2;
+        
+	ypoints[3] = height/2 - pocketSize/2;
+	ypoints[2] = height/2 - (pocketSize/2 + railIndent);
+	ypoints[1] = (pocketSize/2 + railIndent) - height/2;
+	ypoints[0] = pocketSize/2-height/2;
+        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
     }
 
-    public void initPockets() {
-	pockets.add(new Pocket(borderSize , borderSize , pocketSize));
-	pockets.add(new Pocket(width/2, borderSize , sidePocketSize));
-	pockets.add(new Pocket(width - borderSize , borderSize , pocketSize));
-	pockets.add(new Pocket(borderSize , height - borderSize , pocketSize));
-	pockets.add(new Pocket(width/2, height - borderSize , sidePocketSize));
-	pockets.add(new Pocket(width - borderSize, height - borderSize , pocketSize));
+    void initPockets() {
+	pockets.add(new Pocket(width,  height,  pocketSize));
+	pockets.add(new Pocket(-width, height,  pocketSize));
+        pockets.add(new Pocket(width,  -height, pocketSize));
+	pockets.add(new Pocket(-width, -height, pocketSize));
+        pockets.add(new Pocket(0.0,    -height, sidePocketSize));
+        pockets.add(new Pocket(0.0,    height,  sidePocketSize));
     }
     
     //SIMULATION
     public void actionPerformed(ActionEvent evt){
+        //this.repaint();
+        doAim();
 	Iterator<Ball> iter;
 	iter = balls.iterator();
+        validate();
         if(err) {
-            err = false;
-            frameSkip = true;
-            this.paintImmediately(0, 0, width, height);
             rewind();
-            this.paintImmediately(0, 0, width, height);
-            return;   
+            frameSkip = true;
         }
         if(frameSkip) {
-            frameSkip = true;
+            err = false;
         }
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
-            ball.lastPos.setLocation(ball.pos);
-            ball.lastVel.setLocation(ball.vel);
+            
+            //For error handling           
+            ball.lpos.set(ball.pos);
+            ball.lvel.setLocation(ball.vel);
+            
             detectPolygonCollisions(ball, 0);
 	    checkPockets(ball, 0);
 	    for(int i = balls.lastIndexOf(ball)+1; i < balls.size(); i++) {
@@ -192,26 +301,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 		if(t < 1 && 0 <= t){
 		    collisions.add(new BallCollision(t, ball, balls.get(i)));
 		}
-	    }
-	    if (ball.remove) {
-		if(ball == cueball) {
-		    cueball.alpha = 255;
-		    cueball.remove = false;
-		    cueball.pos.x = width/2;
-		    cueball.pos.y = height/2;
-		    cueball.sunk = false;
-		} else {
-		    iter.remove();
-		}
-	    }
+	    }            
 	}
         updateBallPositions();
-	updateGhostBall();
-	aimer.doShoot(this);	
-	this.repaint();
+        updateGhostBall();
     }
     
-    public void updateBallPositions(){
+    void updateBallPositions(){
 	Iterator<Ball> ballIterator;
 	Collision collision = collisions.poll();
 	double timePassed = 0;
@@ -220,28 +316,22 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             ballIterator = balls.iterator();
 	    while(ballIterator.hasNext()) {
 		Ball ball = ballIterator.next();
-		ball.pos.setLocation(ball.pos.x + (collision.time-timePassed) * ball.vel.x,
-				     ball.pos.y + (collision.time-timePassed) * ball.vel.y);
+		ball.move(collision.time-timePassed);
                 
             }
             timePassed = collision.time;
 	    
             collision.doCollision(this);
             collisionsExecuted++;
-            //For debugging remove later.
-            if(frameSkip) {
-                this.paintImmediately(0, 0, width, height);
-            }
 	    collision = collisions.poll();	    
 	}
         ballIterator = balls.iterator();
 	while(ballIterator.hasNext()) {
 	    Ball ball = ballIterator.next();
-	    ball.pos.setLocation(ball.pos.x + (1-timePassed)*ball.vel.x,
-				 ball.pos.y + (1-timePassed)*ball.vel.y);
+	    ball.move(1-timePassed);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
-            if(ball.vel.distance(0,0) < .15) {
+            if(ball.vel.distance(0,0) < .001) {
                 ball.vel.x = 0;
                 ball.vel.y = 0;
             } else {
@@ -257,28 +347,34 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             }
             
 	}
+        
         ballIterator = balls.iterator();
+        
         while(ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
             checkOverlaps(ball);
         }
     }
     
-    public void updateGhostBall() {
+    void updateGhostBall() {
 	Iterator<Ball> iter;
         double min = Double.POSITIVE_INFINITY;
 	iter = balls.iterator();
 	ghostBallObjectBall = null;
 	while(iter.hasNext()) {
 	    Ball ball = iter.next();
-	    if(!(ball==cueball)){
-		double a = aimer.aim.x*aimer.aim.x + aimer.aim.y*aimer.aim.y;
-		double b = 2 * (cueball.getcx()*-aimer.aim.x - ball.getcx()*-aimer.aim.x + 
-				cueball.getcy()*-aimer.aim.y - ball.getcy()*-aimer.aim.y);
-		double c = cueball.getcx()*cueball.getcx() + ball.getcx()*ball.getcx() +
-		    cueball.getcy()*cueball.getcy() + ball.getcy()*ball.getcy() - 2*cueball.getcx()*ball.getcx() - 
-		    2*cueball.getcy()*ball.getcy() - (ball.size + cueball.size)*(ball.size + cueball.size)/4;
-		double t;
+	    if(ball != shootingBall){
+                double t;
+		double a = aim.x*aim.x + aim.y*aim.y;
+                
+		double b = 2*-aim.x*shootingBall.pos.x + 2*-aim.y*shootingBall.pos.y -
+                           2*-aim.x*ball.pos.x         - 2*-aim.y*ball.pos.y         ;
+                
+		double c = ball.pos.y*ball.pos.y                 + ball.pos.x*ball.pos.x                 +
+                           shootingBall.pos.y*shootingBall.pos.y + shootingBall.pos.x*shootingBall.pos.x -
+                           2*(shootingBall.pos.y*ball.pos.y      + shootingBall.pos.x*ball.pos.x)        -
+                           (ball.size + shootingBall.size)*(ball.size + shootingBall.size);
+                
 		if (a !=0 ){
 		    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
 		    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
@@ -288,8 +384,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 		}
 
 		if( !(Double.isNaN(t)) && t < min && t > 0){
-		    ghostBallPosition.setLocation((int)(cueball.pos.x + t * -aimer.aim.x),
-						  (int)(cueball.pos.y + t * -aimer.aim.y));
+		    ghostBallPosition.set((float)(shootingBall.pos.x + t * -aim.x),
+                                          (float)(shootingBall.pos.y + t * -aim.y),
+                                          0.0f);
 		    ghostBallObjectBall = ball;
 		    min = t;
 		}
@@ -297,7 +394,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
     
-    public void detectPolygonCollisions(Ball ball, double t) {
+    //COLLISION DETECTION
+    void detectPolygonCollisions(Ball ball, double t) {
         Iterator<PoolPolygon> iter = polygons.iterator();
         while(iter.hasNext()) {
             PoolPolygon p = iter.next();
@@ -305,7 +403,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
-    public void detectPolygonCollisions(Ball ball, double t, WallCollision collision) {
+    void detectPolygonCollisions(Ball ball, double t, WallCollision collision) {
         Iterator<PoolPolygon> iter = polygons.iterator();
         while(iter.hasNext()) {
             PoolPolygon p = iter.next();
@@ -317,7 +415,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
-    public void checkPockets(Ball ball, double timePassed) {
+    void checkPockets(Ball ball, double timePassed) {
 	double time;
 	Iterator<Pocket> pocketItr;
 	pocketItr = pockets.iterator();
@@ -332,82 +430,116 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
     
-    //DRAWING 
+    //GRAPHICAL FUNCTIONS
     @Override public void paintComponent(Graphics g){
-	super.paintComponent(g);        
-        //BORDER
-	g.setColor(Color.DARK_GRAY);
-	g.fillRect(0,0,width,borderSize);
-	g.fillRect(0,0,borderSize,width);
-	g.fillRect(0,height-borderSize,width,borderSize);
-	g.fillRect(width-borderSize,0,borderSize,width);
         
-	g.setColor(Color.BLACK);
-        
-        //POLYGONS
-        Iterator<PoolPolygon> iterator = polygons.iterator();
-        while(iterator.hasNext()){
-	    PoolPolygon p = iterator.next();
-	    p.draw(g);
-	}
-
-	//POCKETS
-	Iterator<Pocket> pocketItr;
-	pocketItr = pockets.iterator();
-	while(pocketItr.hasNext()) {
-	    Pocket pocket = pocketItr.next();
-	    pocket.draw(g);
-	}        
-	
-	//BALLS
-	Iterator<Ball> iter = balls.iterator();
-	while(iter.hasNext()){
-	    Ball temp = iter.next();
-	    temp.draw(g);
-	}
-        
-	//GHOST BALL AND AIMER
-	g.setColor(Color.BLACK);
-        drawGhostBall(g);
-		
+        /*super.paintComponent(g);
+        g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
+        g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
+        g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
+        * */
         /*
-         * Draw information on screen.
-         * g.drawString(Integer.toString(modeListener.click.x), 100, 140);
-         * g.drawString(Integer.toString(modeListener.click.y), 160, 140);
-         * g.drawString(Integer.toString(collisionsExecuted), 160, 160);
-         * g.drawString(Double.toString(power), 200, 140);
-         * g.drawString(Double.toString(spin), 200, 160);
-        */                       
+        super.paintComponent(g);
+        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
+         */
+                 /*
+        g.setColor(Color.BLACK);
+        g.drawString(Float.toString(cueball.rotation.x), 0, getHeight()-20);
+         g.drawString(Float.toString(cueball.rotation.y), 100, getHeight()-20);
+         g.drawString(Float.toString(cueball.rotation.z), 200, getHeight()-20);*/
+        /*
+         * This was removed for performance reasons.
+         * super.paintComponent(g);
+         g.setColor(Color.BLACK);
+          g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
+         g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
+         * 
+         * g.drawString(Double.toString(cameraController.cameraPos.x), 0, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraPos.y), 100, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraPos.z), 200, getHeight());
+         * 
+         * g.drawString(Float.toString(cameraController.upVector.x), 300, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.upVector.y), 400, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.upVector.z), 500, getHeight()-20);
+         * 
+         * g.drawString(Double.toString(cameraController.upVec.x), 300, getHeight());
+         * g.drawString(Double.toString(cameraController.upVec.y), 400, getHeight());
+         * g.drawString(Double.toString(cameraController.upVec.z), 500, getHeight());
+         * 
+         * g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
+         * g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
+         * 
+         * g.drawString(Double.toString(cameraController.cameraTrans.x), 600, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraTrans.y), 700, getHeight());
+         * g.drawString(Double.toString(cameraController.cameraTrans.z), 800, getHeight());
+         */                        
     }
     
-    void drawGhostBall(Graphics g) {
-        if(Math.abs(cueball.vel.x) + Math.abs(cueball.vel.y) < 1) {
-	    g.drawLine((int)cueball.getcx(), 
-		       (int)cueball.getcy(), 
-		       (int)(cueball.getcx()+(-aimer.aim.x*2000)), 
-		       (int)(cueball.getcy()+(-aimer.aim.y*2000)));
-	    //Additional aiming lines that were removed.
-	    
-            /*
-	    g.drawLine( (int)(cueball.getcx() - -aimer.aim.y*cueball.size/2),
-			(int)(cueball.getcy() + -aimer.aim.x*cueball.size/2), 
-			(int)(cueball.getcx() + -aimer.aim.x*2000 - -aimer.aim.y*cueball.size/2), 
-			(int)(cueball.getcy() + -aimer.aim.y*2000 + -aimer.aim.x*cueball.size/2));
-	    g.drawLine( (int)(cueball.getcx() + -aimer.aim.y*cueball.size/2),
-			(int)(cueball.getcy() - -aimer.aim.x*cueball.size/2), 
-			(int)(cueball.getcx() + -aimer.aim.x*2000 + -aimer.aim.y*cueball.size/2),
-			(int)(cueball.getcy() + -aimer.aim.y*2000 - -aimer.aim.x*cueball.size/2));
-                        * 
-                        */
-            Color color = Color.WHITE;
-            g.setColor(color);
+    void doAim() {        
+        if(shootingBall != null && shootingBall.vel.distance(0.0, 0.0) < .01) {
+            aimLineRA.setVisible(true);
+            if(ghostBallObjectBall == null) {
+                Vector3f unit = new Vector3f();
+                unit.set(aim);
+                unit.scale(-1f);
+                unit.normalize();
+                Point3f start = new Point3f(shootingBall.pos);
+                drawPoolPath(unit, start, numberOfAimLines, aimLineGeometry,0);
+                ghostBallRA.setVisible(false);
+            } else {
+                //Set the ghost ball to be visible.
+                ghostBallRA.setVisible(true);
+                
+                //Set the first line to be a line from the shooting ball to the location of the ghost ball.
+                aimLineGeometry.setCoordinate(0, shootingBall.pos);
+                aimLineGeometry.setCoordinate(1, new Point3f(ghostBallPosition));
+                
+                //Determine the unit vectors that describe the trajectory of the object ball.
+                Vector3f unit = new Vector3f();
+                unit.set((float)(ghostBallObjectBall.pos.x - ghostBallPosition.x),
+                         (float)(ghostBallObjectBall.pos.y - ghostBallPosition.y),
+                         0.0f);               
+                unit.normalize();
+                //Store unit in shootingBallUnit as it will get overwritten by drawPoolPath.
+
+                Vector3f shootingBallUnit = new Vector3f(unit);
+                
+                //Draw the trajectory of the object ball.
+                Point3f start = new Point3f(ghostBallObjectBall.pos);
+                drawPoolPath(unit, start, numberOfAimLines, ghostBallLineGeometry, 0);                                
+                
+                //Determine which of the two perpendicular directions the shooting ball will travel in.
+                unit.set(shootingBallUnit);
+                shootingBallUnit.set(unit.y, -unit.x, unit.z);
+                Vector3f temp = new Vector3f((float)(shootingBall.pos.x - ghostBallPosition.x),
+                                             (float)(shootingBall.pos.y - ghostBallPosition.y),
+                                             0.0f);
+                float angle = Math.abs(shootingBallUnit.angle(temp));
+                if(angle < Math.PI/2) {
+                    shootingBallUnit.scale(-1f);
+                }               
+                
+                //Draw the path of the shooting ball.
+                start.set(ghostBallPosition);               
+                drawPoolPath(shootingBallUnit, start, numberOfAimLines, aimLineGeometry, 1);
+                Transform3D transform = new Transform3D();
+                transform.setTranslation(ghostBallPosition);
+                ghostBallTransformGroup.setTransform(transform);
+            }
+        }
+        
+        if(cueball.vel.distance(0.0, 0.0) == 0) {
+
             if (ghostBallObjectBall != null){
-                int gcx = ghostBallPosition.x + ballSize/2;
-                int gcy = ghostBallPosition.y + ballSize/2;
-                g.fillOval(ghostBallPosition.x, ghostBallPosition.y, ballSize, ballSize);
+                
+                /*
                 Point2D.Double last = new Point2D.Double(gcx, gcy);                                              
-                Point2D.Double unit = new Point2D.Double(ghostBallObjectBall.getcx() - gcx,
-                        ghostBallObjectBall.getcy() - gcy);
+                Point2D.Double unit = new Point2D.Double(ghostBallObjectBall.pos.y - gcx,
+                        ghostBallObjectBall.pos.y - gcy);
                 drawPoolPath(unit, last, g);
                 double temp = unit.y;
                 unit.y = unit.x;
@@ -415,135 +547,116 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 g.setColor(Color.MAGENTA);
                 g.drawString(Double.toString(unit.x), 300, 140);
                 g.drawString(Double.toString(unit.y), 300, 180);
-                last.setLocation(cueball.getcx()-ghostBallObjectBall.getcx(), cueball.getcy()-ghostBallObjectBall.getcy());
+                last.setLocation(cueball.pos.y-ghostBallObjectBall.pos.y, cueball.pos.y-ghostBallObjectBall.pos.y);
                 Point2D.Double trans = new Point2D.Double(1/(last.x + last.y*last.y/last.x),
                         1/(last.y + last.x*last.x/last.y));
                 temp = trans.y*gcx - trans.x*gcy;
                 double unitY = trans.y*unit.x - trans.x*unit.y;
-                double cueballY = trans.y*cueball.getcx() - trans.x*cueball.getcy();
+                double cueballY = trans.y*cueball.pos.y - trans.x*cueball.pos.y;
                 if((unitY < 0) != (temp-cueballY < 0)){
                     unit.x = -unit.x;
                     unit.y = -unit.y;
                 }
                 last.setLocation(gcx,gcy);
                 drawPoolPath(unit, last, g);
-            }
-            g.setColor(Color.BLACK);
-	    g.fillOval((int)(aimer.tracker.x - aimer.size/2),
-		       (int)(aimer.tracker.y - aimer.size/2), aimer.size, aimer.size);
-	}        
+                */
+            }                       
+	}
     }
     
-    public void drawPoolPath(Point2D.Double unit, Point2D.Double last, Graphics g) {
-        Point2D.Double next = new Point2D.Double();
-        double horizontal = 0, vertical = 0;
-        for(int i = 0; i < 6; i++) {
+    void drawPoolPath(Vector3f unit, Point3f last, int numLines, LineArray array, int offset) {
+        Point3d next = new Point3d();
+        double horizontal, vertical;
+        for(int i = offset; i < numLines; i++) {
             horizontal = Double.POSITIVE_INFINITY;
             vertical = Double.POSITIVE_INFINITY;
             
             if(unit.x != 0) {
-                horizontal = (borderSize + railSize - last.x)/unit.x;
+                horizontal = (width/2 - (railSize + ballSize) - last.x)/unit.x;
                 if(horizontal <= .00001) {
-                    horizontal = (width - (borderSize + railSize) - last.x)/unit.x;
+                    horizontal = ((railSize + ballSize) - width/2 - last.x)/unit.x;
                 }
             }
             if(unit.y != 0) {
-                vertical = (borderSize + railSize - last.y)/unit.y;
+                vertical = (height/2 - (railSize + ballSize) - last.y)/unit.y;
                 if(vertical <= .00001) {
-                    vertical = (height - (borderSize + railSize) - last.y)/unit.y;
+                    vertical = ((railSize + ballSize) - height/2 - last.y)/unit.y;
                 }
             }
             if(vertical < horizontal && vertical > 0) {
-                next.setLocation((last.x + unit.x*vertical), (last.y+unit.y*vertical));
-                g.drawLine((int)last.x, (int)last.y, (int)next.x, (int)(next.y));
+                next.set((last.x + unit.x*vertical), (last.y+unit.y*vertical), 0);                
                 unit.y = -unit.y;
             } else {
-                next.setLocation((last.x+unit.x*horizontal), (last.y+unit.y*horizontal));
-                g.drawLine((int)last.x, (int)last.y, (int)(next.x), (int)(next.y));
+                next.set((last.x+unit.x*horizontal), (last.y+unit.y*horizontal), 0);
                 unit.x = -unit.x;
             }
-            last.setLocation(next);
+            array.setCoordinate(2*i, last);
+            array.setCoordinate(2*i + 1, next);
+            last.set(next);
         }        
     }
     
-    //ERROR HANDLING
-    public boolean checkBounds(Ball b) {
-        if(b.sunk) {
-            return false;
-        }
-        if(b.pos.x < 0 || b.pos.y < 0 || b.pos.x > width - b.size || b.pos.y > height - b.size)
-            return true;
-        return false;
+    //ACTIONS
+    public void newRack() {        
+        cueball.pos.set(-width/4, 0, 0);
+        cueball.vel.setLocation(0,0);
+        cueball.move(0.0);
+        aim.x = -1.0;
+        aim.y = 0.0;
+        doAim();
+        this.cameraController.overheadView();
+        double x = width/8;
+        for(int i = 0; i < 5; i++) {
+            double y = -i*ballSize + .01;
+            for(int j = 0; j <= i; j++) {
+                if(j == 1 && i == 2) {
+
+                } else if((i+j)%2 == 0) {
+                    this.addBall(x, y, 0, 0, ballSize);
+                } else {
+                    this.addBall(x, y, 0, 0, ballSize);
+                }
+                y += 2*ballSize; 
+            }
+            x += 2*ballSize*Math.sqrt(3)/2+.01;
+        }                       
+    }
+     
+    public void shoot() {
+        shootingBall.vel.x = -aim.x * power;
+        shootingBall.vel.y = -aim.y * power;
+        shootingBall.acc.x = -aim.x * spin;
+        shootingBall.acc.y = -aim.y * spin;
+        ghostBallRA.setVisible(false);
+        aimLineRA.setVisible(false);
     }
     
-    public void checkOverlaps(Ball ball) {
-        Iterator<Ball> ballIterator = balls.iterator();
-        while(ballIterator.hasNext()) {
-            Ball ball2 = ballIterator.next();
-            if(ball2 != ball && ball.checkOverlap(ball2)) {
-               fixOverlap(ball, ball2);
-            }
-        }
-        Iterator<PoolPolygon> polyIterator = polygons.iterator();
-        while(polyIterator.hasNext()) {
-            PoolPolygon poly = polyIterator.next();
-            if(poly.checkOverlap(ball)) {
-                poly.color = poly.color.darker();
-                ball.color = ball.color.darker();
-                err = true;
-            }
-        }
+    public Ball addBall(double x, double y, double a, double b, double s) {
+        Texture texImage = new TextureLoader("1.jpg",this).getTexture();        
+        Appearance appearance = new Appearance();
+        appearance.setTexture(texImage);
+        Ball ball = new Ball(appearance, x, y, a, b, s);
+        universe.addBranchGraph(ball.group);        
+        balls.add(ball);
+        return ball;
     }
     
-    public void fixOverlap(Ball a, Ball b) {
-        a.color = Color.MAGENTA;
-        b.color = Color.MAGENTA;
-        err = true;
+    public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
+            Color c, double ballsize) {
+        PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, c, ballsize);
+        universe.addBranchGraph(poly.group);
+        polygons.add(poly);
+        return poly;
         
     }
     
     public void rewind() {
-        Iterator<Ball> iter;
-        iter = balls.iterator();
+       Iterator<Ball> iter = balls.iterator();
         while(iter.hasNext()) {
-            Ball ball = iter.next();
-            ball.pos.setLocation(ball.lastPos);
-            ball.vel.setLocation(ball.lastVel);
-            
-        }
-    }
-    
-    //ACTIONS
-    public void newRack() {
-        Color def, other;
-        int x = width*2/3;
-        def = Color.ORANGE.darker();
-        other = Color.CYAN.darker();
-        for(int i = 0; i < 5; i++) {
-            int y = height/2 - i*ballSize/2;
-            for(int j = 0; j <= i; j++) {
-                if(j == 1 && i == 2) {
-                    balls.add(new Ball(Color.BLACK, x, y, 0, 0, ballSize));
-                    def = Color.CYAN.darker();
-                    other = Color.ORANGE.darker();
-                } else if((i+j)%2 == 0) {
-                    balls.add(new Ball(def, x, y, 0, 0, ballSize));
-                } else {
-                    balls.add(new Ball(other, x, y, 0, 0, ballSize));
-                }
-                y += ballSize+1; 
-            }
-            x += 2 + ballSize*Math.sqrt(3)/2;
-        }
-        cueball.pos.setLocation(width/4, height/2);
-        cueball.vel.setLocation(0,0);
-    }
-    
-    public void shoot() {
-        shootingBall.vel.x = -aimer.aim.x * power;
-        shootingBall.vel.y = -aimer.aim.y * power;
-        shootingBall.acc.x = -aimer.aim.x * spin;
-        shootingBall.acc.y = -aimer.aim.y * spin;
+	    Ball ball = iter.next();
+            ball.pos.set(ball.lpos);
+            ball.vel.setLocation(ball.lvel);
+        }                
     }
 
     //COMPARATOR INTERFACE
@@ -558,8 +671,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         int hash = 5;
         hash = 13 * hash + (this.balls != null ? this.balls.hashCode() : 0);
         hash = 13 * hash + (this.pockets != null ? this.pockets.hashCode() : 0);
@@ -580,199 +692,141 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     //HIERARCHY BOUNDS INTERFACE
-    public void ancestorResized(HierarchyEvent he) {
-        height = getHeight();
-        width = getWidth();
-        
-        if(pockets != null) {
-	    pockets.get(0).pos.setLocation(borderSize , borderSize );
-	    pockets.get(1).pos.setLocation(width/2, borderSize );
-	    pockets.get(2).pos.setLocation(width - borderSize , borderSize );
-	    pockets.get(3).pos.setLocation(borderSize , height - borderSize );
-	    pockets.get(4).pos.setLocation(width/2, height - borderSize );
-	    pockets.get(5).pos.setLocation(width - borderSize, height - borderSize);
-        }
-        
-        if(polygons != null) {
-            polygons.get(0).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
-            polygons.get(0).xpoints[3] = width/2 - sidePocketSize/2;
-
-	    polygons.get(1).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(1).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
-	    polygons.get(1).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-	    polygons.get(1).xpoints[3] = width - pocketSize/2 - borderSize;
-
-	    polygons.get(2).xpoints[0] = width - borderSize;
-	    polygons.get(2).xpoints[1] = width - borderSize-railSize;
-	    polygons.get(2).xpoints[2] = width - borderSize-railSize;
-	    polygons.get(2).xpoints[3] = width - borderSize;
-	    polygons.get(2).ypoints[0] = borderSize + pocketSize/2;
-	    polygons.get(2).ypoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(2).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
-	    polygons.get(2).ypoints[3] = height - borderSize - pocketSize/2;
-
-	    polygons.get(3).xpoints[0] = width/2 + sidePocketSize/2;
-	    polygons.get(3).xpoints[1] = width/2 + sidePocketSize/2 + sideIndent;
-	    polygons.get(3).xpoints[2] = width - pocketSize/2 - railIndent - borderSize;
-	    polygons.get(3).xpoints[3] = width - pocketSize/2 - borderSize;
-	    polygons.get(3).ypoints[0] = height - borderSize;
-	    polygons.get(3).ypoints[1] = height - (borderSize + railSize);
-	    polygons.get(3).ypoints[2] = height - (borderSize + railSize);
-	    polygons.get(3).ypoints[3] = height - borderSize;
-	    
-	    
-	    polygons.get(4).xpoints[0] = borderSize + pocketSize/2;
-	    polygons.get(4).xpoints[1] = borderSize + pocketSize/2 + railIndent;
-	    polygons.get(4).xpoints[2] = width/2 - sidePocketSize/2 - sideIndent;
-	    polygons.get(4).xpoints[3] = width/2 - sidePocketSize/2;
-	    polygons.get(4).ypoints[0] = height - borderSize;
-	    polygons.get(4).ypoints[1] = height - (borderSize + railSize);
-	    polygons.get(4).ypoints[2] = height - (borderSize + railSize);
-	    polygons.get(4).ypoints[3] = height - borderSize;
-           
-            polygons.get(5).ypoints[2] = height - borderSize - railIndent - pocketSize/2;
-            polygons.get(5).ypoints[3] = height - borderSize - pocketSize/2;
-        }
+    public void ancestorResized(HierarchyEvent he) {        
+        canvas.setSize(getWidth(), getHeight()-40);
     }
     
     public void ancestorMoved(HierarchyEvent he) { }
     
-}
-
-class SelectionModeListener implements MouseMotionListener, MouseListener {
-    Ball ball;
-    Point click;
-
-    public SelectionModeListener() {
-        ball = null;
-	click = new Point(0,0);
-    }
-
-    public void mousePressed(MouseEvent evt) {
-	PoolPanel pp = (PoolPanel)evt.getSource();
-	click.setLocation(evt.getX(), evt.getY());
-	if(!pp.selMode) {
-	    return;
-	}
-        Iterator<Ball> iter;
-        iter = pp.balls.iterator();
-	while(iter.hasNext()) {
-            Ball aBall = iter.next();
-	    if(click.distance(aBall.getcx(), aBall.getcy()) < aBall.size) {
-		ball = aBall;
-		aBall.vel.x = 0;
-                aBall.vel.y = 0;
-	    }
-	}	
-    }
-
-    public void mouseReleased(MouseEvent evt) {
-	ball = null;
-    }
-
-    public void mouseDragged(MouseEvent evt){
-	if(ball != null) {
-	    ball.pos.x = evt.getX() - ball.size/2;
-	    ball.pos.y = evt.getY() - ball.size/2;
-	}
-    }
-
-    //Unused
-    public void mouseEntered(MouseEvent evt) { }
-    public void mouseExited(MouseEvent evt) { }
-    public void mouseClicked(MouseEvent evt) { }
-    public void mouseMoved(MouseEvent evt) { 
-        click.setLocation(evt.getX(), evt.getY());
-    }
-}
-
-class Aimer implements MouseMotionListener, MouseListener {
-    boolean dragging, shooting;
-    Ball cb;
-    int size;
-    Point.Double aim;
-    Point.Double tracker;
-    Point.Double click;
-    int vel;
-    int acc;
-    double distance;
-
-    Aimer(int s, int l, Ball ball) {
-	size = s;
-	cb = ball;
-	aim = new Point2D.Double(1,0);
-	tracker = new Point2D.Double(0,1);
-	click = new Point2D.Double(0,1);
-	dragging = false;
-	shooting = false;
-	vel = 0;
-	acc = 2;
-    }
-
-    public void doShoot(PoolPanel pp) {
-	if(!dragging && ! shooting) {
-	    tracker.setLocation(cb.getcx(), cb.getcy());
-	}
-	if(shooting) {
-	    vel += acc;
-	    if(distance > vel) {
-		distance -= vel;
-                tracker.x = cb.getcx() + aim.x*distance;
-		tracker.y = cb.getcy() + aim.y*distance;   
-	    } else {
-                /*
-                 *shooting = false;
-                 *cb.vel.x = -aim.x*vel;
-                 *cb.vel.y = -aim.y*vel;
-                 *vel = 0;
-                 */
-                shooting = false;
-                vel = 0;        
-                pp.shoot();
-            }
-	}
+    //ERROR HANDLING
+    public boolean checkBounds(Ball b) {
+        return false;
     }
     
-    public void mousePressed(MouseEvent evt) {
-	click.setLocation(evt.getX(), evt.getY());
-	PoolPanel a = (PoolPanel)evt.getSource();
-	if(click.distance(tracker) < size && !shooting) {
-	    dragging = true;
-	}
-    }
-
-    public void mouseReleased(MouseEvent evt) {
-        PoolPanel a = (PoolPanel)evt.getSource();
-        if(a.sliderPower) {
-            if(dragging) {
-                dragging = false;
+    public void checkOverlaps(Ball ball) {
+        Iterator<Ball> ballIterator = balls.iterator();
+        while(ballIterator.hasNext()) {
+            Ball ball2 = ballIterator.next();
+            if(ball2 != ball && ball.checkOverlap(ball2)) {
+               fixOverlap(ball, ball2);
             }
         }
-	if(dragging) {
-	    dragging = false;
-	    if(distance > 20) {
-		shooting = true;
-	    }
-	}
-    }
+        Iterator<PoolPolygon> polyIterator = polygons.iterator();
+        while(polyIterator.hasNext()) {
+            PoolPolygon poly = polyIterator.next();
+            if(poly.checkOverlap(ball)) {
 
-    public void mouseMoved(MouseEvent evt) {
-	click.setLocation(evt.getX(), evt.getY());
-	PoolPanel a = (PoolPanel)evt.getSource();
-    }
-
-    public void mouseDragged(MouseEvent evt){
-	PoolPanel a = (PoolPanel)evt.getSource();
-	if (dragging){
-	    tracker.setLocation(evt.getX(), evt.getY());
-	    distance = tracker.distance(cb.getcx(), cb.getcy());
-	    aim.x = (tracker.x - cb.getcx())/distance;
-	    aim.y = (tracker.y - cb.getcy())/distance;
-	}
+                err = true;
+            }
+        }
     }
     
-    //Unused
-    public void mouseEntered(MouseEvent evt) { }
-    public void mouseExited(MouseEvent evt) { }
-    public void mouseClicked(MouseEvent evt) { }
+    public void fixOverlap(Ball a, Ball b) {
+        a.color = Color.MAGENTA;
+        b.color = Color.MAGENTA;
+        err = true;
+        
+    }
+    
+}
+
+class PoolCameraController extends CameraController {
+    PoolPanel pp;
+    
+    public PoolCameraController(PoolPanel p) {
+        super(p.universe, p.canvas);
+        pp = p;
+    }
+    
+    public void snapToShootingBall() {
+        cameraTrans.set(pp.shootingBall.pos);
+        cameraTranslation.set(cameraTrans);
+        cameraPosition.set(pp.aim);
+        double angle = .1;
+        Vector3f aimPerp = new Vector3f();
+        aimPerp.x = (float) pp.aim.y;
+        aimPerp.y = (float) -pp.aim.x;
+        aimPerp.z = (float) pp.aim.z;
+        
+        aimPerp.scale((float)Math.sin(angle/2));
+        
+        rotation.set(aimPerp.x,
+                     aimPerp.y,
+                     aimPerp.z, 
+                     (float)Math.cos(angle/2));
+        inverse.inverse(rotation);
+        //Rotate the upVector.
+        vector.set(cameraPosition.x,
+                cameraPosition.y,
+                cameraPosition.z,
+                0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);
+        
+        cameraPosition.x = vector.x;
+        cameraPosition.y = vector.y;
+        cameraPosition.z = vector.z;        
+                
+        cameraPosition.normalize();
+        cameraPos.set(cameraPosition);
+        upVector.set(0.0f, 0.0f, 1.0f);
+        upVec.set(upVector);    
+        updateCamera();
+    }
+    
+    public void overheadView() {
+        cameraPos.set(0.0, 0.0, 1.0);
+        upVec.set(0.0, 1.0, 0.0);
+        cameraTrans.set(0.0, 0.0, 0.0f);
+        camDistance = 34f;
+        updateCamera();
+        mouseReleased(null);
+    }    
+}
+
+class ChangeBasis extends Matrix3f {
+    
+    public ChangeBasis(Tuple3f a, Tuple3f b, Tuple3f c,
+		       Tuple3f x, Tuple3f y, Tuple3f z) {
+        m00 = -(a.x*(z.z*y.y - y.z*z.y) + a.y*(y.z*z.x - z.z*y.x) + a.z*(z.y*y.x - y.y*z.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        m10 = -(a.x*(x.z*z.y - z.z*x.y) + a.y*(z.z*x.x - x.z*z.x) + a.z*(x.y*z.x - z.y*x.x))/
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+        m20 = -(a.x*(y.z*x.y - x.z*y.y) + a.y*(x.z*y.x - y.z*x.x) + a.z*(y.y*x.x  - x.y*y.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
+        m01 = -(b.x*(z.z*y.y - y.z*z.y) + b.y*(y.z*z.x - z.z*y.x) + b.z*(z.y*y.x - y.y*z.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        m11 = -(b.x*(x.z*z.y - z.z*x.y) + b.y*(z.z*x.x - x.z*z.x) + b.z*(x.y*z.x - z.y*x.x))/
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+        m21 = -(b.x*(y.z*x.y - x.z*y.y) + b.y*(x.z*y.x - y.z*x.x) + b.z*(y.y*x.x  - x.y*y.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
+        m02 = -(c.x*(z.z*y.y - y.z*z.y) + c.y*(y.z*z.x - z.z*y.x) + c.z*(z.y*y.x - y.y*z.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        m12 = -(c.x*(x.z*z.y - z.z*x.y) + c.y*(z.z*x.x - x.z*z.x) + c.z*(x.y*z.x - z.y*x.x))/
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+        m22 = -(c.x*(y.z*x.y - x.z*y.y) + c.y*(x.z*y.x - y.z*x.x) + c.z*(y.y*x.x  - x.y*y.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));         
+    }
+    
+    public ChangeBasis(Tuple3f x, Tuple3f y, Tuple3f z) {
+        m00 = -((z.z*y.y - y.z*z.y))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        m10 = -((x.z*z.y - z.z*x.y))/
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+        m20 = -((y.z*x.y - x.z*y.y))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
+        m01 = -((y.z*z.x - z.z*y.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        m11 = -((z.z*x.x - x.z*z.x))/
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+        m21 = -((x.z*y.x - y.z*x.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
+        m02 = -((z.y*y.x - y.y*z.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        m12 = -((x.y*z.x - z.y*x.x))/
+	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
+        m22 = -((y.y*x.x  - x.y*y.x))/
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+    }
+    
 }

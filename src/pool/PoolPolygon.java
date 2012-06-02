@@ -1,29 +1,69 @@
 package pool;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.geom.Point2D;
 import java.util.PriorityQueue;
+import javax.media.j3d.*;
+import javax.vecmath.Color3f;
+import javax.vecmath.Point3d;
 
-public class PoolPolygon extends Polygon {
+public class PoolPolygon extends Polygon2D {
     Color color;
+    QuadArray vertices;
+    BranchGroup group;
     
-    public PoolPolygon(int[] xpoints, int[] ypoints, int npoints, Color c) {
+    
+    public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, Color c, double ballsize) {
         super(xpoints, ypoints, npoints);
         color = c;
+        
+        vertices = new QuadArray ((npoints+2)*4, QuadArray.COORDINATES);
+        int j = 0;
+        double height = ballsize;
+        for(int i = 0; i < npoints - 1; i++) {
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], height));
+            vertices.setCoordinate (j++, new Point3d (xpoints[i], ypoints[i], -ballsize));
+            vertices.setCoordinate (j++, new Point3d(xpoints[i+1], ypoints[i+1], -ballsize));
+            vertices.setCoordinate (j++, new Point3d (xpoints[i+1], ypoints[i+1], height));
+        }
+        
+        for(int i = 0; i < npoints; i++) {
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], height));
+        }
+        
+        for(int i = npoints-1; i >= 0; i--) {
+            vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i], -ballsize));
+        }
+        
+        vertices.setCoordinate (j++, new Point3d(xpoints[0], ypoints[0], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[npoints-1], ypoints[npoints-1], height));
+        vertices.setCoordinate (j++, new Point3d(xpoints[npoints-1], ypoints[npoints-1], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[0], ypoints[0], -ballsize));
+        
+        
+        
+        /*int i = 0;
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
+        vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));*/
+        
+        
+
+    	group = new BranchGroup();
+        Appearance appearance = new Appearance();
+        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, .5f, 0.5f), ColoringAttributes.SHADE_FLAT);
+        appearance.setColoringAttributes(ca);
+        group.addChild(new Shape3D(vertices, appearance));
     }
     
-    public void draw(Graphics g) {
-        g.setColor(color);
-        g.fillPolygon(this);
-    }
+    
     
     public boolean checkOverlap(Ball ball) {
         Point2D.Double a = new Point.Double(xpoints[npoints-1], ypoints[npoints-1]);        
         Point2D.Double b = new Point.Double(xpoints[0], ypoints[0]);        
-        Point2D.Double center = new Point2D.Double(ball.getcx(), ball.getcy());
+        Point2D.Double center = new Point2D.Double(ball.pos.x, ball.pos.y);
         double min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
@@ -32,7 +72,7 @@ public class PoolPolygon extends Polygon {
                 min = temp;
             a.setLocation(b);
         }
-        if(min < ball.size/2){
+        if(min <= ball.size){
             return true;
         }
         return false;
@@ -44,8 +84,8 @@ public class PoolPolygon extends Polygon {
         boolean minIsPoint = false;
         Point2D.Double minVel = new Point2D.Double(0,0);
         Point2D.Double newVel = new Point2D.Double(0,0);
-        Point a = new Point(xpoints[npoints-1], ypoints[npoints-1]);
-        Point b = new Point(xpoints[0],ypoints[0]);
+        Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
+        Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
@@ -66,8 +106,7 @@ public class PoolPolygon extends Polygon {
         }
         if(min + timePassed < 1) {
             if(minIsPoint) {
-                Point p = new Point((int)minVel.x, (int)minVel.y);
-                collisions.add(new PointCollision(min + timePassed, p, ball));              
+                collisions.add(new PointCollision(min + timePassed, minVel, ball));              
             } else {
                 collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
             }
@@ -80,8 +119,8 @@ public class PoolPolygon extends Polygon {
         int minWall = -1;
         Point2D.Double minVel = new Point2D.Double(0,0);
         Point2D.Double newVel = new Point2D.Double(0,0);
-        Point a = new Point(xpoints[npoints-1], ypoints[npoints-1]);
-        Point b = new Point(xpoints[0],ypoints[0]);
+        Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
+        Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
@@ -104,8 +143,7 @@ public class PoolPolygon extends Polygon {
         }
         if(min + timePassed < 1) {
             if(minIsPoint) {
-                Point p = new Point((int)minVel.x, (int)minVel.y);
-                collisions.add(new PointCollision(min + timePassed, p, ball));              
+                collisions.add(new PointCollision(min + timePassed, minVel, ball));              
             } else {
                 collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
             }
@@ -114,7 +152,7 @@ public class PoolPolygon extends Polygon {
     
     
     
-    public static double detectWallCollision(Point a, Point b, Ball ball, Point2D.Double res) {
+    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, Ball ball, Point2D.Double res) {
 	Point2D.Double unit, trans, aInNewBasis, bInNewBasis, velInNewBasis, posInNewBasis;
 	double dist = a.distance(b);
 	unit          = new Point2D.Double((a.x-b.x)/dist,
@@ -123,8 +161,8 @@ public class PoolPolygon extends Polygon {
 					   1/(unit.y + unit.x*unit.x/unit.y));
 	velInNewBasis = new Point2D.Double(trans.x*ball.vel.x + trans.y*ball.vel.y,
 					   trans.y*ball.vel.x - trans.x*ball.vel.y);
-	posInNewBasis = new Point2D.Double(trans.x*ball.getcx() + trans.y*ball.getcy(),
-					   trans.y*ball.getcx() - trans.x*ball.getcy());
+	posInNewBasis = new Point2D.Double(trans.x*ball.pos.x + trans.y*ball.pos.y,
+					   trans.y*ball.pos.x - trans.x*ball.pos.y);
 	aInNewBasis   = new Point2D.Double(trans.x*a.x + trans.y*a.y,
 					   trans.y*a.x - trans.x*a.y);
 	bInNewBasis   = new Point2D.Double(trans.x*b.x + trans.y*b.y,
@@ -132,9 +170,9 @@ public class PoolPolygon extends Polygon {
 	double t;
 	if (velInNewBasis.y != 0) {
             if(aInNewBasis.y > posInNewBasis.y){
-                t = (aInNewBasis.y-(ball.size/2)-posInNewBasis.y)/velInNewBasis.y;
+                t = (aInNewBasis.y-(ball.size)-posInNewBasis.y)/velInNewBasis.y;
             } else {
-                t = (aInNewBasis.y+(ball.size/2)-posInNewBasis.y)/velInNewBasis.y;
+                t = (aInNewBasis.y+(ball.size)-posInNewBasis.y)/velInNewBasis.y;
             }
 	} else {
 	    return Double.POSITIVE_INFINITY;
