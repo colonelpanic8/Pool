@@ -3,9 +3,7 @@ package pool;
 import cameracontrol.CameraController;
 import cameracontrol.ChangeBasis;
 import com.sun.j3d.utils.geometry.Sphere;
-import com.sun.j3d.utils.geometry.Text2D;
 import com.sun.j3d.utils.image.TextureLoader;
-import com.sun.j3d.utils.universe.PlatformGeometry;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -119,6 +117,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration());
         add("Center", canvas);
         universe = new SimpleUniverse(canvas);
+        universe.getViewer().getView().setBackClipDistance(width*3);
         group = new BranchGroup();
         
         //Create the bounding box for the game.
