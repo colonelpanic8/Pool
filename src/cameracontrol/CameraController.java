@@ -1,4 +1,4 @@
-package pool;
+package cameracontrol;
 
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Canvas;
@@ -7,23 +7,23 @@ import java.awt.event.*;
 import javax.media.j3d.Transform3D;
 import javax.vecmath.*;
 
-class CameraController implements MouseMotionListener, MouseListener, KeyListener {
+public class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
     SimpleUniverse universe;
     Canvas canvas;
     Point click = new Point(0,0);
     Transform3D transform = new Transform3D();
-    Vector3f cameraPosition = new Vector3f(0f, 0f, 1f);
-    Vector3f upVector = new Vector3f(0f, 1f, 0f);
-    Point3f cameraTranslation = new Point3f();
-    Vector3d upVec = new Vector3d(upVector);
-    Point3d cameraPos = new Point3d(cameraPosition);
-    Point3d cameraTrans = new Point3d();
-    Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
-    float cameraDistance = 40f;
-    float camDistance = cameraDistance;
-    ChangeBasis changeBasis;
-    boolean updateCameraPos;
+    protected Vector3f cameraPosition = new Vector3f(0f, 0f, 1f);
+    protected Vector3f upVector = new Vector3f(0f, 1f, 0f);
+    protected Point3f cameraTranslation = new Point3f();
+    protected Vector3d upVec = new Vector3d(upVector);
+    protected Point3d cameraPos = new Point3d(cameraPosition);
+    protected Point3d cameraTrans = new Point3d();
+    protected Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
+    protected float cameraDistance = 40f;
+    protected float camDistance = cameraDistance;
+    protected ChangeBasis changeBasis;
+    protected boolean updateCameraPos;
     
     //User configuration
     int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;

@@ -70,7 +70,7 @@ public class Pocket {
         group.addChild(transformGroup);
     }
     
-    public double detectCollisionWith(Ball ball) {
+    public double detectCollisionWith(PoolBall ball) {
         Point2D.Double times = ball.detectCollisionWith(pos, (size - ball.size));
         if(times.x >= 0) {
             Vector3f vector = 
@@ -93,5 +93,13 @@ public class Pocket {
                 return times.y;    
         }
         return Double.NaN;
-    }    
+    }
+    
+    public boolean ballIsOver(PoolBall ball) {
+        if(pos.distance(ball.pos.x, ball.pos.y) < size) {
+            return true;
+        }
+        return false;
+    }
+        
 }

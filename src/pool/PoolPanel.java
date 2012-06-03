@@ -20,14 +20,15 @@ import javax.vecmath.*;
 import unbboolean.j3dbool.BooleanModeller;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
+import cameracontrol.CameraController;
 
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
     boolean selMode, sliderPower;
-    Ball cueball, shootingBall, ghostBallObjectBall;
-    ArrayList<Ball> balls;
+    PoolBall cueball, shootingBall, ghostBallObjectBall;
+    ArrayList<PoolBall> balls;
     ArrayList<Pocket> pockets;
     ArrayList<PoolPolygon> polygons;
     PriorityQueue<Collision> collisions;
@@ -387,7 +388,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public void actionPerformed(ActionEvent evt){
         //this.repaint();
         doAim();
-	Iterator<Ball> iter;
+	Iterator<PoolBall> iter;
 	iter = balls.iterator();
         validate();
         if(err) {
@@ -398,7 +399,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             err = false;
         }
 	while(iter.hasNext()) {
-	    Ball ball = iter.next();
+	    PoolBall ball = iter.next();
             
             //For error handling           
             ball.lpos.set(ball.pos);
@@ -418,14 +419,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     void updateBallPositions(){
-	Iterator<Ball> ballIterator;
+	Iterator<PoolBall> ballIterator;
 	Collision collision = collisions.poll();
 	double timePassed = 0;
         while(collision != null) {
 	    //Advance balls to the point where the collision occurs.
             ballIterator = balls.iterator();
 	    while(ballIterator.hasNext()) {
-		Ball ball = ballIterator.next();
+		PoolBall ball = ballIterator.next();
 		ball.move(collision.time-timePassed);
                 
             }
@@ -437,7 +438,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
         ballIterator = balls.iterator();
 	while(ballIterator.hasNext()) {
-	    Ball ball = ballIterator.next();
+	    PoolBall ball = ballIterator.next();
 	    ball.move(1-timePassed);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
@@ -461,18 +462,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ballIterator = balls.iterator();
         
         while(ballIterator.hasNext()) {
-            Ball ball = ballIterator.next();
+            PoolBall ball = ballIterator.next();
             checkOverlaps(ball);
         }
     }
     
     void updateGhostBall() {
-	Iterator<Ball> iter;
+	Iterator<PoolBall> iter;
         double min = Double.POSITIVE_INFINITY;
 	iter = balls.iterator();
 	ghostBallObjectBall = null;
 	while(iter.hasNext()) {
-	    Ball ball = iter.next();
+	    PoolBall ball = iter.next();
 	    if(ball != shootingBall){
                 double t;
 		double a = aim.x*aim.x + aim.y*aim.y;
@@ -505,7 +506,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     //COLLISION DETECTION
-    void detectPolygonCollisions(Ball ball, double t) {
+    void detectPolygonCollisions(PoolBall ball, double t) {
         Iterator<PoolPolygon> iter = polygons.iterator();
         while(iter.hasNext()) {
             PoolPolygon p = iter.next();
@@ -514,7 +515,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     //This version ignores the wall of the collision
-    void detectPolygonCollisions(Ball ball, double t, WallCollision collision) {
+    void detectPolygonCollisions(PoolBall ball, double t, WallCollision collision) {
         Iterator<PoolPolygon> iter = polygons.iterator();
         while(iter.hasNext()) {
             PoolPolygon p = iter.next();
@@ -526,7 +527,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
-    void detectPocketCollisions(Ball ball, double timePassed) {
+    void detectPocketCollisions(PoolBall ball, double timePassed) {
 	double time;
 	Iterator<Pocket> pocketItr;
 	pocketItr = pockets.iterator();
@@ -711,11 +712,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         aimLineRA.setVisible(false);
     }
     
-    public Ball addBall(double x, double y, double a, double b, double s) {
+    public PoolBall addBall(double x, double y, double a, double b, double s) {
         Texture texImage = new TextureLoader("1.jpg",this).getTexture();        
         Appearance appearance = new Appearance();
         appearance.setTexture(texImage);
-        Ball ball = new Ball(appearance, x, y, a, b, s);
+        PoolBall ball = new PoolBall(appearance, x, y, a, b, s);
         universe.addBranchGraph(ball.group);        
         balls.add(ball);
         return ball;
@@ -731,9 +732,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void rewind() {
-       Iterator<Ball> iter = balls.iterator();
+       Iterator<PoolBall> iter = balls.iterator();
         while(iter.hasNext()) {
-	    Ball ball = iter.next();
+	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
             ball.vel.setLocation(ball.lvel);
         }                
@@ -779,14 +780,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public void ancestorMoved(HierarchyEvent he) { }
     
     //ERROR HANDLING
-    public boolean checkBounds(Ball b) {
+    public boolean checkBounds(PoolBall b) {
         return false;
     }
     
-    public void checkOverlaps(Ball ball) {
-        Iterator<Ball> ballIterator = balls.iterator();
+    public void checkOverlaps(PoolBall ball) {
+        Iterator<PoolBall> ballIterator = balls.iterator();
         while(ballIterator.hasNext()) {
-            Ball ball2 = ballIterator.next();
+            PoolBall ball2 = ballIterator.next();
             if(ball2 != ball && ball.checkOverlap(ball2)) {
                fixOverlap(ball, ball2);
             }
@@ -801,7 +802,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
-    public void fixOverlap(Ball a, Ball b) {
+    public void fixOverlap(PoolBall a, PoolBall b) {
         a.color = Color.MAGENTA;
         b.color = Color.MAGENTA;
         err = true;
@@ -861,51 +862,4 @@ class PoolCameraController extends CameraController {
         updateCamera();
         mouseReleased(null);
     }    
-}
-
-class ChangeBasis extends Matrix3f {
-    
-    public ChangeBasis(Tuple3f a, Tuple3f b, Tuple3f c,
-		       Tuple3f x, Tuple3f y, Tuple3f z) {
-        m00 = -(a.x*(z.z*y.y - y.z*z.y) + a.y*(y.z*z.x - z.z*y.x) + a.z*(z.y*y.x - y.y*z.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-        m10 = -(a.x*(x.z*z.y - z.z*x.y) + a.y*(z.z*x.x - x.z*z.x) + a.z*(x.y*z.x - z.y*x.x))/
-	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
-        m20 = -(a.x*(y.z*x.y - x.z*y.y) + a.y*(x.z*y.x - y.z*x.x) + a.z*(y.y*x.x  - x.y*y.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
-        m01 = -(b.x*(z.z*y.y - y.z*z.y) + b.y*(y.z*z.x - z.z*y.x) + b.z*(z.y*y.x - y.y*z.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-        m11 = -(b.x*(x.z*z.y - z.z*x.y) + b.y*(z.z*x.x - x.z*z.x) + b.z*(x.y*z.x - z.y*x.x))/
-	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
-        m21 = -(b.x*(y.z*x.y - x.z*y.y) + b.y*(x.z*y.x - y.z*x.x) + b.z*(y.y*x.x  - x.y*y.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
-        m02 = -(c.x*(z.z*y.y - y.z*z.y) + c.y*(y.z*z.x - z.z*y.x) + c.z*(z.y*y.x - y.y*z.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-        m12 = -(c.x*(x.z*z.y - z.z*x.y) + c.y*(z.z*x.x - x.z*z.x) + c.z*(x.y*z.x - z.y*x.x))/
-	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
-        m22 = -(c.x*(y.z*x.y - x.z*y.y) + c.y*(x.z*y.x - y.z*x.x) + c.z*(y.y*x.x  - x.y*y.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));         
-    }
-    
-    public ChangeBasis(Tuple3f x, Tuple3f y, Tuple3f z) {
-        m00 = -((z.z*y.y - y.z*z.y))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-        m10 = -((x.z*z.y - z.z*x.y))/
-	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
-        m20 = -((y.z*x.y - x.z*y.y))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));       
-        m01 = -((y.z*z.x - z.z*y.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-        m11 = -((z.z*x.x - x.z*z.x))/
-	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
-        m21 = -((x.z*y.x - y.z*x.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));        
-        m02 = -((z.y*y.x - y.y*z.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-        m12 = -((x.y*z.x - z.y*x.x))/
-	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
-        m22 = -((y.y*x.x  - x.y*y.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
-    }
-    
 }

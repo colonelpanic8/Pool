@@ -1,5 +1,6 @@
 package pool;
 
+import Polygon2D.Polygon2D;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.geom.Point2D;
@@ -60,7 +61,7 @@ public class PoolPolygon extends Polygon2D {
     
     
     
-    public boolean checkOverlap(Ball ball) {
+    public boolean checkOverlap(PoolBall ball) {
         Point2D.Double a = new Point.Double(xpoints[npoints-1], ypoints[npoints-1]);        
         Point2D.Double b = new Point.Double(xpoints[0], ypoints[0]);        
         Point2D.Double center = new Point2D.Double(ball.pos.x, ball.pos.y);
@@ -78,7 +79,7 @@ public class PoolPolygon extends Polygon2D {
         return false;
     }
     
-    public void detectCollisions(Ball ball, PriorityQueue<Collision> collisions, double timePassed) {
+    public void detectCollisions(PoolBall ball, PriorityQueue<Collision> collisions, double timePassed) {
         double min, t;
         int minWall = -1;
         boolean minIsPoint = false;
@@ -113,7 +114,7 @@ public class PoolPolygon extends Polygon2D {
         }    
     }
     
-    public void detectCollisionsWithoutWall(Ball ball, PriorityQueue<Collision> collisions, double timePassed, int wall) {
+    public void detectCollisionsWithoutWall(PoolBall ball, PriorityQueue<Collision> collisions, double timePassed, int wall) {
         double min, t;
         boolean minIsPoint = false;
         int minWall = -1;
@@ -152,7 +153,7 @@ public class PoolPolygon extends Polygon2D {
     
     
     
-    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, Ball ball, Point2D.Double res) {
+    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Point2D.Double res) {
 	Point2D.Double unit, trans, aInNewBasis, bInNewBasis, velInNewBasis, posInNewBasis;
 	double dist = a.distance(b);
 	unit          = new Point2D.Double((a.x-b.x)/dist,

@@ -1,18 +1,17 @@
 package pool;
 
-import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
 
 public abstract class Collision {
     double time;
-    Ball ball1;
+    PoolBall ball1;
 
     public abstract void doEffects(PoolPanel pp);
 
     public void doCollision(PoolPanel pp) {
 	Iterator<Collision> collIterator = pp.collisions.iterator();
-	Iterator<Ball> ballIterator;
+	Iterator<PoolBall> ballIterator;
 	while(collIterator.hasNext()) {
 	    Collision item = collIterator.next();
 	    if(item.involves(ball1)) {
@@ -23,7 +22,7 @@ public abstract class Collision {
 	ballIterator = pp.balls.iterator();
         
 	while(ballIterator.hasNext()) {
-	    Ball ball = ballIterator.next();
+	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1) {
 		double t = ball1.detectCollisionWith(ball);
 		t += time;
@@ -36,26 +35,26 @@ public abstract class Collision {
 	pp.detectPocketCollisions(ball1, time);
     }
         
-    public boolean involves(Ball b) {
+    public boolean involves(PoolBall b) {
         return ball1 == b;
     }
     
-    public void detectPolygonCollisions(PoolPanel pp, Ball x) {
+    public void detectPolygonCollisions(PoolPanel pp, PoolBall x) {
         pp.detectPolygonCollisions(x, time);
     }
 }
 
 class BallCollision extends Collision {
-    Ball ball2;
+    PoolBall ball2;
 
-    public BallCollision(double t, Ball b, Ball c){
+    public BallCollision(double t, PoolBall b, PoolBall c){
 	time = t;
 	ball1 = b;
         ball2 = c;
     }
 
     @Override public void doCollision(PoolPanel pp) {
-	Iterator<Ball> ballIterator;
+	Iterator<PoolBall> ballIterator;
         Iterator<Collision> collIterator = pp.collisions.iterator();
         
         //Remove collisions involiving the balls
@@ -79,7 +78,7 @@ class BallCollision extends Collision {
         //Check for new collisions involving the balls
 	ballIterator = pp.balls.iterator();
 	while(ballIterator.hasNext()) {
-	    Ball ball = ballIterator.next();
+	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2) {
 		double t = ball1.detectCollisionWith(ball);
 		t += time;
@@ -91,7 +90,7 @@ class BallCollision extends Collision {
         
         ballIterator = pp.balls.iterator();
 	while(ballIterator.hasNext()) {
-	    Ball ball = ballIterator.next();
+	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2){
 		double t = ball2.detectCollisionWith(ball);
 		t += time;
@@ -134,7 +133,7 @@ class BallCollision extends Collision {
 	ball2.vel.y = vp1 * yp + vo2 * xp;
     }
     
-    @Override public boolean involves(Ball b) {
+    @Override public boolean involves(PoolBall b) {
         return (b == ball1 || b == ball2);
     }
 }
@@ -143,7 +142,7 @@ class WallCollision extends Collision {
     Point2D.Double newVel;
     PoolPolygon poly;
     int wall;
-    public WallCollision(double t, Ball b, Point2D.Double v, PoolPolygon p, int w) {
+    public WallCollision(double t, PoolBall b, Point2D.Double v, PoolPolygon p, int w) {
 	time = t;
 	ball1 = b;
         newVel = v;
@@ -155,7 +154,7 @@ class WallCollision extends Collision {
         ball1.vel = newVel;
     }
     
-    @Override public void detectPolygonCollisions(PoolPanel pp, Ball x) {
+    @Override public void detectPolygonCollisions(PoolPanel pp, PoolBall x) {
         pp.detectPolygonCollisions(x, time, this);
     }
 }
@@ -163,7 +162,7 @@ class WallCollision extends Collision {
 class PointCollision extends Collision {
     Point2D.Double point;
     
-    public PointCollision(double t, Point2D.Double p, Ball b) {
+    public PointCollision(double t, Point2D.Double p, PoolBall b) {
 	time = t;
 	ball1 = b;
 	point = p;
@@ -188,7 +187,7 @@ class PointCollision extends Collision {
 }
 
 class PocketCollision extends Collision {
-    public PocketCollision(Ball b, double t) {
+    public PocketCollision(PoolBall b, double t) {
 	ball1 = b;
 	time = t;
     }
@@ -205,8 +204,7 @@ class PocketCollision extends Collision {
     }
     
     @Override public void doEffects(PoolPanel pp) {
-	ball1.vel.x = 0;
-	ball1.vel.y = 0;
-	ball1.sunk = true;
+        ball1.vel.x = 0;
+	ball1.vel.y = 0;	
     }
 }
