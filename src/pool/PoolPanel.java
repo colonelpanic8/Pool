@@ -37,7 +37,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     PriorityQueue<PoolCollision> collisions;
     double height, width;
     double spin, power;
-    double spinS = 2.0, powerS = 2.0;
+    double spinS = .01, powerS = 2.0;
     int collisionsExecuted = 0;
     int numberOfAimLines = 3;
     private static final float gravity = .005f;
@@ -850,11 +850,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController {
     PoolPanel pp;
-    boolean doingDragAim = true;
+    boolean doingDragAim = false;
     Sphere aimSphere = new Sphere(.25f);
     TransformGroup transformGroup = new TransformGroup();
     BranchGroup aimSphereGroup = new BranchGroup();
-    Text2D text;
     
     
     public PoolCameraController(PoolPanel p) {
@@ -864,27 +863,10 @@ class PoolCameraController extends CameraController {
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         aimSphereGroup.addChild(transformGroup);
         universe.addBranchGraph(aimSphereGroup);
-        
-        PlatformGeometry pg = new PlatformGeometry();
-        
-        TransformGroup objScale = new TransformGroup();
-        Transform3D t3d = new Transform3D();
-        t3d.setTranslation(new Vector3f(0f, 0f, -1f));
-        objScale.setTransform(t3d);
-        
-        text = new Text2D("Text to display", pp.turqoise, "Verdana", 12, 1);
-        text.setCapability(Text2D.ALLOW_APPEARANCE_WRITE);
-        text.setCapability(Text2D.ALLOW_APPEARANCE_READ);
-        text.getAppearance().setCapability(Appearance.ALLOW_TEXTURE_READ);
-        text.getAppearance().setCapability(Appearance.ALLOW_TEXTURE_WRITE);
-        
-        objScale.addChild(text);
-        pg.addChild(objScale);
-
-        universe.getViewingPlatform().setPlatformGeometry(pg);
     }
     
     @Override public void mouseDragged(MouseEvent me) {
+        
         if(doingDragAim) {
             //Calculate the constants
             float x,y;
@@ -897,7 +879,6 @@ class PoolCameraController extends CameraController {
             y = (float) Math.sin(y);
             float _z = 1 - x * x - y * y;
             float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
-            text.setString(String.format("%f0.3, %f0.3, %f0.3", x, y, z));
             Vector3f lookDirection = new Vector3f(cameraPosition);
             lookDirection.scale(-1f);
             Vector3f cross = new Vector3f();            
@@ -933,16 +914,18 @@ class PoolCameraController extends CameraController {
     }
     
     @Override public void mousePressed(MouseEvent me) {
+        if(me.getButton() != MouseEvent.BUTTON1) {
+            doingDragAim = true;
+        }
         super.mousePressed(me);
     }
     
     @Override public void mouseReleased(MouseEvent me) {
         if(doingDragAim) {
             
-            //doingDragAim = false;
-        } else {
-            super.mouseReleased(me);
+            doingDragAim = false;
         }
+        super.mouseReleased(me);
     }
     
     public void snapToShootingBall() {
