@@ -907,6 +907,11 @@ class PoolCameraController extends CameraController {
             transform = new Transform3D();
             transform.setTranslation(actualPos);
             transformGroup.setTransform(transform);
+            actualPos.scale(-1f);
+            actualPos.add(new Vector3f(pp.shootingBall.pos));
+            actualPos.normalize();
+            actualPos.scale(-1f);
+            pp.setAim(actualPos.x, actualPos.y);
             
         } else {
             super.mouseDragged(me);
