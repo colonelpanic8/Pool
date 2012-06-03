@@ -1,4 +1,4 @@
-package Polygon2D;
+package misc;
 
 import java.awt.Point;
 import java.awt.Rectangle;
