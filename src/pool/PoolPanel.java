@@ -18,7 +18,6 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.vecmath.*;
 import unbboolean.j3dbool.BooleanModeller;
-import unbboolean.j3dbool.Object3D;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
 

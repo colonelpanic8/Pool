@@ -118,20 +118,19 @@ public class Ball {
 	return t;
     }
 
-    public double detectCollisionWith(Point2D.Double p, double distance) {
-	double a,b,c,t;
+    public Point2D.Double detectCollisionWith(Point2D.Double p, double distance) {
+	double a,b,c;
 	a = vel.y*vel.y + vel.x*vel.x;
 	b = 2*(vel.y*(pos.y-p.y) + vel.x*(pos.x - p.x));
 	c = p.x*p.x + p.y*p.y - 2*p.x*pos.x - 2*p.y*pos.y
 	    + pos.y*pos.y + pos.x*pos.x - distance*distance;
 	if (a !=0 ){
-	    double t1 = ( -b - Math.sqrt(b*b-4*a*c) )/(2 * a);
-	    double t2 = ( -b + Math.sqrt(b*b-4*a*c) )/(2 * a);
-	    t = t1 < t2 ? t1 : t2;
+	    return new Point2D.Double((-b - Math.sqrt(b*b-4*a*c) )/(2 * a),
+                                      (-b + Math.sqrt(b*b-4*a*c) )/(2 * a));
+            
 	} else {
-	    t = -c/b;  
-	}
-	return t;
+	   return new Point2D.Double(-c/b, -1.0);
+	}        
     }
     
     public boolean checkOverlap(Ball ball) {
