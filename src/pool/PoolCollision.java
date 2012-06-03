@@ -2,6 +2,7 @@ package pool;
 
 import java.awt.geom.Point2D;
 import java.util.Iterator;
+import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 
 public abstract class PoolCollision {
@@ -117,17 +118,17 @@ class BallCollision extends PoolCollision {
 	    }
 	}
 	//Collision effects
-	float xdif = (float) (ball2.pos.x - ball1.pos.x);
-	float ydif = (float) (ball2.pos.y - ball1.pos.y);
-	float dist = (float) Math.sqrt(xdif*xdif + ydif*ydif);
-	float xp = xdif/dist;
-	float yp = ydif/dist;
-	float xo = -yp;
-	float yo = xp;
-	float vp1 = xp * ball1.vel.x + yp * ball1.vel.y;
-	float vp2 = xp * ball2.vel.x + yp * ball2.vel.y;
-	float vo1 = xo * ball1.vel.x + yo * ball1.vel.y;
-	float vo2 = xo * ball2.vel.x + yo * ball2.vel.y;
+	double xdif = (double) (ball2.pos.x - ball1.pos.x);
+	double ydif = (double) (ball2.pos.y - ball1.pos.y);
+	double dist = (double) Math.sqrt(xdif*xdif + ydif*ydif);
+	double xp = xdif/dist;
+	double yp = ydif/dist;
+	double xo = -yp;
+	double yo = xp;
+	double vp1 = xp * ball1.vel.x + yp * ball1.vel.y;
+	double vp2 = xp * ball2.vel.x + yp * ball2.vel.y;
+	double vo1 = xo * ball1.vel.x + yo * ball1.vel.y;
+	double vo2 = xo * ball2.vel.x + yo * ball2.vel.y;
 	ball1.vel.x = vp2 * xp - vo1 * yp;
 	ball1.vel.y = vp2 * yp + vo1 * xp;
 	ball2.vel.x = vp1 * xp - vo2 * yp;
@@ -140,10 +141,10 @@ class BallCollision extends PoolCollision {
 }
 
 class WallCollision extends PoolCollision {
-    Vector3f newVel;
+    Vector3d newVel;
     PoolPolygon poly;
     int wall;
-    public WallCollision(double t, PoolBall b, Vector3f v, PoolPolygon p, int w) {
+    public WallCollision(double t, PoolBall b, Vector3d v, PoolPolygon p, int w) {
 	time = t;
 	ball1 = b;
         newVel = v;
@@ -170,19 +171,19 @@ class PointCollision extends PoolCollision {
     }
 
     @Override public void doEffects(PoolPanel pp) {
-	Point2D.Float unit, trans, temp;
+	Point2D.Double unit, trans, temp;
 	double dist = point.distance(ball1.pos.x, ball1.pos.y);
-	unit = new Point2D.Float((float)(point.x - ball1.pos.x/dist),
-				 (float)(point.y - ball1.pos.y/dist));
-	trans = new Point2D.Float(1/(unit.x + unit.y*unit.y/unit.x), 1/(unit.y + unit.x*unit.x/unit.y));
-	temp = new Point2D.Float(trans.x*ball1.vel.x, trans.y*ball1.vel.x);
+	unit = new Point2D.Double((Double)(point.x - ball1.pos.x/dist),
+				 (Double)(point.y - ball1.pos.y/dist));
+	trans = new Point2D.Double(1/(unit.x + unit.y*unit.y/unit.x), 1/(unit.y + unit.x*unit.x/unit.y));
+	temp = new Point2D.Double(trans.x*ball1.vel.x, trans.y*ball1.vel.x);
 	temp.x += trans.y*ball1.vel.y;
 	temp.y += -trans.x*ball1.vel.y;
 	temp.x = -temp.x;
 	
-	ball1.vel = new Vector3f(temp.x*unit.x + temp.y*unit.y,
-                                       temp.x*unit.y - temp.y*unit.x,
-                                       ball1.vel.z);
+	ball1.vel = new Vector3d(temp.x*unit.x + temp.y*unit.y,
+                                 temp.x*unit.y - temp.y*unit.x,
+                                 ball1.vel.z);
     }
 }
 

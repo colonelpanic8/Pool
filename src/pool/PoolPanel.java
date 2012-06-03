@@ -654,7 +654,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //ACTIONS
     public void newRack() {        
         cueball.pos.set(-width/4, 0, 0);
-        cueball.vel.set(PoolBall.zero);
+        cueball.vel.set(0.0, 0.0, 0.0);
         cueball.move(0.0);
         aim.x = -1.0;
         aim.y = 0.0;
@@ -678,8 +678,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
      
     public void shoot() {
-        shootingBall.vel.x = (float) (-aim.x * power * powerS);
-        shootingBall.vel.y = (float) (-aim.y * power * powerS);
+        shootingBall.vel.x = (-aim.x * power * powerS);
+        shootingBall.vel.y = (-aim.y * power * powerS);
         shootingBall.acc.x = -aim.x * spin * spinS;
         shootingBall.acc.y = -aim.y * spin * spinS;
         ghostBallRA.setVisible(false);

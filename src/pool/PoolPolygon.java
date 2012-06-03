@@ -7,6 +7,7 @@ import java.util.PriorityQueue;
 import javax.media.j3d.*;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 
 public class PoolPolygon extends Polygon2D {
@@ -96,8 +97,8 @@ public class PoolPolygon extends Polygon2D {
         double min, t;
         int minWall = -1;
         boolean minIsPoint = false;
-        Vector3f minVel = new Vector3f();
-        Vector3f newVel = new Vector3f();
+        Vector3d minVel = new Vector3d();
+        Vector3d newVel = new Vector3d();
         Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
         Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         Point2D.Double point = new Point2D.Double();
@@ -132,8 +133,8 @@ public class PoolPolygon extends Polygon2D {
         double min, t;
         boolean minIsPoint = false;
         int minWall = -1;
-        Vector3f minVel = new Vector3f();
-        Vector3f newVel = new Vector3f();
+        Vector3d minVel = new Vector3d();
+        Vector3d newVel = new Vector3d();
         Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
         Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         Point2D.Double point = new Point2D.Double();
@@ -168,7 +169,7 @@ public class PoolPolygon extends Polygon2D {
     
     
     
-    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Vector3f res) {
+    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Vector3d res) {
 	Point2D.Double unit, trans, aInNewBasis, bInNewBasis, velInNewBasis, posInNewBasis;
 	double dist = a.distance(b);
 	unit          = new Point2D.Double((a.x-b.x)/dist,
