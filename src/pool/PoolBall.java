@@ -12,7 +12,7 @@ import javax.vecmath.*;
 public class PoolBall {
     Appearance appearance;
     Point3d pos , lpos;
-    Vector3d vel , lvel;
+    Vector3f vel , lvel;
     
     Point2D.Double acc;
     double size;
@@ -20,6 +20,7 @@ public class PoolBall {
     Color color;
     boolean sel, sunk, remove, showDirection;
     
+    static Point3f zero = new Point3f(0.0f, 0.0f, 0.0f);
         
     //Java 3D
     BranchGroup group;
@@ -30,9 +31,9 @@ public class PoolBall {
     
     public PoolBall(Appearance app, double x, double y, float a, float b, double s){
         pos = new Point3d(x,y,(double)0);
-	vel = new Vector3d(a, b, 0f);
+	vel = new Vector3f(a, b, 0f);
         lpos = new Point3d(x,y,(double)0);
-	lvel = new Vector3d(a, b, 0f);
+	lvel = new Vector3f(a, b, 0f);
         appearance = app;
 	acc = new Point2D.Double(0,0);
 	size = s;

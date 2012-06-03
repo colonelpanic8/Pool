@@ -111,7 +111,5 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         val = powerSlider.getValue();
         poolPanel.setPower(val/50);
     }
-    public static void main(String[] args) {
-	PoolFrame window = new PoolFrame("3D Pool");	
-    }
+    
 }
