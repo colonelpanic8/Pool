@@ -1,15 +1,13 @@
 package pool;
 
 import cameracontrol.CameraController;
+import cameracontrol.ChangeBasis;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -850,10 +848,57 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController {
     PoolPanel pp;
+    boolean doingDragAim;
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
         pp = p;
+    }
+    
+    @Override public void mouseDragged(MouseEvent me) {
+        if(doingDragAim) {
+            float x,y;
+            x = ((float)(me.getX() - 1));
+            y = ((float)(1 - me.getY()));
+            double fieldOfView = universe.getViewer().getView().getFieldOfView();
+            double scale = fieldOfView/canvas.getWidth();
+            Transform3D trans = new Transform3D();
+            universe.getViewingPlatform().getViewPlatformTransform().getTransform(trans);
+            //
+            Vector3f actualPos = new Vector3f();
+            trans.get(actualPos);
+            //
+            Vector3f lookDirection = new Vector3f(cameraPos);
+            lookDirection.scale(-1f);
+            Vector3f mouseDirection = new Vector3f(x,y,0);
+            double angle = mouseDirection.length()*scale;
+            Vector3f cross = new Vector3f();
+            Vector3f up = new Vector3f(upVec);         
+            cross.cross(lookDirection, up);
+            
+            ChangeBasis cb = new ChangeBasis(lookDirection, up, cross);
+            cb.invert();            
+            Vector3f axis = new Vector3f(y,-x,0);
+            cb.transform(axis);
+            
+            
+            
+        } else {
+            super.mouseDragged(me);
+        }
+    }
+    
+    @Override public void mousePressed(MouseEvent me) {
+        
+    }
+    
+    @Override public void mouseReleased(MouseEvent me) {
+        if(doingDragAim) {
+            
+            doingDragAim = false;
+        } else {
+            super.mouseReleased(me);
+        }
     }
     
     public void snapToShootingBall() {

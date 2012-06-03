@@ -9,10 +9,10 @@ import javax.vecmath.*;
 
 public class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
-    SimpleUniverse universe;
-    Canvas canvas;
-    Point click = new Point(0,0);
-    Transform3D transform = new Transform3D();
+    protected SimpleUniverse universe;
+    protected Canvas canvas;
+    protected Point click = new Point(0,0);
+    protected Transform3D transform = new Transform3D();
     protected Vector3f cameraPosition = new Vector3f(0f, 0f, 1f);
     protected Vector3f upVector = new Vector3f(0f, 1f, 0f);
     protected Point3f cameraTranslation = new Point3f();
@@ -26,16 +26,16 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected boolean updateCameraPos;
     
     //User configuration
-    int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
-    float zoomSensitivity = 20f;
-    float translationSensitivity = 4f;
-    float keyYSensitivity = .05f;
-    float keyXSensitivity = .05f;
+    protected int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
+    protected float zoomSensitivity = 20f;
+    protected float translationSensitivity = 4f;
+    protected float keyYSensitivity = .05f;
+    protected float keyXSensitivity = .05f;
     
     //Constants
     static final int TRANSLATION = 0;
     static final int ZOOM_ROLL = 1;
-    static final int ROTATION = 2;
+    static final int ROTATION = 2;    
 
     public CameraController(SimpleUniverse u, Canvas c) {
         universe = u;
@@ -44,16 +44,32 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         canvas.addMouseMotionListener(this);
         canvas.addKeyListener(this); 
         updateCamera();
-    }
+    }    
     
     final public void updateCamera() {
-        cameraPos.scale(camDistance);
         Point3d transCameraPos = new Point3d(cameraPos);
+        transCameraPos.scale(camDistance);
         transCameraPos.add(cameraTrans);
         transform.lookAt(transCameraPos, cameraTrans, upVec);
         transform.invert();
         universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);        
-    }    
+    }
+    
+    public Vector3f doRotation(Vector3f axis, double angle, Tuple3f obj) {
+        axis.scale((float)Math.sin(angle/2));
+        rotation.set(axis.x,
+                     axis.y,
+                     axis.z, 
+                     (float)Math.cos(angle/2));
+        inverse.inverse(rotation);
+        vector.set(obj.x,
+                   obj.y,
+                   obj.z,
+                   0.0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);
+        return new Vector3f(vector.x, vector.y, vector.z);
+    }
     
     public void mouseDragged(MouseEvent me) {
         float x,y;
