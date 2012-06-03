@@ -3,6 +3,7 @@ package pool;
 import cameracontrol.ChangeBasis;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
+import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 
 public abstract class PoolCollision {
@@ -143,10 +144,10 @@ class BallCollision extends PoolCollision {
 }
 
 class WallCollision extends PoolCollision {
-    Point2D.Double newVel;
+    Vector3d newVel;
     PoolPolygon poly;
     int wall;
-    public WallCollision(double t, PoolBall b, Point2D.Double v, PoolPolygon p, int w) {
+    public WallCollision(double t, PoolBall b, Vector3d v, PoolPolygon p, int w) {
 	time = t;
 	ball1 = b;
         newVel = v;
@@ -173,7 +174,8 @@ class PointCollision extends PoolCollision {
     }
 
     @Override public void doEffects(PoolPanel pp) {
-	Point2D.Double unit, trans, temp, res;
+        Vector3d res;
+	Point2D.Double unit, trans, temp;
 	double dist = point.distance(ball1.pos.x, ball1.pos.y);
 	unit = new Point2D.Double((point.x - ball1.pos.x)/dist,
 				  (point.y - ball1.pos.y)/dist );
@@ -183,11 +185,27 @@ class PointCollision extends PoolCollision {
 	temp.y += -trans.x*ball1.vel.y;
 	temp.x = -temp.x;
 	
-	res = new Point2D.Double(temp.x*unit.x, temp.x*unit.y);
+	res = new Vector3d(temp.x*unit.x, temp.x*unit.y, ball1.vel.z);
 	res.x += temp.y*unit.y;
 	res.y += -temp.y*unit.x;
 	ball1.vel = res;
     }
+}
+
+
+class SinkCollision extends PoolCollision {
+    PoolPocket pocket;
+    
+    public SinkCollision(PoolBall b, double t, PoolPocket p) {
+        ball1 = b;
+	time = t;
+        pocket = p;
+    }
+    
+    @Override
+    public void doEffects(PoolPanel pp) {
+    }
+    
 }
 
 class PocketCollision extends PoolCollision {

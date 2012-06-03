@@ -39,6 +39,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     double spin, power;
     double spinS = 2.0, powerS = 2.0;
     int collisionsExecuted = 0;
+    int numberOfAimLines = 3;
+    private static final float gravity = .005f;
     
     //Java3D
     Canvas3D canvas;
@@ -74,9 +76,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     Color3f borderColor = darkestTableColor;
     Color3f pocketColor = darkRed;
     
-    int numberOfAimLines = 3;
     
-    //INITIALIZATION
+    //--------------------INITIALIZATION--------------------//
+    
     public PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
         height = h;
@@ -88,7 +90,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         borderSize = pocketSize + .4;
         railIndent = railSize;
         sideIndent = railIndent/4;
-        pocketDepth = ballSize*5;                                      
+        pocketDepth = ballSize*8;                                      
         
         init3D();
         
@@ -96,7 +98,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPockets();
         initPolygons();
         initTable();
-        cueball = addBall(0, 0, 0, 0, ballSize);
+        cueball = addBall(-width/4, 0, 0, 0, ballSize);
         shootingBall = cueball;        
         
         //Add listeners.
@@ -358,7 +360,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
     }
     
-    //SIMULATION
+    //--------------------SIMULATION--------------------//
+    
     public void actionPerformed(ActionEvent evt){
         //this.repaint();
         doAim();
@@ -377,7 +380,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             
             //For error handling           
             ball.lpos.set(ball.pos);
-            ball.lvel.setLocation(ball.vel);
+            ball.lvel.set(ball.vel);
             
             detectPolygonCollisions(ball, 0);
 	    detectPocketCollisions(ball, 0);
@@ -416,7 +419,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    ball.move(1-timePassed);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
-            if(ball.vel.distance(0,0) < .001) {
+            if(ball.vel.length() < .001) {
                 ball.vel.x = 0;
                 ball.vel.y = 0;
             } else {
@@ -433,11 +436,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             
 	}
         
-        ballIterator = balls.iterator();
-        
+        ballIterator = balls.iterator();        
         while(ballIterator.hasNext()) {
+            Iterator<PoolPocket> pocketIterator = pockets.iterator();
             PoolBall ball = ballIterator.next();
-            checkOverlaps(ball);
+            //checkOverlaps(ball);
+            while(pocketIterator.hasNext()) {
+                PoolPocket pocket = pocketIterator.next();
+                if(pocket.ballIsOver(ball)) {
+                    this.doGravity(ball, pocket);
+                }
+            }
+            
         }
     }
     
@@ -479,7 +489,34 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	}
     }
     
-    //COLLISION DETECTION
+    void doGravity(PoolBall ball, PoolPocket pocket) {
+        if(ball.pos.z <= (-pocketDepth+ballSize)) {
+            ball.vel.set(0.0,0.0,0.0);
+            ball.sunk = true;
+            return;
+        }
+        Vector3f acceleration = new Vector3f((float)(ball.pos.x - pocket.pos.x),
+                                           (float)(ball.pos.y - pocket.pos.y),
+                                           0.0f);
+        acceleration.normalize();
+        acceleration.scale(pocket.size);        
+        Point3f contactPoint = new Point3f((float)pocket.pos.x, (float)pocket.pos.y, (float)-ballSize);
+        contactPoint.add(acceleration);        
+        if(ball.pos.distance(new Point3d(contactPoint)) <= ball.size) {
+            Vector3f normal = new Vector3f(ball.pos);
+            contactPoint.scale(-1);
+            normal.add(contactPoint);
+            normal.normalize();
+            float scale = 1/normal.z;
+            ball.vel.x += normal.x*scale * gravity;
+            ball.vel.y += normal.y*scale * gravity;
+        } else {
+            ball.vel.z -= gravity;
+        }                
+    }
+    
+    //--------------------COLLISION DETECTION--------------------//
+    
     void detectPolygonCollisions(PoolBall ball, double t) {
         Iterator<PoolPolygon> iter = polygons.iterator();
         while(iter.hasNext()) {
@@ -506,17 +543,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	Iterator<PoolPocket> pocketItr;
 	pocketItr = pockets.iterator();
         while(pocketItr.hasNext()) {
-            PoolPocket pocket = pocketItr.next();
+            PoolPocket pocket = pocketItr.next();            
             time = pocket.detectCollisionWith(ball);
             time += timePassed;
-	    if(time >= timePassed && time < 1) {
-		collisions.add(new PocketCollision(ball, time, pocket));
-		return;
-	    }
+            if(time >= timePassed && time < 1) {
+                collisions.add(new PocketCollision(ball, time, pocket));
+                return;
+            }            
 	}
     }
     
-    //GRAPHICAL FUNCTIONS
+    //--------------------GRAPHICAL FUNCTIONS--------------------//
+    
     @Override public void paintComponent(Graphics g){
         
         /*super.paintComponent(g);
@@ -566,7 +604,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     void doAim() {        
-        if(shootingBall != null && shootingBall.vel.distance(0.0, 0.0) < .01) {
+        if(shootingBall != null && shootingBall.vel.length() < .01) {
             aimLineRA.setVisible(true);
             if(ghostBallObjectBall == null) {
                 Vector3f unit = new Vector3f();
@@ -651,10 +689,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }        
     }
     
-    //ACTIONS
+    //--------------------ACTIONS--------------------//
+    
     public void newRack() {        
         cueball.pos.set(-width/4, 0, 0);
-        cueball.vel.setLocation(0,0);
+        cueball.vel.set(0.0,0.0,0.0);
         cueball.move(0.0);
         aim.x = -1.0;
         aim.y = 0.0;
@@ -731,11 +770,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
-            ball.vel.setLocation(ball.lvel);
+            ball.vel.set(ball.lvel);
         }                
     }
 
-    //COMPARATOR INTERFACE
+    //--------------------COMPARATOR INTERFACE--------------------//
+    
     public int compare(Object a, Object b) {
 	double val =  ((PoolCollision)a).time - ((PoolCollision)b).time;
 	if(val < 0) {
@@ -767,14 +807,16 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             return false;
     }
     
-    //HIERARCHY BOUNDS INTERFACE
+    //--------------------HIERARCHY BOUNDS INTERFACE--------------------//
+    
     public void ancestorResized(HierarchyEvent he) {        
         canvas.setSize(getWidth(), getHeight());
     }
     
     public void ancestorMoved(HierarchyEvent he) { }
     
-    //ERROR HANDLING
+    //--------------------ERROR HANDLING--------------------//
+    
     public boolean checkBounds(PoolBall b) {
         return false;
     }
@@ -818,7 +860,7 @@ class PoolCameraController extends CameraController {
         cameraTrans.set(pp.shootingBall.pos);
         cameraTranslation.set(cameraTrans);
         cameraPosition.set(pp.aim);
-        double angle = .1;
+        double angle = .3;
         Vector3f aimPerp = new Vector3f();
         aimPerp.x = (float) pp.aim.y;
         aimPerp.y = (float) -pp.aim.x;

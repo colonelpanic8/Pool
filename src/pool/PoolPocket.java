@@ -13,7 +13,7 @@ import unbboolean.solids.DefaultCoordinates;
 
 public class PoolPocket {
     Point2D.Double pos;
-    float size;
+    float size, depth, ballSize;
     TransformGroup transformGroup = new TransformGroup();
     BranchGroup group = new BranchGroup();
     Solid inner = new Solid();
@@ -27,7 +27,9 @@ public class PoolPocket {
         transform.setTranslation(new Vector3d(pos.x, pos.y, -h/2-bs));
         transform.setRotation(matrix);
 	size = (float)s;
-        cylinder = new Cylinder(size, h, ap);
+        depth = h;
+        ballSize = bs;
+        cylinder = new Cylinder(size, depth, ap);
         Shape3D topFace = cylinder.getShape(Cylinder.TOP);        
         RenderingAttributes ra = new RenderingAttributes();
         Appearance appearance = new Appearance();
@@ -100,6 +102,11 @@ public class PoolPocket {
             }
         }
         return Double.NaN;
+    }
+    
+    public double detectSinkCollisionWith(PoolBall ball) {
+        return (-(ballSize + depth + ball.pos.z)/ball.vel.z);
+        
     }
     
     public boolean ballIsOver(PoolBall ball) {

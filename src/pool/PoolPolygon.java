@@ -7,6 +7,7 @@ import java.util.PriorityQueue;
 import javax.media.j3d.*;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 public class PoolPolygon extends Polygon2D {
     QuadArray vertices;
@@ -95,8 +96,9 @@ public class PoolPolygon extends Polygon2D {
         double min, t;
         int minWall = -1;
         boolean minIsPoint = false;
-        Point2D.Double minVel = new Point2D.Double(0,0);
-        Point2D.Double newVel = new Point2D.Double(0,0);
+        Vector3d minVel = new Vector3d();
+        Vector3d newVel = new Vector3d();
+        Point2D.Double point = new Point2D.Double();
         Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
         Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
@@ -106,20 +108,20 @@ public class PoolPolygon extends Polygon2D {
             if(t >= 0 && t < min) {
                 min = t;
                 minWall = i;
-                minVel.setLocation(newVel);
+                minVel.set(newVel);
                 minIsPoint = false;
             }
             t = ball.detectCollisionWith(b);
             if(t >= 0 && t < min) {
                 min = t;
-                minVel.setLocation(b);
+                point.setLocation(b);
                 minIsPoint = true;
             }
             a.setLocation(b);
         }
         if(min + timePassed < 1) {
             if(minIsPoint) {
-                collisions.add(new PointCollision(min + timePassed, minVel, ball));              
+                collisions.add(new PointCollision(min + timePassed, point, ball));              
             } else {
                 collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
             }
@@ -130,8 +132,9 @@ public class PoolPolygon extends Polygon2D {
         double min, t;
         boolean minIsPoint = false;
         int minWall = -1;
-        Point2D.Double minVel = new Point2D.Double(0,0);
-        Point2D.Double newVel = new Point2D.Double(0,0);
+        Vector3d minVel = new Vector3d();
+        Vector3d newVel = new Vector3d();
+        Point2D.Double point = new Point2D.Double();
         Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
         Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
@@ -142,21 +145,21 @@ public class PoolPolygon extends Polygon2D {
                 if(t > 0 && t < min) {
                     min = t;
                     minWall = i;
-                    minVel.setLocation(newVel);
+                    minVel.set(newVel);
                     minIsPoint = false;
                 }
             }
             t = ball.detectCollisionWith(b);
             if(t > 0 && t < min) {
                 min = t;
-                minVel.setLocation(b);
+                point.setLocation(b);
                 minIsPoint = true;
             }
             a.setLocation(b);
         }
         if(min + timePassed < 1) {
             if(minIsPoint) {
-                collisions.add(new PointCollision(min + timePassed, minVel, ball));              
+                collisions.add(new PointCollision(min + timePassed, point, ball));              
             } else {
                 collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
             }
@@ -165,7 +168,7 @@ public class PoolPolygon extends Polygon2D {
     
     
     
-    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Point2D.Double res) {
+    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Vector3d res) {
 	Point2D.Double unit, trans, aInNewBasis, bInNewBasis, velInNewBasis, posInNewBasis;
 	double dist = a.distance(b);
 	unit          = new Point2D.Double((a.x-b.x)/dist,
@@ -215,8 +218,8 @@ public class PoolPolygon extends Polygon2D {
 	}
 	
 	velInNewBasis.y = -velInNewBasis.y;
-	res.setLocation(velInNewBasis.x*unit.x + velInNewBasis.y*unit.y,
-			velInNewBasis.x*unit.y - velInNewBasis.y*unit.x);
+	res.set(velInNewBasis.x*unit.x + velInNewBasis.y*unit.y,
+			velInNewBasis.x*unit.y - velInNewBasis.y*unit.x, res.z);
 	return t;
     }
     

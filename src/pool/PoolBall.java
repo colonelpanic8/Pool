@@ -14,10 +14,8 @@ import javax.vecmath.Vector3f;
 
 public class PoolBall {
     Appearance appearance;
-    Point3d pos;
-    Point2D.Double vel;
-    Point3d lpos;
-    Point2D.Double lvel;
+    Point3d pos, lpos;
+    Vector3d vel, lvel;
     
     Point2D.Double acc;
     double size;
@@ -33,10 +31,10 @@ public class PoolBall {
     Transform3D transform = new Transform3D();                
     
     public PoolBall(Appearance app, double x, double y, double a, double b, double s){
-        pos = new Point3d(x,y,(double)0);
-	vel = new Point2D.Double(a,b);
-        lpos = new Point3d(x,y,(double)0);
-	lvel = new Point2D.Double(a,b);
+        pos = new Point3d(x,y,0.0);
+	vel = new Vector3d(a,b,0.0);
+        lpos = new Point3d(x,y,0.0);
+	lvel = new Vector3d(a,b,0.0);
         appearance = app;
 	acc = new Point2D.Double(0,0);
 	size = s;
@@ -59,7 +57,8 @@ public class PoolBall {
     public final void move(double t) {
         pos.x += vel.x*t;
         pos.y += vel.y*t;
-        double angle = (vel.distance(0.0,0.0)*t/size);
+        pos.z += vel.z*t;
+        double angle = (vel.length()*t/size);
         Vector3f velPerp = new Vector3f((float)-vel.y, (float)vel.x, 0f);
         velPerp.normalize();
         velPerp.scale((float)Math.sin(angle/2));
@@ -68,7 +67,7 @@ public class PoolBall {
                      0, 
                      (float)Math.cos(angle/2));
         
-        if(vel.distance(0.0,0.0) > 0) {
+        if(vel.length() > 0) {
             rotation.mul(velRotation, rotation);
         }
         
@@ -81,14 +80,16 @@ public class PoolBall {
     public double detectCollisionWith(PoolBall ball) {
 	// a b c are the terms of a quadratic.  at^2 + bt + c  This code uses the quadratic equation to check for collisions.
 	double a = ( (ball.vel.x) * (ball.vel.x) + (vel.x) * (vel.x) - 2*(ball.vel.x)*(vel.x) +
-		     (ball.vel.y) * (ball.vel.y) + (vel.y) * (vel.y) - 2*(ball.vel.y)*(vel.y) );
+		     (ball.vel.y) * (ball.vel.y) + (vel.y) * (vel.y) - 2*(ball.vel.y)*(vel.y) +
+                     (ball.vel.z) * (ball.vel.z) + (vel.z) * (vel.z) - 2*(ball.vel.z)*(vel.z));
 	
-	double b = 2 * ((ball.pos.x * ball.vel.x) + (pos.x * vel.x) - (ball.pos.x * vel.x) -
-                (pos.x * ball.vel.x) + (ball.pos.y * ball.vel.y) + (pos.y * vel.y) - 
-                (ball.pos.y * vel.y) - (pos.y * ball.vel.y));
+	double b = 2 * ((ball.pos.x * ball.vel.x) + (pos.x * vel.x) - (ball.pos.x * vel.x) - (pos.x * ball.vel.x) + 
+                        (ball.pos.y * ball.vel.y) + (pos.y * vel.y) - (ball.pos.y * vel.y) - (pos.y * ball.vel.y) +
+                        (ball.pos.z * ball.vel.z) + (pos.y * vel.z) - (ball.pos.z * vel.z) - (pos.z * ball.vel.z));
 	
 	double c = ball.pos.x * ball.pos.x + pos.x * pos.x - 2 * (pos.x * ball.pos.x) +
-                   ball.pos.y * ball.pos.y + pos.y * pos.y - 2 * (pos.y * ball.pos.y) -
+                   ball.pos.y * ball.pos.y + pos.y * pos.y - 2 * (pos.y * ball.pos.y) +
+                   ball.pos.z * ball.pos.z + pos.z * pos.z - 2 * (pos.z * ball.pos.z) -
                    (size+ball.size)*(size+ball.size);
 	double t;
 	if (a !=0 ){
