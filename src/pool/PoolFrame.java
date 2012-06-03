@@ -18,8 +18,8 @@ public class PoolFrame {
 	public void stateChanged(ChangeEvent evt){
 			slider = (JSlider)evt.getSource();
 			double aind = slider.getValue();
-			pp.aim.x = Math.cos((aind)*2*Math.PI/2000);
-			pp.aim.y = Math.sin((aind)*2*Math.PI/2000);
+			pp.aim.x = Math.cos((aind)*2*Math.PI/5000);
+			pp.aim.y = Math.sin((aind)*2*Math.PI/5000);
 			pp.repaint();
 	}
     }
@@ -155,7 +155,7 @@ public class PoolFrame {
 	colorChoice.addItem("Green");
 	colorChoice.addItem("Yellow");
 	
-	JSlider angle = new JSlider(0,2000,0);//Defines angle of shot
+	JSlider angle = new JSlider(0,5000,0);//Defines angle of shot
 	AngleListener alist = new AngleListener(poolpanel);
 	angle.addChangeListener(alist);
 	

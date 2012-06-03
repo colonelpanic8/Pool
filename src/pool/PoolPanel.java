@@ -347,6 +347,22 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             bm = new BooleanModeller(solid1, pocket.inner);
             solid1 = bm.getDifference();
         }
+        
+        Solid solid3 = new Solid();
+        solid3.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+                
+        solid2.setData(DefaultCoordinates.DEFAULT_CYLINDER_VERTICES, DefaultCoordinates.DEFAULT_CYLINDER_COORDINATES, darkBlue);
+        solid2.rotate(Math.PI/2, 0);
+        
+        bm = new BooleanModeller(solid3, solid2);
+        solid3 = bm.getDifference();
+        //solid3.translate(0,2);
+        borderGroup.addChild(solid3);
+        //solid2.scale(ballSize, ballSize, 2*ballSize);
+        
+        //solid2.translate(width/2+borderSize-ballSize, height/2+borderSize-ballSize);
+        //bm = new BooleanModeller(solid1, solid2);        
+        
         borderGroup.addChild(solid1);
         
         //Table
@@ -842,7 +858,7 @@ class PoolCameraController extends CameraController {
         cameraPos.set(0.0, 0.0, 1.0);
         upVec.set(0.0, 1.0, 0.0);
         cameraTrans.set(0.0, 0.0, 0.0f);
-        camDistance = 34f;
+        camDistance = 40f;
         updateCamera();
         mouseReleased(null);
     }    

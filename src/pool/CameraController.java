@@ -20,7 +20,7 @@ class CameraController implements MouseMotionListener, MouseListener, KeyListene
     Point3d cameraPos = new Point3d(cameraPosition);
     Point3d cameraTrans = new Point3d();
     Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
-    float cameraDistance = 34f;
+    float cameraDistance = 40f;
     float camDistance = cameraDistance;
     ChangeBasis changeBasis;
     boolean updateCameraPos;
