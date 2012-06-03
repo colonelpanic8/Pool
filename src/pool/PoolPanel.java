@@ -96,7 +96,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPockets();
         initPolygons();
         initTable();
-        cueball = addBall(0, -height/2 +.7, -.2f, -.1f, ballSize);
+        cueball = addBall(0, 0, 0, 0, ballSize);
         shootingBall = cueball;        
         
         //Add listeners.
