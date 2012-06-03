@@ -8,17 +8,19 @@ package pool;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import javax.swing.*;
+/*
 import pool.PoolFrame.AngleListener;
 import pool.PoolFrame.PowerListener;
 import pool.PoolFrame.SListener;
 import pool.PoolFrame.NBControl;
+* */
 
 /**
  *
  * @author ivanmalison
  */
 public class PoolApplet extends JApplet {
- 
+ /*
     @Override
 	public void init() {
 		PoolPanel poolpanel = new PoolPanel(45,20, 40, 40);
@@ -62,5 +64,5 @@ public class PoolApplet extends JApplet {
 		setContentPane(content);
 		setSize(840, 670);
 		setVisible(true);
-	}
+	}*/
 }

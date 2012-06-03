@@ -1,7 +1,6 @@
 package pool;
 
 import Polygon2D.Polygon2D;
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.PriorityQueue;
@@ -10,15 +9,36 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 
 public class PoolPolygon extends Polygon2D {
-    Color color;
     QuadArray vertices;
-    BranchGroup group;
+    BranchGroup group = new BranchGroup();
+    Shape3D shape;
+    Color3f color;
     
     
-    public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, Color c, double ballsize) {
+    public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, Appearance appearance, double ballsize) {
+        super(xpoints, ypoints, npoints);
+        init3d(xpoints, ypoints, npoints, appearance, ballsize);        
+    }
+    
+    public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, Color3f c, double ballsize) {
         super(xpoints, ypoints, npoints);
         color = c;
-        
+        Appearance appearance = new Appearance();
+        ColoringAttributes ca = new ColoringAttributes(color, ColoringAttributes.SHADE_FLAT);
+        appearance.setColoringAttributes(ca);
+        init3d(xpoints, ypoints, npoints, appearance, ballsize);        
+    }
+    
+    public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, double ballsize) {
+        super(xpoints, ypoints, npoints);
+        color = new Color3f(0.0f, .5f, 0.5f);
+        Appearance appearance = new Appearance();
+        ColoringAttributes ca = new ColoringAttributes(color, ColoringAttributes.SHADE_FLAT);
+        appearance.setColoringAttributes(ca);
+        init3d(xpoints, ypoints, npoints, appearance, ballsize);
+    }
+    
+    private void init3d(double[] xpoints, double[] ypoints, int npoints, Appearance appearance, double ballsize) {
         vertices = new QuadArray ((npoints+2)*4, QuadArray.COORDINATES);
         int j = 0;
         double height = ballsize;
@@ -50,16 +70,8 @@ public class PoolPolygon extends Polygon2D {
         vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));
         vertices.setCoordinate (j++, new Point3d(xpoints[i], ypoints[i++], -ballsize));*/
         
-        
-
-    	group = new BranchGroup();
-        Appearance appearance = new Appearance();
-        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.0f, .5f, 0.5f), ColoringAttributes.SHADE_FLAT);
-        appearance.setColoringAttributes(ca);
         group.addChild(new Shape3D(vertices, appearance));
     }
-    
-    
     
     public boolean checkOverlap(PoolBall ball) {
         Point2D.Double a = new Point.Double(xpoints[npoints-1], ypoints[npoints-1]);        

@@ -29,17 +29,16 @@ import unbboolean.solids.DefaultCoordinates;
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
-    boolean selMode, sliderPower;
+    boolean selectionMode = false, sliderPower = false, frameSkip = false, err = false;
     PoolBall cueball, shootingBall, ghostBallObjectBall;
-    ArrayList<PoolBall> balls;
-    ArrayList<PoolPocket> pockets;
-    ArrayList<PoolPolygon> polygons;
+    ArrayList<PoolBall>     balls = new ArrayList(16);        
+    ArrayList<PoolPocket> pockets = new ArrayList(6);
+    ArrayList<PoolPolygon> polygons = new ArrayList(10);
     PriorityQueue<PoolCollision> collisions;
-    Color tableColor;
     double height, width;
     double spin, power;
-    int collisionsExecuted;
-    boolean frameSkip, err;
+    double spinS = 2.0, powerS = 2.0;
+    int collisionsExecuted = 0;
     
     //Java3D
     Canvas3D canvas;
@@ -55,18 +54,25 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //Ghostball
     TransformGroup ghostBallTransformGroup = new TransformGroup();
+    RenderingAttributes ghostBallRA = new RenderingAttributes();
     Sphere ghostBall;
     Vector3f ghostBallPosition;
     Appearance ghostBallAppearance;
     Shape3D ghostBallLine;
     LineArray ghostBallLineGeometry;
-    RenderingAttributes ghostBallRA = new RenderingAttributes();
     
     //Colors
-    Color3f white;
-    Color3f turqoise;
-    Color3f darkGreen;
-    Color3f darkBlue;
+    Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
+    Color3f turqoise = new Color3f(0.0f, .5f, .5f);
+    Color3f darkGreen = new Color3f(0.0f, 0.5f, 0.0f);
+    Color3f darkBlue = new Color3f(0.0f, 0.0f, 0.5f);
+    Color3f darkRed = new Color3f(.5f, 0.0f, 0.0f);
+    Color3f tableColor = turqoise;
+    Color3f darkerTableColor = new Color3f(tableColor.x*.80f, tableColor.y*.80f, tableColor.z*.80f);
+    Color3f darkestTableColor = new Color3f(darkerTableColor.x*.80f, darkerTableColor.y*.80f, darkerTableColor.z*.80f);
+    Color3f railColor = darkerTableColor;
+    Color3f borderColor = darkestTableColor;
+    Color3f pocketColor = darkRed;
     
     int numberOfAimLines = 3;
     
@@ -82,27 +88,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         borderSize = pocketSize + .4;
         railIndent = railSize;
         sideIndent = railIndent/4;
-        pocketDepth = 1.0f;
-        
-        //Initialize boolean values.
-        selMode = false;
-        sliderPower = false;        
-        frameSkip = false;
-        err = false;
-        
-        //Set component color.
-        tableColor = new Color(48,130,100);
-	setBackground(tableColor);
-        
-        //Initialize other primitives.
-        power = .1;
-        spin = 0;
-        collisionsExecuted = 0;
-        
-        //Initialize table item arrays.
-        balls = new ArrayList(16);
-        pockets = new ArrayList(6);
-        polygons = new ArrayList(10);
+        pocketDepth = ballSize*5;                                      
         
         init3D();
         
@@ -139,19 +125,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         bounds.setUpper(width/2+borderSize, height/2+borderSize, 3);
         
         //Create light sources.
-        Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
+        Color3f lightColor = white;
         Vector3f lightDirection = new Vector3f(4.0f, -7.0f, -12.0f);        
         DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
         light.setInfluencingBounds(bounds);
         group.addChild(light);
         
-        Color3f ambientColor = new Color3f(1.0f, 1.0f, 1.0f);        
+        Color3f ambientColor = white;        
         AmbientLight ambientLight = new AmbientLight(ambientColor);
         ambientLight.setInfluencingBounds(bounds);
         group.addChild(ambientLight);        
         
         //Add aiming line.
-        white = new Color3f(1.0f, 1.0f, 1.0f);
         Appearance appearance = new Appearance();
         ColoringAttributes ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
         LineAttributes dashLa = new LineAttributes();
@@ -202,7 +187,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }        
     
     void initPolygons() {
-	Color color = tableColor.darker();
         double[] xpoints, ypoints;
 	xpoints = new double[4];
 	ypoints = new double[4];
@@ -216,7 +200,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[1] = height/2 - railSize;
 	ypoints[2] = height/2 - railSize;
 	ypoints[3] = height/2;
-        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        this.addPolygon(xpoints, ypoints, 4, railColor, ballSize);
         
         xpoints[0] = (sidePocketSize);
 	xpoints[1] = (sidePocketSize + sideIndent);
@@ -227,7 +211,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[1] = height/2 - railSize;
 	ypoints[2] = height/2 - railSize;
 	ypoints[3] = height/2;
-        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        this.addPolygon(xpoints, ypoints, 4, railColor, ballSize);
         
         xpoints[0] = width/2 ;
 	xpoints[1] = width/2 - railSize;
@@ -238,7 +222,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[1] = height/2 - (pocketSize + railIndent);
 	ypoints[2] = (pocketSize + railIndent) - height/2;
 	ypoints[3] = pocketSize-height/2;
-        this.addPolygon(xpoints, ypoints, 4, color, ballSize);                
+        this.addPolygon(xpoints, ypoints, 4, railColor, ballSize);                
         
         xpoints[3] = -width/2 + (pocketSize);
 	xpoints[2] = -width/2 + (pocketSize + railIndent);
@@ -249,7 +233,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[2] = -height/2 + railSize;
 	ypoints[1] = -height/2 + railSize;
 	ypoints[0] = -height/2;
-        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        this.addPolygon(xpoints, ypoints, 4, railColor, ballSize);
         
         xpoints[3] = (sidePocketSize);
 	xpoints[2] = (sidePocketSize + sideIndent);
@@ -260,7 +244,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[2] = -height/2 + railSize;
 	ypoints[1] = -height/2 + railSize;
 	ypoints[0] = -height/2;
-        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        this.addPolygon(xpoints, ypoints, 4, railColor, ballSize);
         
         xpoints[3] = -width/2 ;
 	xpoints[2] = -width/2 + railSize;
@@ -271,29 +255,17 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ypoints[2] = height/2 - (pocketSize + railIndent);
 	ypoints[1] = (pocketSize + railIndent) - height/2;
 	ypoints[0] = pocketSize-height/2;
-        this.addPolygon(xpoints, ypoints, 4, color, ballSize);
+        this.addPolygon(xpoints, ypoints, 4, railColor, ballSize);
     }
 
     void initPockets() {
         Iterator<PoolPocket> iter;
-        Appearance appearance = new Appearance();
-        turqoise = new Color3f(0.0f, .5f, .5f);
-        ColoringAttributes ca = new ColoringAttributes(turqoise, ColoringAttributes.SHADE_FLAT);
-        appearance.setColoringAttributes(ca);
-        /*
-	pockets.add(new Pocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, appearance));
-	pockets.add(new Pocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, appearance));
-        pockets.add(new Pocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, appearance));
-	pockets.add(new Pocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, appearance));
-        pockets.add(new Pocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, appearance));
-        pockets.add(new Pocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, appearance));
-        */
-        pockets.add(new PoolPocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new PoolPocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new PoolPocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
-        pockets.add(new PoolPocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-	pockets.add(new PoolPocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new PoolPocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
+        pockets.add(new PoolPocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
+        pockets.add(new PoolPocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
+        pockets.add(new PoolPocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, pocketColor));        
+        pockets.add(new PoolPocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
+	pockets.add(new PoolPocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
+        pockets.add(new PoolPocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, pocketColor));        
         iter = pockets.iterator();
         while(iter.hasNext()) {
             PoolPocket pocket = iter.next();
@@ -306,16 +278,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         BooleanModeller bm;        
         BranchGroup borderGroup = new BranchGroup();
         Solid solid1 = new Solid();
-        Solid solid2 = new Solid();
-        darkGreen = new Color3f(0.0f, 0.5f, 0.0f);
-        darkBlue = new Color3f(0.0f, 0.0f, 0.5f);
+        Solid solid2 = new Solid();        
         
         //Top border
-        solid1.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid1.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
         solid1.scale(width + 2*borderSize, borderSize, ballSize*2);
         
         //Bottom
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
         solid2.scale(width + 2*borderSize, borderSize, ballSize*2);
 
         
@@ -325,14 +295,14 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         solid1 = bm.getUnion();
         
         //Left
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
         solid2.scale(borderSize, height, ballSize*2);
         solid2.translate(-(width/2 + borderSize/2) ,0);
         
         bm = new BooleanModeller(solid1, solid2);
         solid1 = bm.getUnion();
         
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
         solid2.scale(borderSize, height, ballSize*2);
         solid2.translate(width/2 + borderSize/2,0);
         
@@ -340,7 +310,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         solid1 = bm.getUnion();
         
         //Table
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkGreen);
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, tableColor);
         solid2.scale(width, height, ballSize/2);
         
         for(int i = 0; i < 6; i++) {            
@@ -351,6 +321,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             solid1 = bm.getDifference();
         }
         
+        /*
         Solid solid3 = new Solid();
         solid3.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
                 
@@ -364,7 +335,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         //solid2.scale(ballSize, ballSize, 2*ballSize);
         
         //solid2.translate(width/2+borderSize-ballSize, height/2+borderSize-ballSize);
-        //bm = new BooleanModeller(solid1, solid2);        
+        //bm = new BooleanModeller(solid1, solid2);        */
         
         borderGroup.addChild(solid1);
         
@@ -374,7 +345,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         Transform3D transform = new Transform3D();
         transform.setTranslation(shift);
         tg.setTransform(transform);
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkGreen);
+        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, tableColor);
         solid2.scale(width, height, ballSize);        
         for(int i = 0; i < 6; i++) {            
             pocket = pockets.get(i);
@@ -707,12 +678,33 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
      
     public void shoot() {
-        shootingBall.vel.x = -aim.x * power;
-        shootingBall.vel.y = -aim.y * power;
-        shootingBall.acc.x = -aim.x * spin;
-        shootingBall.acc.y = -aim.y * spin;
+        shootingBall.vel.x = -aim.x * power * powerS;
+        shootingBall.vel.y = -aim.y * power * powerS;
+        shootingBall.acc.x = -aim.x * spin * spinS;
+        shootingBall.acc.y = -aim.y * spin * spinS;
         ghostBallRA.setVisible(false);
         aimLineRA.setVisible(false);
+    }
+    
+    public void setAim(double x, double y) {
+        aim.x = x;
+        aim.y = y;
+    }
+    
+    public void setSpin(double v) {
+        spin = v;
+    }
+    
+    public void setPower(double p) {
+        power = p;
+    }
+    
+    public void flipSelectionMode() {
+        selectionMode = !selectionMode;
+    }
+    
+    public void setSelectionMode(boolean v) {
+        selectionMode = v;
     }
     
     public PoolBall addBall(double x, double y, double a, double b, double s) {
@@ -726,7 +718,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
-            Color c, double ballsize) {
+            Color3f c, double ballsize) {
         PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, c, ballsize);
         universe.addBranchGraph(poly.group);
         polygons.add(poly);
@@ -777,7 +769,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //HIERARCHY BOUNDS INTERFACE
     public void ancestorResized(HierarchyEvent he) {        
-        canvas.setSize(getWidth(), getHeight()-40);
+        canvas.setSize(getWidth(), getHeight());
     }
     
     public void ancestorMoved(HierarchyEvent he) { }
@@ -813,6 +805,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }    
     
 }
+
 class PoolCameraController extends CameraController {
     PoolPanel pp;
     

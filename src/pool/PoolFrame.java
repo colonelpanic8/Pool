@@ -1,146 +1,115 @@
 package pool;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class PoolFrame {
-    public static class AngleListener implements ChangeListener{
-	PoolPanel pp;
-	JSlider slider;
-	public AngleListener(PoolPanel a){
-	    pp=a;
-	}
-	public void stateChanged(ChangeEvent evt){
-			slider = (JSlider)evt.getSource();
-			double aind = slider.getValue();
-			pp.aim.x = Math.cos((aind)*2*Math.PI/5000);
-			pp.aim.y = Math.sin((aind)*2*Math.PI/5000);
-			pp.repaint();
-	}
+public class PoolFrame extends JFrame implements ChangeListener, ActionListener {
+    PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);
+    JPanel content = new JPanel();
+    JPanel south = new JPanel();
+        
+    int aimRange = 5000;
+    int powerRange = 100;
+    int spinRange = 100;
+    
+    //Buttons and components
+    JComboBox colorChoice = new JComboBox();
+    JSlider angleSlider = new JSlider(0,aimRange,0);//Defines angle of shot
+    JSlider powerSlider = new JSlider(0,powerRange,0);
+    JSlider spinSlider = new JSlider(-spinRange,spinRange,0);
+    JButton selectionModeButton = new JButton("Selection Mode");
+    JButton newBallButton = new JButton("New Ball");
+    JButton shootButton = new JButton("Shoot");
+    JButton makeRackButton = new JButton("Make Rack");
+    JButton snapButton = new JButton("Snap");
+    
+        
+    public void actionPerformed(ActionEvent evt){        
+        Object source = evt.getSource();
+        if       (source == shootButton)         {
+            poolPanel.shoot();
+        } else if(source == snapButton)          {
+            poolPanel.cameraController.snapToShootingBall();
+        } else if(source == selectionModeButton) {
+            poolPanel.flipSelectionMode();
+        } else if(source == makeRackButton)      {
+            poolPanel.newRack();
+        } else if(source == newBallButton)       {
+            poolPanel.addBall(1.0, -1.0, 0.0, 0.0, 0.0);            
+        }
     }
     
-    public static class SpinListener implements ChangeListener {
-        PoolPanel pp;
-	public SpinListener(PoolPanel a){
-	    pp=a;
-	}
-	public void stateChanged(ChangeEvent evt){
-            JSlider slider = (JSlider)evt.getSource();
-            pp.spin = (double)(slider.getValue())/1000;
-	}
+    public void stateChanged(ChangeEvent ce) {
+        Object source = ce.getSource();
+        if       (source == colorChoice) {
+            
+        } else if(source == angleSlider) {
+            double val = angleSlider.getValue();
+            poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));            
+        } else if(source == powerSlider) {
+            double val = powerSlider.getValue();
+            poolPanel.setPower(val/powerRange);
+        } else if(source == spinSlider)  {
+            double val = spinSlider.getValue();
+            poolPanel.setSpin(val/spinRange);
+        }        
+    }                
+    
+    public PoolFrame(String str) {
+        super(str);
+        
+        //Component Configuration
+	colorChoice.addItem("Red");
+	colorChoice.addItem("Blue");
+	colorChoice.addItem("Green");
+	colorChoice.addItem("Yellow");
+        powerSlider.setOrientation(JSlider.VERTICAL);                
+	        
+        //Add listeners
+	newBallButton.addActionListener(this);
+        selectionModeButton.addActionListener(this);
+	shootButton.addActionListener(this);
+        makeRackButton.addActionListener(this);
+        snapButton.addActionListener(this);
+	powerSlider.addChangeListener(this);
+        spinSlider.addChangeListener(this);
+        angleSlider.addChangeListener(this);
+        
+        //Add content to frame.
+	content.setLayout(new BorderLayout());
+	content.add(poolPanel, BorderLayout.CENTER);
+	content.add(angleSlider, BorderLayout.NORTH);
+	content.add(powerSlider, BorderLayout.EAST);
+        
+        //Toolbar setup.
+        south.setBackground(Color.BLACK);
+        south.add(snapButton);
+        south.add(makeRackButton);
+	south.add(selectionModeButton);
+	south.add(newBallButton);
+	south.add(shootButton);
+	south.add(colorChoice);
+        south.add(spinSlider);
+	content.add(south, BorderLayout.SOUTH);
+        
+        //Finalize
+	this.setContentPane(content);
+	this.setSize(1000, 700);
+	this.setLocation(0,0);
+	this.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+	this.setVisible(true);
+        
+        //Init proper shooting values
+        double val = angleSlider.getValue();
+        poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
+        poolPanel.setPower(val/100);
+        val = powerSlider.getValue();
+        poolPanel.setPower(val/50);
     }
     
-    public static class PowerListener implements ChangeListener{
-	PoolPanel pp;
-	JSlider slider;
-	SListener slistener;
-	public PowerListener(PoolPanel a, SListener b){
-	    pp = a; slistener = b;
-	}
-	public void stateChanged(ChangeEvent evt){
-	    slider = (JSlider)evt.getSource();
-	    pp.power = (float)(slider.getValue())/100;
-	    
-	}
-    }
-    
-    public static class SListener implements ActionListener{
-	PoolPanel pp;
-	public SListener(PoolPanel a){
-	    pp = a;
-	}
-	public void actionPerformed(ActionEvent evt){
-            pp.shoot();
-	}
-    }
-    
-    public static class ModeListener implements ActionListener{
-	PoolPanel pp;
-	boolean enabled;
-	public ModeListener(PoolPanel a){
-	    pp = a;
-	}
-	public void actionPerformed(ActionEvent evt){
-	    JButton b = (JButton)evt.getSource();
-	    pp.selMode = !pp.selMode;
-	    if(pp.selMode) {
-		b.setLabel("Stop");
-	    } else {
-		b.setLabel("Selection Mode");
-	    }
-	}
-    }
-    
-    public static class ShootingModeListener implements ActionListener{
-	PoolPanel pp;
-	boolean enabled;
-	public ShootingModeListener(PoolPanel a){
-	    pp = a;
-	}
-	public void actionPerformed(ActionEvent evt){
-	    JButton b = (JButton)evt.getSource();
-	    pp.sliderPower = !pp.sliderPower;
-	    if(pp.sliderPower) {
-		b.setLabel("Slider Mode");
-	    } else {
-		b.setLabel("Drag Mode");
-	    }
-	}
-    }
-    
-    public static class SnapListener implements ActionListener{
-	PoolPanel pp;
-	boolean enabled;
-	public SnapListener(PoolPanel a){
-	    pp = a;
-	}
-	public void actionPerformed(ActionEvent evt){
-            pp.cameraController.snapToShootingBall();
-	}
-    }        
-    
-    public static class MakeRackListener implements ActionListener{
-	PoolPanel pp;
-	boolean enabled;
-	public MakeRackListener(PoolPanel a){
-	    pp = a;
-	}
-	public void actionPerformed(ActionEvent evt){
-            pp.newRack();
-	}
-    }
-    
-    public static class NBControl implements ActionListener{
-	PoolPanel msp;
-	JComboBox cc;
-	public NBControl(PoolPanel a, JComboBox c){
-	    msp = a;
-	    cc= c;
-	}
-	public void actionPerformed(ActionEvent evt){
-	    int width = 1;
-	    int height = 2;
-	    switch (cc.getSelectedIndex()) {
-	    case 1:
-		msp.addBall(-width, height, 0, 0, msp.ballSize);
-		break;
-	    case 2:
-		msp.addBall(msp.borderSize + msp.railSize, 400, 0, 0, msp.ballSize);
-		break;
-	    case 3:
-		msp.addBall(width, -height, 0, 0, msp.ballSize);
-		break;
-		
-	    default:
-		msp.addBall(-width, -height, 0, 0, msp.ballSize);
-		break;
-	    }
-	    msp.repaint();
-	}
-    }   
 }
