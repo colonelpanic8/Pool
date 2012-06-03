@@ -40,7 +40,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         } else if(source == makeRackButton)      {
             poolPanel.newRack();
         } else if(source == newBallButton)       {
-            poolPanel.addBall(1.0, -1.0, 0.0, 0.0, 0.0);            
+            poolPanel.addBall(1.0, -1.0, 0.0f, 0.0f, 0.0);            
         }
     }
     

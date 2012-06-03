@@ -377,7 +377,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             
             //For error handling           
             ball.lpos.set(ball.pos);
-            ball.lvel.setLocation(ball.vel);
+            ball.lvel.set(ball.vel);
             
             detectPolygonCollisions(ball, 0);
 	    detectPocketCollisions(ball, 0);
@@ -416,12 +416,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    ball.move(1-timePassed);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
-            if(ball.vel.distance(0,0) < .001) {
+            if(ball.vel.length() < .001) {
                 ball.vel.x = 0;
                 ball.vel.y = 0;
             } else {
-                ball.vel.x = ball.vel.x*.99;
-                ball.vel.y = ball.vel.y*.99;
+                ball.vel.x = (float) (ball.vel.x*.99);
+                ball.vel.y = (float) (ball.vel.y*.99);
             }
             if(ball.acc.distance(0,0) < .01) {
                 ball.acc.x = 0;
@@ -510,7 +510,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             time = pocket.detectCollisionWith(ball);
             time += timePassed;
 	    if(time > timePassed && time < 1) {
-		collisions.add(new PocketCollision(ball, time));
+		collisions.add(new PocketCollision(ball, time, pocket));
 		return;
 	    }
 	}
@@ -566,7 +566,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     void doAim() {        
-        if(shootingBall != null && shootingBall.vel.distance(0.0, 0.0) < .01) {
+        if(shootingBall != null && shootingBall.vel.length() < .01) {
             aimLineRA.setVisible(true);
             if(ghostBallObjectBall == null) {
                 Vector3f unit = new Vector3f();
@@ -654,7 +654,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //ACTIONS
     public void newRack() {        
         cueball.pos.set(-width/4, 0, 0);
-        cueball.vel.setLocation(0,0);
+        cueball.vel.set(PoolBall.zero);
         cueball.move(0.0);
         aim.x = -1.0;
         aim.y = 0.0;
@@ -678,8 +678,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
      
     public void shoot() {
-        shootingBall.vel.x = -aim.x * power * powerS;
-        shootingBall.vel.y = -aim.y * power * powerS;
+        shootingBall.vel.x = (float) (-aim.x * power * powerS);
+        shootingBall.vel.y = (float) (-aim.y * power * powerS);
         shootingBall.acc.x = -aim.x * spin * spinS;
         shootingBall.acc.y = -aim.y * spin * spinS;
         ghostBallRA.setVisible(false);
@@ -707,7 +707,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         selectionMode = v;
     }
     
-    public PoolBall addBall(double x, double y, double a, double b, double s) {
+    public PoolBall addBall(double x, double y, float a, float b, double s) {
         Texture texImage = new TextureLoader("1.jpg",this).getTexture();        
         Appearance appearance = new Appearance();
         appearance.setTexture(texImage);
@@ -731,7 +731,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
-            ball.vel.setLocation(ball.lvel);
+            ball.vel.set(ball.lvel);
         }                
     }
 
