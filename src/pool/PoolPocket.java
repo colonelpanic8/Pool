@@ -79,8 +79,12 @@ public class PoolPocket {
                                  0.0f);
             Vector3f velVector = new Vector3f((float)ball.vel.x, (float)ball.vel.y, 0.0f);
             
-            if(vector.angle(velVector) < Math.PI/2)
-                return times.x;            
+            if(Math.abs(vector.angle(velVector)) <= Math.PI/2)
+                return times.x;
+            else if (times.x < 1) {
+                times.x = 0;
+            }
+            
         }
         if(times.y >= 0) {
             Vector3f vector = 
@@ -89,8 +93,11 @@ public class PoolPocket {
                                  0.0f);
             Vector3f velVector = new Vector3f((float)ball.vel.x, (float)ball.vel.y, 0.0f);
             
-            if(vector.angle(velVector) < Math.PI/2)
-                return times.y;    
+            if(Math.abs(vector.angle(velVector)) <= Math.PI/2)
+                return times.y;
+            else if (times.x < 1) {
+                times.y = 0;
+            }
         }
         return Double.NaN;
     }

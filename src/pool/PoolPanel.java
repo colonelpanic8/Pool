@@ -509,8 +509,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             PoolPocket pocket = pocketItr.next();
             time = pocket.detectCollisionWith(ball);
             time += timePassed;
-	    if(time > timePassed && time < 1) {
-		collisions.add(new PocketCollision(ball, time));
+	    if(time >= timePassed && time < 1) {
+		collisions.add(new PocketCollision(ball, time, pocket));
 		return;
 	    }
 	}

@@ -1,11 +1,15 @@
 package pool;
 
+import cameracontrol.ChangeBasis;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
+import javax.vecmath.Vector3f;
 
 public abstract class PoolCollision {
     double time;
     PoolBall ball1;
+    
+    public static float velScale = .5f;
 
     public abstract void doEffects(PoolPanel pp);
 
@@ -187,24 +191,27 @@ class PointCollision extends PoolCollision {
 }
 
 class PocketCollision extends PoolCollision {
-    public PocketCollision(PoolBall b, double t) {
+    PoolPocket pocket;
+    public PocketCollision(PoolBall b, double t, PoolPocket p) {
 	ball1 = b;
 	time = t;
-    }
-    
-    @Override public void doCollision(PoolPanel pp) {
-        Iterator<PoolCollision> collIterator = pp.collisions.iterator();
-        while(collIterator.hasNext()) {
-            PoolCollision item = collIterator.next();
-            if(item.involves(ball1)) {
-                collIterator.remove();
-            }
-	}
-	doEffects(pp);
+        pocket = p;
     }
     
     @Override public void doEffects(PoolPanel pp) {
-        ball1.vel.x = 0;
-	ball1.vel.y = 0;	
+        Vector3f colDir = new Vector3f((float)(ball1.pos.x - pocket.pos.x),
+                (float)(ball1.pos.y - pocket.pos.y),
+                0.0f);
+        Vector3f vel = new Vector3f(0.0f, 0.0f, 1.0f);
+        ChangeBasis cb = new ChangeBasis(colDir, new Vector3f(colDir.y, -colDir.x, colDir.z),
+                vel);
+        vel.set((float)ball1.vel.x, (float)ball1.vel.y, 0.0f);
+        cb.transform(vel);
+        vel.x *= -1;
+        cb.invert();
+        cb.transform(vel);
+        vel.scale(velScale);
+        ball1.vel.x = vel.x;
+	ball1.vel.y = vel.y;	
     }
 }
