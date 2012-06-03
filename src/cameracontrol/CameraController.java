@@ -55,22 +55,6 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);        
     }
     
-    public Vector3f doRotation(Vector3f axis, double angle, Tuple3f obj) {
-        axis.scale((float)Math.sin(angle/2));
-        rotation.set(axis.x,
-                     axis.y,
-                     axis.z, 
-                     (float)Math.cos(angle/2));
-        inverse.inverse(rotation);
-        vector.set(obj.x,
-                   obj.y,
-                   obj.z,
-                   0.0f);
-        vector.mul(rotation,vector);
-        vector.mul(inverse);
-        return new Vector3f(vector.x, vector.y, vector.z);
-    }
-    
     public void mouseDragged(MouseEvent me) {
         float x,y;
         x = ((float)(me.getX() - click.x))/(canvas.getWidth()/2);
@@ -117,24 +101,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         camDistance = Math.abs(cameraDistance - y*zoomSensitivity);
         Vector3f axis = new Vector3f();
         axis.set(cameraPosition);
-        float angle = x;
-        axis.scale((float)Math.sin(angle/2));
-        rotation.set(axis.x,
-                axis.y,
-                axis.z, 
-                (float)Math.cos(angle/2));
-        inverse.inverse(rotation);
-        //Rotate the upVector.
-        vector.set(upVector.x,
-                upVector.y,
-                upVector.z,
-                0f);
-        vector.mul(rotation,vector);
-        vector.mul(inverse);
-        
-        upVec.x = vector.x;
-        upVec.y = vector.y;
-        upVec.z = vector.z;
+        upVec.set(rotater.setAndRotate(axis, x, upVector));
         cameraPos.set(cameraPosition);
     }
         
@@ -153,36 +120,9 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         angle = point.angle(cameraPosition);       
         axis.normalize();
         
-        //Calculate the quarternion that represents this rotation and its inverse.
-        axis.scale((float)Math.sin(angle/2));
-        rotation.set(axis.x,
-		     axis.y,
-		     axis.z, 
-		     (float)Math.cos(angle/2));
-        inverse.inverse(rotation);
-        
-        //Rotate the camera, store the result in point.
-        vector.set(cameraPosition.x,
-                   cameraPosition.y,
-                   cameraPosition.z,
-		   0f);
-        vector.mul(rotation,vector);
-        vector.mul(inverse);        
-        cameraPos.x = vector.x;
-        cameraPos.y = vector.y;
-        cameraPos.z = vector.z;
-        
-        //Rotate the upVector.
-        vector.set(upVector.x,
-		   upVector.y,
-		   upVector.z,
-		   0f);
-        vector.mul(rotation,vector);
-        vector.mul(inverse);
-        
-        upVec.x = vector.x;
-        upVec.y = vector.y;
-        upVec.z = vector.z;                      
+        //Do the rotations
+        cameraPos.set(rotater.setAndRotate(axis, angle, cameraPosition));        
+        upVec.set(rotater.rotate(upVector));        
         updateCameraPos = true;
     }
     

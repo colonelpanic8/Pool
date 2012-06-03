@@ -3,7 +3,9 @@ package pool;
 import cameracontrol.CameraController;
 import cameracontrol.ChangeBasis;
 import com.sun.j3d.utils.geometry.Sphere;
+import com.sun.j3d.utils.geometry.Text2D;
 import com.sun.j3d.utils.image.TextureLoader;
+import com.sun.j3d.utils.universe.PlatformGeometry;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -848,40 +850,82 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController {
     PoolPanel pp;
-    boolean doingDragAim = false;
+    boolean doingDragAim = true;
+    Sphere aimSphere = new Sphere(.25f);
+    TransformGroup transformGroup = new TransformGroup();
+    BranchGroup aimSphereGroup = new BranchGroup();
+    Text2D text;
+    
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
         pp = p;
+        transformGroup.addChild(aimSphere);
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        aimSphereGroup.addChild(transformGroup);
+        universe.addBranchGraph(aimSphereGroup);
+        
+        PlatformGeometry pg = new PlatformGeometry();
+        
+        TransformGroup objScale = new TransformGroup();
+        Transform3D t3d = new Transform3D();
+        t3d.setTranslation(new Vector3f(0f, 0f, -1f));
+        objScale.setTransform(t3d);
+        
+        text = new Text2D("Text to display", pp.turqoise, "Verdana", 12, 1);
+        text.setCapability(Text2D.ALLOW_APPEARANCE_WRITE);
+        text.setCapability(Text2D.ALLOW_APPEARANCE_READ);
+        text.getAppearance().setCapability(Appearance.ALLOW_TEXTURE_READ);
+        text.getAppearance().setCapability(Appearance.ALLOW_TEXTURE_WRITE);
+        
+        objScale.addChild(text);
+        pg.addChild(objScale);
+
+        universe.getViewingPlatform().setPlatformGeometry(pg);
     }
     
     @Override public void mouseDragged(MouseEvent me) {
         if(doingDragAim) {
+            //Calculate the constants
             float x,y;
-            x = ((float)(me.getX() - 1));
-            y = ((float)(1 - me.getY()));
+            x = ((float)(me.getX() - canvas.getWidth()/2)/(canvas.getWidth()/2));
+            y = ((float)(canvas.getHeight()/2 - me.getY())/(canvas.getWidth()/2));                        
             double fieldOfView = universe.getViewer().getView().getFieldOfView();
-            double scale = fieldOfView/canvas.getWidth();
-            Transform3D trans = new Transform3D();
-            universe.getViewingPlatform().getViewPlatformTransform().getTransform(trans);
-            //
-            Vector3f actualPos = new Vector3f();
-            trans.get(actualPos);
-            //
-            Vector3f lookDirection = new Vector3f(cameraPos);
+            x *= fieldOfView/2;
+            y *= fieldOfView/2;
+            x = (float) Math.sin(x);
+            y = (float) Math.sin(y);
+            float _z = 1 - x * x - y * y;
+            float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
+            text.setString(String.format("%f0.3, %f0.3, %f0.3", x, y, z));
+            Vector3f lookDirection = new Vector3f(cameraPosition);
             lookDirection.scale(-1f);
-            Vector3f mouseDirection = new Vector3f(x,y,0);
-            double angle = mouseDirection.length()*scale;
-            Vector3f cross = new Vector3f();
-            Vector3f up = new Vector3f(upVec);         
-            cross.cross(lookDirection, up);
+            Vector3f cross = new Vector3f();            
+            cross.cross(lookDirection, upVector);
+            ChangeBasis cb = new ChangeBasis(cross, upVector, lookDirection);
+            cb.invert();
+            Vector3f clickVector = new Vector3f(x,y,z);
+            cb.transform(clickVector);
+            lookDirection.set(clickVector);
             
-            ChangeBasis cb = new ChangeBasis(lookDirection, up, cross);
-            cb.invert();            
-            Vector3f axis = new Vector3f(y,-x,0);
-            cb.transform(axis);
+            //double angle = clickVector.angle(out);
             
+            //cross.cross(clickVector, out);
+            //cross.normalize();
+                        
+            //Get camera translation
+            Vector3f actualPos = new Vector3f();
+            universe.getViewingPlatform().getViewPlatformTransform().getTransform(transform);
+            transform.get(actualPos);
             
+            //Calculate the maginitude of the ray from the camera position
+            //defined by the mouse to the x,y plane to get the x,y values.
+            float magnitude = -actualPos.z/lookDirection.z;
+            lookDirection.scale(magnitude);
+            actualPos.add(lookDirection);
+            transform = new Transform3D();
+            transform.setTranslation(actualPos);
+            transformGroup.setTransform(transform);
             
         } else {
             super.mouseDragged(me);
@@ -895,7 +939,7 @@ class PoolCameraController extends CameraController {
     @Override public void mouseReleased(MouseEvent me) {
         if(doingDragAim) {
             
-            doingDragAim = false;
+            //doingDragAim = false;
         } else {
             super.mouseReleased(me);
         }
@@ -909,27 +953,8 @@ class PoolCameraController extends CameraController {
         Vector3f aimPerp = new Vector3f();
         aimPerp.x = (float) pp.aim.y;
         aimPerp.y = (float) -pp.aim.x;
-        aimPerp.z = (float) pp.aim.z;
-        
-        aimPerp.scale((float)Math.sin(angle/2));
-        
-        rotation.set(aimPerp.x,
-                     aimPerp.y,
-                     aimPerp.z, 
-                     (float)Math.cos(angle/2));
-        inverse.inverse(rotation);
-        //Rotate the upVector.
-        vector.set(cameraPosition.x,
-                cameraPosition.y,
-                cameraPosition.z,
-                0f);
-        vector.mul(rotation,vector);
-        vector.mul(inverse);
-        
-        cameraPosition.x = vector.x;
-        cameraPosition.y = vector.y;
-        cameraPosition.z = vector.z;        
-                
+        aimPerp.z = (float) pp.aim.z;        
+        rotater.setAndRotateInPlace(aimPerp, angle, cameraPosition);                
         cameraPosition.normalize();
         cameraPos.set(cameraPosition);
         upVector.set(0.0f, 0.0f, 1.0f);

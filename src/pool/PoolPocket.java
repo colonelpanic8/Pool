@@ -63,7 +63,7 @@ public class PoolPocket {
         inner.scale(s, 2*h, s);
         outer.scale(s+.1,h,s+.1);
         base.scale(s+.1,.2,s+.1);
-        base.translate(0, -h/2+.1);
+        base.translate(0, -h/2+.1);        
         BooleanModeller bm = new BooleanModeller(outer, inner);
         Solid ring = bm.getDifference();      
         bm = new BooleanModeller(ring,base);      
