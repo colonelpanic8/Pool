@@ -848,7 +848,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController {
     PoolPanel pp;
-    boolean doingDragAim;
+    boolean doingDragAim = false;
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
@@ -889,7 +889,7 @@ class PoolCameraController extends CameraController {
     }
     
     @Override public void mousePressed(MouseEvent me) {
-        
+        super.mousePressed(me);
     }
     
     @Override public void mouseReleased(MouseEvent me) {

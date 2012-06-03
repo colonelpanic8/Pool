@@ -16,6 +16,8 @@ public class Rotater3f {
     
     protected Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
     
+    public Rotater3f() { }
+    
     public Rotater3f(Vector3f axis, double angle) {
         setRotation(axis, angle);
     }

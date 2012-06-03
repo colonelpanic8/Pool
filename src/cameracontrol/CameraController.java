@@ -19,7 +19,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected Vector3d upVec = new Vector3d(upVector);
     protected Point3d cameraPos = new Point3d(cameraPosition);
     protected Point3d cameraTrans = new Point3d();
-    protected Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();
+    protected Rotater3f rotater = new Rotater3f();
     protected float cameraDistance = 40f;
     protected float camDistance = cameraDistance;
     protected ChangeBasis changeBasis;
