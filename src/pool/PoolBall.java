@@ -7,20 +7,23 @@ import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.vecmath.*;
+import javax.vecmath.Point3d;
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3d;
+import javax.vecmath.Vector3f;
 
 public class PoolBall {
     Appearance appearance;
-    Point3d pos , lpos;
-    Vector3f vel , lvel;
+    Point3d pos;
+    Point2D.Double vel;
+    Point3d lpos;
+    Point2D.Double lvel;
     
     Point2D.Double acc;
     double size;
     int alpha;
     Color color;
     boolean sel, sunk, remove, showDirection;
-    
-    static Point3f zero = new Point3f(0.0f, 0.0f, 0.0f);
         
     //Java 3D
     BranchGroup group;
@@ -29,11 +32,11 @@ public class PoolBall {
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
     Transform3D transform = new Transform3D();                
     
-    public PoolBall(Appearance app, double x, double y, float a, float b, double s){
+    public PoolBall(Appearance app, double x, double y, double a, double b, double s){
         pos = new Point3d(x,y,(double)0);
-	vel = new Vector3f(a, b, 0f);
+	vel = new Point2D.Double(a,b);
         lpos = new Point3d(x,y,(double)0);
-	lvel = new Vector3f(a, b, 0f);
+	lvel = new Point2D.Double(a,b);
         appearance = app;
 	acc = new Point2D.Double(0,0);
 	size = s;
@@ -56,7 +59,7 @@ public class PoolBall {
     public final void move(double t) {
         pos.x += vel.x*t;
         pos.y += vel.y*t;
-        double angle = (vel.length()*t/size);
+        double angle = (vel.distance(0.0,0.0)*t/size);
         Vector3f velPerp = new Vector3f((float)-vel.y, (float)vel.x, 0f);
         velPerp.normalize();
         velPerp.scale((float)Math.sin(angle/2));
@@ -65,7 +68,7 @@ public class PoolBall {
                      0, 
                      (float)Math.cos(angle/2));
         
-        if(vel.length() > 0) {
+        if(vel.distance(0.0,0.0) > 0) {
             rotation.mul(velRotation, rotation);
         }
         
