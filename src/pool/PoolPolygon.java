@@ -79,7 +79,7 @@ public class PoolPolygon extends Polygon2D {
         return false;
     }
     
-    public void detectCollisions(PoolBall ball, PriorityQueue<Collision> collisions, double timePassed) {
+    public void detectCollisions(PoolBall ball, PriorityQueue<PoolCollision> collisions, double timePassed) {
         double min, t;
         int minWall = -1;
         boolean minIsPoint = false;
@@ -114,7 +114,7 @@ public class PoolPolygon extends Polygon2D {
         }    
     }
     
-    public void detectCollisionsWithoutWall(PoolBall ball, PriorityQueue<Collision> collisions, double timePassed, int wall) {
+    public void detectCollisionsWithoutWall(PoolBall ball, PriorityQueue<PoolCollision> collisions, double timePassed, int wall) {
         double min, t;
         boolean minIsPoint = false;
         int minWall = -1;

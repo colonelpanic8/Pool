@@ -11,14 +11,14 @@ import unbboolean.j3dbool.BooleanModeller;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
 
-public class Pocket {
+public class PoolPocket {
     Point2D.Double pos;
     float size;
     TransformGroup transformGroup = new TransformGroup();
     BranchGroup group = new BranchGroup();
     Solid inner = new Solid();
         
-    public Pocket(double x, double y, double s, float h, float bs, Appearance ap) {
+    public PoolPocket(double x, double y, double s, float h, float bs, Appearance ap) {
         Cylinder cylinder;
         pos = new Point2D.Double(x,y);
         Matrix3f matrix = new Matrix3f();
@@ -39,7 +39,7 @@ public class Pocket {
         group.addChild(transformGroup);
     }
     
-    public Pocket(double x, double y, double s, float h, float bs, Color3f color) {
+    public PoolPocket(double x, double y, double s, float h, float bs, Color3f color) {
         Solid outer = new Solid(), base = new Solid();
         pos = new Point2D.Double(x,y);
         Matrix3f matrix = new Matrix3f();

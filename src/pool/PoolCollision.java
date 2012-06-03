@@ -3,17 +3,17 @@ package pool;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
 
-public abstract class Collision {
+public abstract class PoolCollision {
     double time;
     PoolBall ball1;
 
     public abstract void doEffects(PoolPanel pp);
 
     public void doCollision(PoolPanel pp) {
-	Iterator<Collision> collIterator = pp.collisions.iterator();
+	Iterator<PoolCollision> collIterator = pp.collisions.iterator();
 	Iterator<PoolBall> ballIterator;
 	while(collIterator.hasNext()) {
-	    Collision item = collIterator.next();
+	    PoolCollision item = collIterator.next();
 	    if(item.involves(ball1)) {
 		collIterator.remove();
 	    }
@@ -44,7 +44,7 @@ public abstract class Collision {
     }
 }
 
-class BallCollision extends Collision {
+class BallCollision extends PoolCollision {
     PoolBall ball2;
 
     public BallCollision(double t, PoolBall b, PoolBall c){
@@ -55,18 +55,18 @@ class BallCollision extends Collision {
 
     @Override public void doCollision(PoolPanel pp) {
 	Iterator<PoolBall> ballIterator;
-        Iterator<Collision> collIterator = pp.collisions.iterator();
+        Iterator<PoolCollision> collIterator = pp.collisions.iterator();
         
         //Remove collisions involiving the balls
         while(collIterator.hasNext()) {
-	    Collision item = collIterator.next();
+	    PoolCollision item = collIterator.next();
 	    if(item.involves(ball1)) {
 		collIterator.remove();
 	    }
 	}
         collIterator = pp.collisions.iterator();
         while(collIterator.hasNext()) {
-	    Collision item = collIterator.next();
+	    PoolCollision item = collIterator.next();
 	    if(item.involves(ball2)) {
 		collIterator.remove();
 	    }
@@ -108,9 +108,9 @@ class BallCollision extends Collision {
     
     @Override public void doEffects(PoolPanel pp) {
 	//Remove collisions involving ball2
-	Iterator<Collision> collIterator = pp.collisions.iterator();
+	Iterator<PoolCollision> collIterator = pp.collisions.iterator();
 	while(collIterator.hasNext()) {
-	    Collision item = collIterator.next();
+	    PoolCollision item = collIterator.next();
 	    if(item.involves(ball2)) {
 		collIterator.remove();
 	    }
@@ -138,7 +138,7 @@ class BallCollision extends Collision {
     }
 }
 
-class WallCollision extends Collision {
+class WallCollision extends PoolCollision {
     Point2D.Double newVel;
     PoolPolygon poly;
     int wall;
@@ -159,7 +159,7 @@ class WallCollision extends Collision {
     }
 }
 
-class PointCollision extends Collision {
+class PointCollision extends PoolCollision {
     Point2D.Double point;
     
     public PointCollision(double t, Point2D.Double p, PoolBall b) {
@@ -186,16 +186,16 @@ class PointCollision extends Collision {
     }
 }
 
-class PocketCollision extends Collision {
+class PocketCollision extends PoolCollision {
     public PocketCollision(PoolBall b, double t) {
 	ball1 = b;
 	time = t;
     }
     
     @Override public void doCollision(PoolPanel pp) {
-        Iterator<Collision> collIterator = pp.collisions.iterator();
+        Iterator<PoolCollision> collIterator = pp.collisions.iterator();
         while(collIterator.hasNext()) {
-            Collision item = collIterator.next();
+            PoolCollision item = collIterator.next();
             if(item.involves(ball1)) {
                 collIterator.remove();
             }

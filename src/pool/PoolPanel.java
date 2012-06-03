@@ -1,5 +1,6 @@
 package pool;
 
+import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
@@ -16,11 +17,13 @@ import java.util.PriorityQueue;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
 import javax.swing.Timer;
-import javax.vecmath.*;
+import javax.vecmath.Color3f;
+import javax.vecmath.Point3d;
+import javax.vecmath.Point3f;
+import javax.vecmath.Vector3f;
 import unbboolean.j3dbool.BooleanModeller;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
-import cameracontrol.CameraController;
 
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
@@ -29,9 +32,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     boolean selMode, sliderPower;
     PoolBall cueball, shootingBall, ghostBallObjectBall;
     ArrayList<PoolBall> balls;
-    ArrayList<Pocket> pockets;
+    ArrayList<PoolPocket> pockets;
     ArrayList<PoolPolygon> polygons;
-    PriorityQueue<Collision> collisions;
+    PriorityQueue<PoolCollision> collisions;
     Color tableColor;
     double height, width;
     double spin, power;
@@ -272,7 +275,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
 
     void initPockets() {
-        Iterator<Pocket> iter;
+        Iterator<PoolPocket> iter;
         Appearance appearance = new Appearance();
         turqoise = new Color3f(0.0f, .5f, .5f);
         ColoringAttributes ca = new ColoringAttributes(turqoise, ColoringAttributes.SHADE_FLAT);
@@ -285,21 +288,21 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         pockets.add(new Pocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, appearance));
         pockets.add(new Pocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, appearance));
         */
-        pockets.add(new Pocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new Pocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new Pocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
-        pockets.add(new Pocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-	pockets.add(new Pocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
-        pockets.add(new Pocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
+        pockets.add(new PoolPocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
+        pockets.add(new PoolPocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
+        pockets.add(new PoolPocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
+        pockets.add(new PoolPocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
+	pockets.add(new PoolPocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, turqoise));
+        pockets.add(new PoolPocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, turqoise));        
         iter = pockets.iterator();
         while(iter.hasNext()) {
-            Pocket pocket = iter.next();
+            PoolPocket pocket = iter.next();
             universe.addBranchGraph(pocket.group);
         }
     }
     
     private void initTable() {
-        Pocket pocket;
+        PoolPocket pocket;
         BooleanModeller bm;        
         BranchGroup borderGroup = new BranchGroup();
         Solid solid1 = new Solid();
@@ -420,7 +423,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     void updateBallPositions(){
 	Iterator<PoolBall> ballIterator;
-	Collision collision = collisions.poll();
+	PoolCollision collision = collisions.poll();
 	double timePassed = 0;
         while(collision != null) {
 	    //Advance balls to the point where the collision occurs.
@@ -529,10 +532,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     void detectPocketCollisions(PoolBall ball, double timePassed) {
 	double time;
-	Iterator<Pocket> pocketItr;
+	Iterator<PoolPocket> pocketItr;
 	pocketItr = pockets.iterator();
         while(pocketItr.hasNext()) {
-            Pocket pocket = pocketItr.next();
+            PoolPocket pocket = pocketItr.next();
             time = pocket.detectCollisionWith(ball);
             time += timePassed;
 	    if(time > timePassed && time < 1) {
@@ -742,7 +745,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
     //COMPARATOR INTERFACE
     public int compare(Object a, Object b) {
-	double val =  ((Collision)a).time - ((Collision)b).time;
+	double val =  ((PoolCollision)a).time - ((PoolCollision)b).time;
 	if(val < 0) {
 	    return -1;
 	} else if (val > 0) {
