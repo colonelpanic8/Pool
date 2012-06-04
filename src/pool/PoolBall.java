@@ -46,7 +46,7 @@ public class PoolBall {
         group = new BranchGroup();
         transformGroup = new TransformGroup();
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS, appearance);
+        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, appearance);
         transformGroup.addChild(sphere);
         rotation.w = 1.0f;
         transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));

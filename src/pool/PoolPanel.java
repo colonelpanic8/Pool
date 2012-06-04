@@ -1,7 +1,6 @@
 package pool;
 
 import cameracontrol.CameraController;
-import cameracontrol.ChangeBasis;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
@@ -65,6 +64,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     LineArray ghostBallLineGeometry;
     
     //Colors
+    Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
     Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
     Color3f turqoise = new Color3f(0.0f, .5f, .5f);
     Color3f darkGreen = new Color3f(0.0f, 0.5f, 0.0f);
@@ -76,6 +76,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     Color3f railColor = darkerTableColor;
     Color3f borderColor = darkestTableColor;
     Color3f pocketColor = darkRed;
+    
+    //Shared Scene Graph Objects
+    Material ballMaterial = new Material(new Color3f(.2f,.2f,.2f), white, white, black, 50f);
     
     
     //--------------------INITIALIZATION--------------------//
@@ -99,7 +102,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPockets();
         initPolygons();
         initTable();
-        cueball = addBall(-width/4, 0, 0, 0, ballSize, null);
+        Appearance appearance = new Appearance();
+        appearance.setMaterial(ballMaterial);
+        cueball = addBall(-width/4, 0, 0, 0, ballSize, appearance);
         shootingBall = cueball;        
         
         //Add listeners.
@@ -122,6 +127,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         universe = new SimpleUniverse(canvas);
         universe.getViewer().getView().setBackClipDistance(width*3);
         group = new BranchGroup();
+        group.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+        group.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
         
         //Create the bounding box for the game.
         BoundingBox bounds = new BoundingBox();
@@ -130,7 +137,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         //Create light sources.
         Color3f lightColor = white;
-        Vector3f lightDirection = new Vector3f(4.0f, -7.0f, -12.0f);        
+        Vector3f lightDirection = new Vector3f(0.0f, -1.0f, -1.0f);        
         DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
         light.setInfluencingBounds(bounds);
         group.addChild(light);
@@ -421,7 +428,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    ball.move(1-timePassed);
             ball.vel.x += ball.acc.x;
             ball.vel.y += ball.acc.y;
-            if(ball.vel.length() < .001) {
+            if(ball.vel.length() < .01) {
                 ball.vel.x = 0;
                 ball.vel.y = 0;
             } else {
@@ -697,11 +704,21 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //--------------------ACTIONS--------------------//
     
     public void newRack() {
-        Texture texImage = new TextureLoader("10.jpg",this).getTexture();        
+        TextureAttributes ta = new TextureAttributes();
+        ta.setTextureMode(TextureAttributes.MODULATE);
+        Material mat = new Material();
+	mat.setAmbientColor(new Color3f(0.0f,0.0f,1.0f));
+	mat.setDiffuseColor(new Color3f(0.7f,0.7f,0.7f));
+	mat.setSpecularColor(new Color3f(0.7f,0.7f,0.7f));
+        Texture texImage = new TextureLoader("10.jpg",this).getTexture();
         Appearance stripe = new Appearance();
         stripe.setTexture(texImage);
+        stripe.setTextureAttributes(ta);
         Texture texImage2 = new TextureLoader("3.jpg",this).getTexture();        
         Appearance solid = new Appearance();
+        solid.setTextureAttributes(ta);
+        stripe.setMaterial(mat);
+        solid.setMaterial(ballMaterial);
         solid.setTexture(texImage2);
         cueball.pos.set(-width/4, 0, 0);
         cueball.vel.set(0.0,0.0,0.0);
@@ -759,7 +776,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public PoolBall addBall(double x, double y, double a, double b, double s, Appearance appearance) {        
         PoolBall ball = new PoolBall(appearance, x, y, a, b, s);
-        universe.addBranchGraph(ball.group);        
+        //universe.addBranchGraph(ball.group);
+        group.addChild(ball.group);
         balls.add(ball);
         return ball;
     }
