@@ -136,12 +136,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         Vector3f lightDirection = new Vector3f(0.0f, -1.0f, -1.0f);        
         DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
         light.setInfluencingBounds(bounds);
-        group.addChild(light);
+        //group.addChild(light);
         
         Color3f ambientColor = white;        
         AmbientLight ambientLight = new AmbientLight(ambientColor);
         ambientLight.setInfluencingBounds(bounds);
-        group.addChild(ambientLight);        
+        group.addChild(ambientLight);
+        
+        SpotLight sl = new SpotLight(true, white, new Point3f(0.0f,0.0f, 5.0f),
+        new Point3f(1.0f,1.0f, 3.0f), new Vector3f(0.0f,0.0f, -1.0f), (float)Math.PI, 100.0f);
+        sl.setInfluencingBounds(bounds);
+        group.addChild(sl);
+        group.addChild(this.newSpotLight(bounds, new Point3f(0.0f,0.0f, 5.0f), (float)Math.PI, 100.0f));
         
         //Add aiming line.
         Appearance appearance = new Appearance();
@@ -191,9 +197,31 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         //Finalize 3D setup, initialize camera control.
         universe.addBranchGraph(group);        
         cameraController = new PoolCameraController(this);                      
-    }        
+    }
+    
+    Appearance createMatAppear(Color3f dColor, Color3f sColor, float shine) {
+        
+        Appearance appear = new Appearance();
+        Material material = new Material();
+        material.setDiffuseColor(dColor);
+        material.setSpecularColor(sColor);
+        material.setShininess(shine);
+        appear.setMaterial(material);        
+        return appear;
+  }
+    
+    SpotLight newSpotLight(Bounds bounds, Point3f pos, float spread,
+            float concentration) {
+        SpotLight sl = new SpotLight();
+        sl.setInfluencingBounds(bounds);
+        sl.setPosition(pos);
+        sl.setSpreadAngle(spread);
+        sl.setConcentration(concentration);
+        return sl;
+  }
     
     void initPolygons() {
+        //Appearance appearance = createMatAppear(turqoise, white, 5.0f);
         double[] xpoints, ypoints;
 	xpoints = new double[4];
 	ypoints = new double[4];
@@ -474,11 +502,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             //checkOverlaps(ball);
             while(pocketIterator.hasNext()) {
                 PoolPocket pocket = pocketIterator.next();
-                if(pocket.ballIsOver(ball)) {
-                    this.doGravity(ball, pocket);
+                if(pocket.ballIsOver(ball) && !ball.sunk) {
+                    doGravity(ball, pocket);
                 }
+
             }
-            
         }
     }
     
@@ -526,6 +554,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             ball.sunk = true;
             if(ball == cueball) {
                 cueballSunk();
+            } else {
+                ball.pos.set(balls.lastIndexOf(ball)*2*ballSize, height/2, 2.0);
             }
             return;
         }
@@ -952,6 +982,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void makeActive(PoolBall ball, double x, double y) {
+        ball.sunk = false;
         activeBalls.remove(ball);
         activeBalls.add(ball);
         ball.active = true;
@@ -964,8 +995,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, c, ballsize);
         universe.addBranchGraph(poly.group);
         polygons.add(poly);
+        return poly;        
+    }
+    
+    public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
+            Appearance app, double ballsize) {
+        PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, app, ballsize);
+        universe.addBranchGraph(poly.group);
+        polygons.add(poly);
         return poly;
-        
     }
     
     public void rewind() {

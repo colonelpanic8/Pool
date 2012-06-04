@@ -1,6 +1,5 @@
 package pool;
 
-import misc.Polygon2D;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.PriorityQueue;
@@ -8,6 +7,7 @@ import javax.media.j3d.*;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+import misc.Polygon2D;
 
 public class PoolPolygon extends Polygon2D {
     QuadArray vertices;
