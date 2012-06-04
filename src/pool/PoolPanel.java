@@ -887,6 +887,10 @@ class PoolCameraController extends CameraController {
         pp = p;
     }
     
+    @Override public void mouseClicked(MouseEvent me) {
+        pp.shoot();
+    }
+    
     @Override public void mouseMoved(MouseEvent me) {
         Vector3f pos = mouseToXYPlane(me.getX(), me.getY());
         pos.scale(-1f);
@@ -918,6 +922,7 @@ class PoolCameraController extends CameraController {
         cameraTrans.set(0.0, 0.0, 0.0f);
         camDistance = 40f;
         updateCamera();
+        updateCameraPos = true;
         mouseReleased(null);
     }    
 }
