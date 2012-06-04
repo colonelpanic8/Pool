@@ -881,89 +881,20 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 }
 class PoolCameraController extends CameraController {
     PoolPanel pp;
-    boolean doingDragAim = false;
-    Sphere aimSphere = new Sphere(.25f);
-    TransformGroup transformGroup = new TransformGroup();
-    BranchGroup aimSphereGroup = new BranchGroup();
-    
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
         pp = p;
-        transformGroup.addChild(aimSphere);
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        aimSphereGroup.addChild(transformGroup);
-        universe.addBranchGraph(aimSphereGroup);
     }
     
-    @Override public void mouseDragged(MouseEvent me) {
-        
-        if(doingDragAim) {
-            //Calculate the constants
-            float x,y;
-            x = ((float)(me.getX() - canvas.getWidth()/2)/(canvas.getWidth()/2));
-            y = ((float)(canvas.getHeight()/2 - me.getY())/(canvas.getWidth()/2));                        
-            double fieldOfView = universe.getViewer().getView().getFieldOfView();
-            x *= fieldOfView/2;
-            y *= fieldOfView/2;
-            x = (float) Math.sin(x);
-            y = (float) Math.sin(y);
-            float _z = 1 - x * x - y * y;
-            float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
-            Vector3f lookDirection = new Vector3f(cameraPosition);
-            lookDirection.scale(-1f);
-            Vector3f cross = new Vector3f();            
-            cross.cross(lookDirection, upVector);
-            ChangeBasis cb = new ChangeBasis(cross, upVector, lookDirection);
-            cb.invert();
-            Vector3f clickVector = new Vector3f(x,y,z);
-            cb.transform(clickVector);
-            lookDirection.set(clickVector);
-            
-            //double angle = clickVector.angle(out);
-            
-            //cross.cross(clickVector, out);
-            //cross.normalize();
-                        
-            //Get camera translation
-            Vector3f actualPos = new Vector3f();
-            universe.getViewingPlatform().getViewPlatformTransform().getTransform(transform);
-            transform.get(actualPos);
-            
-            //Calculate the maginitude of the ray from the camera position
-            //defined by the mouse to the x,y plane to get the x,y values.
-            float magnitude = -actualPos.z/lookDirection.z;
-            lookDirection.scale(magnitude);
-            actualPos.add(lookDirection);
-            transform = new Transform3D();
-            transform.setTranslation(actualPos);
-            transformGroup.setTransform(transform);
-            actualPos.scale(-1f);
-            actualPos.add(new Vector3f(pp.shootingBall.pos));
-            actualPos.normalize();
-            actualPos.scale(-1f);
-            pp.setAim(actualPos.x, actualPos.y);
-            
-        } else {
-            super.mouseDragged(me);
-        }
+    @Override public void mouseMoved(MouseEvent me) {
+        Vector3f pos = mouseToXYPlane(me.getX(), me.getY());
+        pos.scale(-1f);
+        pos.add(new Vector3f(pp.shootingBall.pos));
+        pos.normalize();
+        pp.setAim(pos.x, pos.y);
     }
-    
-    @Override public void mousePressed(MouseEvent me) {
-        if(me.getButton() != MouseEvent.BUTTON1) {
-            doingDragAim = true;
-        }
-        super.mousePressed(me);
-    }
-    
-    @Override public void mouseReleased(MouseEvent me) {
-        if(doingDragAim) {
-            
-            doingDragAim = false;
-        }
-        super.mouseReleased(me);
-    }
-    
+
     public void snapToShootingBall() {
         cameraTrans.set(pp.shootingBall.pos);
         cameraTranslation.set(cameraTrans);
