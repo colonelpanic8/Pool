@@ -24,7 +24,7 @@ public abstract class PoolCollision {
 	    }
 	}
 	doEffects(pp);
-	ballIterator = pp.balls.iterator();
+	ballIterator = pp.activeBalls.iterator();
         
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
@@ -81,7 +81,7 @@ class BallCollision extends PoolCollision {
         
        
         //Check for new collisions involving the balls
-	ballIterator = pp.balls.iterator();
+	ballIterator = pp.activeBalls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2) {
@@ -93,7 +93,7 @@ class BallCollision extends PoolCollision {
 	    }
 	}
         
-        ballIterator = pp.balls.iterator();
+        ballIterator = pp.activeBalls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2){
@@ -112,14 +112,13 @@ class BallCollision extends PoolCollision {
     }
     
     @Override public void doEffects(PoolPanel pp) {
-	//Remove collisions involving ball2
-	Iterator<PoolCollision> collIterator = pp.collisions.iterator();
-	while(collIterator.hasNext()) {
-	    PoolCollision item = collIterator.next();
-	    if(item.involves(ball2)) {
-		collIterator.remove();
-	    }
-	}
+        if(ball1.sunk || ball2.sunk) {
+            ball1.vel.set(0.0, 0.0, 0.0);
+            ball2.vel.set(0.0, 0.0, 0.0);
+            ball1.sunk = true;
+            ball2.sunk = true;
+            return;
+        }
 	//Collision effects
 	double xdif = ball2.pos.x - ball1.pos.x;
 	double ydif = ball2.pos.y - ball1.pos.y;

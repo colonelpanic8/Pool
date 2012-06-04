@@ -6,7 +6,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.management.Notification;
 import javax.management.NotificationListener;
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -82,7 +85,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener,
         } else if(source == selectionModeButton) {
             poolPanel.flipSelectionMode();
         } else if(source == makeRackButton)      {
-            poolPanel.newRack();
+            poolPanel.new9BallRack();
         }
     }
     
@@ -90,8 +93,10 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener,
         Object source = ce.getSource();
             
         if       (source == angleSlider) {
-            double val = angleSlider.getValue();
-            poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));            
+            if(ce.getSource() != poolPanel) {
+                double val = angleSlider.getValue();
+                poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
+            }
         } else if(source == powerSlider) {
             double val = powerSlider.getValue();
             poolPanel.setPower(val/powerRange);

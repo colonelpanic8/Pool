@@ -1,7 +1,6 @@
 package pool;
 
 import com.sun.j3d.utils.geometry.Sphere;
-import java.awt.Color;
 import java.awt.geom.Point2D;
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
@@ -15,20 +14,46 @@ import javax.vecmath.Vector3f;
 public class PoolBall {
     Appearance appearance;
     Point3d pos, lpos;
-    Vector3d vel, lvel;
-    
+    Vector3d vel, lvel;    
     Point2D.Double acc;
     double size;
-    int alpha;
-    Color color;
-    boolean sel, sunk, remove, showDirection;
+    boolean sunk, active;
         
     //Java 3D
     BranchGroup group;
     TransformGroup transformGroup;
     Sphere sphere;
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
-    Transform3D transform = new Transform3D();                
+    Transform3D transform = new Transform3D();
+    
+    public PoolBall(Appearance app, double s){
+        //Get values
+        size = s;
+        appearance = app;
+        
+        //Set flags
+        active = false;
+        sunk = false;  
+        rotation.w = 1.0f;
+        
+        //Initialize instance variables
+        pos = new Point3d();
+        vel = new Vector3d();
+        lpos = new Point3d();
+        lvel = new Vector3d();
+        acc = new Point2D.Double(0,0);
+        transformGroup = new TransformGroup();
+        group = new BranchGroup();
+        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
+        
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        sphere.setAppearance(appearance);
+        transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));
+        transformGroup.setTransform(transform);
+        transformGroup.addChild(sphere);
+        group.addChild(transformGroup);
+                
+    }
     
     public PoolBall(Appearance app, double x, double y, double a, double b, double s){
         pos = new Point3d(x,y,0.0);
@@ -39,14 +64,12 @@ public class PoolBall {
 	acc = new Point2D.Double(0,0);
 	size = s;
 	sunk = false;
-	remove = false;
-	alpha = 255;
-        showDirection = true;         
-        
+        active = true;
         group = new BranchGroup();
         transformGroup = new TransformGroup();
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, appearance);
+        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
+        sphere.setAppearance(appearance);
         transformGroup.addChild(sphere);
         rotation.w = 1.0f;
         transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));

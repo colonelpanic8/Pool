@@ -7,10 +7,7 @@ import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.PriorityQueue;
+import java.util.*;
 import javax.management.*;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
@@ -33,7 +30,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
     boolean selectionMode = false, sliderPower = false, frameSkip = false, err = false;
     PoolBall cueball, shootingBall, ghostBallObjectBall;
-    ArrayList<PoolBall>     balls = new ArrayList(16);        
+    ArrayList<PoolBall>     balls = new ArrayList(16);
+    ArrayList<PoolBall>  activeBalls = new ArrayList(16);
     ArrayList<PoolPocket> pockets = new ArrayList(6);
     ArrayList<PoolPolygon> polygons = new ArrayList(10);
     PriorityQueue<PoolCollision> collisions;
@@ -78,7 +76,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     Color3f pocketColor = darkRed;
     
     //Shared Scene Graph Objects
-    Material ballMaterial = new Material(new Color3f(.2f,.2f,.2f), white, white, black, 50f);
+    TextureAttributes ta = new TextureAttributes();
+    Material ballMaterial = new Material(new Color3f(.2f,.2f,.2f), white, white, white, 128f);
     
     
     //--------------------INITIALIZATION--------------------//
@@ -94,18 +93,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         borderSize = pocketSize + .4;
         railIndent = railSize;
         sideIndent = railIndent/4;
-        pocketDepth = ballSize*8;                                      
+        pocketDepth = ballSize*8;       
         
-        init3D();
-        
-        //Initialize table items.
+        //Initialize 3D components
+        ta.setTextureMode(TextureAttributes.MODULATE);
+        init3D();        
         initPockets();
         initPolygons();
         initTable();
-        Appearance appearance = new Appearance();
-        appearance.setMaterial(ballMaterial);
-        cueball = addBall(-width/4, 0, 0, 0, ballSize, appearance);
-        shootingBall = cueball;        
+        initBalls();                
         
         //Add listeners.
 	addHierarchyBoundsListener(this);
@@ -284,6 +280,32 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }
     }
     
+    void initBalls() {
+        //Initialize cueball.
+        Texture cueballImage = new TextureLoader("textures/cueball.jpg",this).getTexture();        
+        Appearance appearance = new Appearance();
+        appearance.setMaterial(ballMaterial);
+        appearance.setTexture(cueballImage);
+        appearance.setTextureAttributes(ta);
+        cueball = addBall(-width/4, 0, 0, 0, ballSize, appearance);
+        shootingBall = cueball;
+        
+        for(int i = 1; i < 16; i++) {
+            Texture texture = new TextureLoader(String.format("textures/%d.jpg",i),this).getTexture();
+            Appearance app = new Appearance();
+            app.setTexture(texture);
+            app.setTextureAttributes(ta);
+            app.setMaterial(ballMaterial);
+            PoolBall ball = new PoolBall(app, ballSize);
+            ball.pos.y = height/2;
+            ball.pos.x = 2*i*ballSize;
+            ball.pos.z = 2;
+            ball.move(0);
+            group.addChild(ball.group);      
+            balls.add(ball);
+        }                
+    }
+    
     private void initTable() {
         PoolPocket pocket;
         BooleanModeller bm;        
@@ -375,7 +397,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         //this.repaint();
         doAim();
 	Iterator<PoolBall> iter;
-	iter = balls.iterator();
+	iter = activeBalls.iterator();
         validate();
         if(err) {
             rewind();
@@ -410,7 +432,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	double timePassed = 0;
         while(collision != null) {
 	    //Advance balls to the point where the collision occurs.
-            ballIterator = balls.iterator();
+            ballIterator = activeBalls.iterator();
 	    while(ballIterator.hasNext()) {
 		PoolBall ball = ballIterator.next();
 		ball.move(collision.time-timePassed);
@@ -422,7 +444,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             collisionsExecuted++;
 	    collision = collisions.poll();	    
 	}
-        ballIterator = balls.iterator();
+        ballIterator = activeBalls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    ball.move(1-timePassed);
@@ -445,7 +467,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             
 	}
         
-        ballIterator = balls.iterator();        
+        ballIterator = activeBalls.iterator();        
         while(ballIterator.hasNext()) {
             Iterator<PoolPocket> pocketIterator = pockets.iterator();
             PoolBall ball = ballIterator.next();
@@ -463,7 +485,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     void updateGhostBall() {
 	Iterator<PoolBall> iter;
         double min = Double.POSITIVE_INFINITY;
-	iter = balls.iterator();
+	iter = activeBalls.iterator();
 	ghostBallObjectBall = null;
 	while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
@@ -703,46 +725,185 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //--------------------ACTIONS--------------------//
     
-    public void newRack() {
-        TextureAttributes ta = new TextureAttributes();
-        ta.setTextureMode(TextureAttributes.MODULATE);
-        Material mat = new Material();
-	mat.setAmbientColor(new Color3f(0.0f,0.0f,1.0f));
-	mat.setDiffuseColor(new Color3f(0.7f,0.7f,0.7f));
-	mat.setSpecularColor(new Color3f(0.7f,0.7f,0.7f));
-        Texture texImage = new TextureLoader("10.jpg",this).getTexture();
-        Appearance stripe = new Appearance();
-        stripe.setTexture(texImage);
-        stripe.setTextureAttributes(ta);
-        Texture texImage2 = new TextureLoader("3.jpg",this).getTexture();        
-        Appearance solid = new Appearance();
-        solid.setTextureAttributes(ta);
-        stripe.setMaterial(mat);
-        solid.setMaterial(ballMaterial);
-        solid.setTexture(texImage2);
+    public void new9BallRack() {
         cueball.pos.set(-width/4, 0, 0);
         cueball.vel.set(0.0,0.0,0.0);
         cueball.move(0.0);
         aim.x = -1.0;
         aim.y = 0.0;
         doAim();
-        this.cameraController.overheadView();
-        double x = width/8;
-        for(int i = 0; i < 5; i++) {
-            double y = -i*ballSize + .01;
-            for(int j = 0; j <= i; j++) {
-                if(j == 1 && i == 2) {
-                    this.addBall(x, y, 0, 0, ballSize, solid);
-                } else if((i+j)%2 == 0) {
-                    this.addBall(x, y, 0, 0, ballSize, stripe);
-                } else {
-                    this.addBall(x, y, 0, 0, ballSize, solid);
-                }
-                y += 2*ballSize; 
-            }
-            x += 2*ballSize*Math.sqrt(3)/2+.01;
-        }                       
+        cameraController.overheadView();
+        ArrayList<PoolBall> solids = new ArrayList();
+        Random random = new Random();
+        for(int i = 2; i < 9; i++) {
+            solids.add(balls.get(i));
+        }
+        PoolBall item;
+        double x = width/5;
+        double y = 0;
+        double space = .005;
+        
+        makeActive(balls.get(1), x, y);
+        
+        
+        //SecondRow
+        y = -(ballSize + space/2);
+        x += ballSize*Math.sqrt(3) + space; 
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);        
+        
+        
+        //Third row
+        x += ballSize*Math.sqrt(3) + space;
+        y = -2*(ballSize + space/2);
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = balls.get(9);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        
+        //Fourth row
+        y = -(ballSize + space/2);
+        x += ballSize*Math.sqrt(3) + space; 
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        
+        //Fifth row
+        x += ballSize*Math.sqrt(3) + space;
+        makeActive(solids.get(0),x,0);
+        
+        
     }
+    
+    public void new8BallRack() {
+        cueball.pos.set(-width/4, 0, 0);
+        cueball.vel.set(0.0,0.0,0.0);
+        cueball.move(0.0);
+        aim.x = -1.0;
+        aim.y = 0.0;
+        doAim();
+        cameraController.overheadView();
+        
+        ArrayList<PoolBall> solids = new ArrayList(), stripes = new ArrayList();
+        Random random = new Random();
+        for(int i = 1; i < 8; i++) {
+            solids.add(balls.get(i));
+        }
+        for(int i = 9; i < 16; i++) {
+            stripes.add(balls.get(i));
+        }
+        
+        if (Math.abs(random.nextInt()) % 2 == 0) {
+            ArrayList<PoolBall> temp = solids;
+            solids = stripes;
+            stripes = temp;
+        }
+        
+        
+        double x = width/5;
+        double y = 0;
+        double space = .005;
+        //First Row               
+        PoolBall item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);        
+        makeActive(item, x, y);
+        
+        //SecondRow
+        y = -(ballSize + space/2);
+        x += ballSize*Math.sqrt(3) + space;                        
+        if (Math.abs(random.nextInt()) % 2 == 0) {
+            ArrayList<PoolBall> temp = solids;
+            solids = stripes;
+            stripes = temp;
+        }
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = stripes.get(Math.abs(random.nextInt()) % stripes.size());
+        stripes.remove(item);
+        makeActive(item, x, y);
+        
+        //Third Row
+        x += ballSize*Math.sqrt(3) + space;
+        y = -2*(ballSize + space/2);
+        item = stripes.get(Math.abs(random.nextInt()) % stripes.size());
+        stripes.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = balls.get(8);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        
+        
+        //Fourth Row
+        x += ballSize*Math.sqrt(3) + space;
+        y = -3*(ballSize + space/2);
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = stripes.get(Math.abs(random.nextInt()) % stripes.size());
+        stripes.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = stripes.get(Math.abs(random.nextInt()) % stripes.size());
+        stripes.remove(item);
+        makeActive(item,x,y);
+        
+        //FifthRow
+        x += ballSize*Math.sqrt(3) + space;
+        y = -4*(ballSize + space/2);
+        PoolBall last = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(last);
+        
+        item = stripes.get(Math.abs(random.nextInt()) % stripes.size());
+        stripes.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;        
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        
+        solids.addAll(stripes);
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        item = solids.get(Math.abs(random.nextInt()) % solids.size());
+        solids.remove(item);
+        makeActive(item,x,y);
+        y += 2*ballSize + space;
+        
+        makeActive(last,x,y);                                
+    }
+    
+    
+    
+    
      
     public void shoot() {
         shootingBall.vel.x = -aim.x * power * powerS;
@@ -756,6 +917,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public void setAim(double x, double y) {
         aim.x = x;
         aim.y = y;
+    }
+    
+    public void setAim(Vector3f v) {
+        aim.x = v.x;
+        aim.y = v.y;
+        //PoolFrame pf = (PoolFrame)this.getParent().getParent().getParent().getParent();
+        //pf.angleSlider.setValue((int)(Math.atan(aim.x/aim.y)*pf.aimRange/Math.PI*2));
     }
     
     public void setSpin(double v) {
@@ -772,14 +940,23 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public void setSelectionMode(boolean v) {
         selectionMode = v;
-    }
+    }            
     
     public PoolBall addBall(double x, double y, double a, double b, double s, Appearance appearance) {        
         PoolBall ball = new PoolBall(appearance, x, y, a, b, s);
         //universe.addBranchGraph(ball.group);
         group.addChild(ball.group);
         balls.add(ball);
+        activeBalls.add(ball);
         return ball;
+    }
+    
+    public void makeActive(PoolBall ball, double x, double y) {
+        activeBalls.remove(ball);
+        activeBalls.add(ball);
+        ball.active = true;
+        ball.vel.set(0.0,0.0,0.0);
+        ball.pos.set(x,y,0);
     }
     
     public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
@@ -792,7 +969,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void rewind() {
-       Iterator<PoolBall> iter = balls.iterator();
+       Iterator<PoolBall> iter = activeBalls.iterator();
         while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
@@ -855,7 +1032,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void checkOverlaps(PoolBall ball) {
-        Iterator<PoolBall> ballIterator = balls.iterator();
+        Iterator<PoolBall> ballIterator = activeBalls.iterator();
         while(ballIterator.hasNext()) {
             PoolBall ball2 = ballIterator.next();
             if(ball2 != ball && ball.checkOverlap(ball2)) {
@@ -873,8 +1050,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void fixOverlap(PoolBall a, PoolBall b) {
-        a.color = Color.MAGENTA;
-        b.color = Color.MAGENTA;
         err = true;
         
     }
@@ -899,6 +1074,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 }
 class PoolCameraController extends CameraController {
     PoolPanel pp;
+    boolean mouseAim = true;
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
@@ -906,15 +1082,21 @@ class PoolCameraController extends CameraController {
     }
     
     @Override public void mouseClicked(MouseEvent me) {
-        pp.shoot();
+        if(me.getButton() == MouseEvent.BUTTON1) {
+            pp.shoot();
+        } else {
+            mouseAim = !mouseAim;
+        }
     }
     
     @Override public void mouseMoved(MouseEvent me) {
-        Vector3f pos = mouseToXYPlane(me.getX(), me.getY());
-        pos.scale(-1f);
-        pos.add(new Vector3f(pp.shootingBall.pos));
-        pos.normalize();
-        pp.setAim(pos.x, pos.y);
+        if(mouseAim) {
+            Vector3f pos = mouseToXYPlane(me.getX(), me.getY());
+            pos.scale(-1f);
+            pos.add(new Vector3f(pp.shootingBall.pos));
+            pos.normalize();
+            pp.setAim(pos);
+        }
     }
 
     public void snapToShootingBall() {

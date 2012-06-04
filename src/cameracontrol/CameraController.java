@@ -26,7 +26,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected float cameraDistance = 40f;
     protected float camDistance = cameraDistance;
     protected ChangeBasis changeBasis;
-    protected boolean updateCameraPos;
+    protected boolean updateCameraPos, rotateUpVector = true;
     
     //User configuration
     protected int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
@@ -159,8 +159,10 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         axis.normalize();
         
         //Do the rotations
-        cameraPos.set(rotater.setAndRotate(axis, angle, cameraPosition));        
-        upVec.set(rotater.rotate(upVector));        
+        cameraPos.set(rotater.setAndRotate(axis, angle, cameraPosition));
+        if(rotateUpVector) {
+            upVec.set(rotater.rotate(upVector));
+        }
         updateCameraPos = true;
     }
     
