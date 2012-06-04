@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
+import javax.management.*;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -24,7 +25,11 @@ import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
 
 
-public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
+
+public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener, NotificationEmitter {
+    
+    private static final float gravity = .01f;
+    static double spinS = .05, powerS = 1.0f;
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
     boolean selectionMode = false, sliderPower = false, frameSkip = false, err = false;
@@ -35,10 +40,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     PriorityQueue<PoolCollision> collisions;
     double height, width;
     double spin, power;
-    double spinS = .01, powerS = 2.0;
     int collisionsExecuted = 0;
     int numberOfAimLines = 3;
-    private static final float gravity = .005f;
     
     //Java3D
     Canvas3D canvas;
@@ -96,7 +99,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPockets();
         initPolygons();
         initTable();
-        cueball = addBall(-width/4, 0, 0, 0, ballSize);
+        cueball = addBall(-width/4, 0, 0, 0, ballSize, null);
         shootingBall = cueball;        
         
         //Add listeners.
@@ -492,6 +495,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         if(ball.pos.z <= (-pocketDepth+ballSize)) {
             ball.vel.set(0.0,0.0,0.0);
             ball.sunk = true;
+            if(ball == cueball) {
+                cueballSunk();
+            }
             return;
         }
         Vector3f acceleration = new Vector3f((float)(ball.pos.x - pocket.pos.x),
@@ -690,7 +696,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //--------------------ACTIONS--------------------//
     
-    public void newRack() {        
+    public void newRack() {
+        Texture texImage = new TextureLoader("10.jpg",this).getTexture();        
+        Appearance stripe = new Appearance();
+        stripe.setTexture(texImage);
+        Texture texImage2 = new TextureLoader("3.jpg",this).getTexture();        
+        Appearance solid = new Appearance();
+        solid.setTexture(texImage2);
         cueball.pos.set(-width/4, 0, 0);
         cueball.vel.set(0.0,0.0,0.0);
         cueball.move(0.0);
@@ -703,11 +715,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             double y = -i*ballSize + .01;
             for(int j = 0; j <= i; j++) {
                 if(j == 1 && i == 2) {
-
+                    this.addBall(x, y, 0, 0, ballSize, solid);
                 } else if((i+j)%2 == 0) {
-                    this.addBall(x, y, 0, 0, ballSize);
+                    this.addBall(x, y, 0, 0, ballSize, stripe);
                 } else {
-                    this.addBall(x, y, 0, 0, ballSize);
+                    this.addBall(x, y, 0, 0, ballSize, solid);
                 }
                 y += 2*ballSize; 
             }
@@ -745,10 +757,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         selectionMode = v;
     }
     
-    public PoolBall addBall(double x, double y, double a, double b, double s) {
-        Texture texImage = new TextureLoader("1.jpg",this).getTexture();        
-        Appearance appearance = new Appearance();
-        appearance.setTexture(texImage);
+    public PoolBall addBall(double x, double y, double a, double b, double s, Appearance appearance) {        
         PoolBall ball = new PoolBall(appearance, x, y, a, b, s);
         universe.addBranchGraph(ball.group);        
         balls.add(ball);
@@ -771,6 +780,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             ball.pos.set(ball.lpos);
             ball.vel.set(ball.lvel);
         }                
+    }
+    
+    //--------------------EVENTS--------------------//
+    
+    public void cueballSunk() {
+        cueball.pos.set(0.0, 0.0, 0.0);
+        cueball.vel.set(0.0, 0.0, 0.0);
     }
 
     //--------------------COMPARATOR INTERFACE--------------------//
@@ -843,10 +859,26 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         b.color = Color.MAGENTA;
         err = true;
         
-    }    
+    }
+    
+    //--------------------NOTIFICATION EMMITER INTERFACE--------------------//
+
+    public void removeNotificationListener(NotificationListener nl, NotificationFilter nf, Object o) throws ListenerNotFoundException {
+        
+    }
+
+    public void addNotificationListener(NotificationListener nl, NotificationFilter nf, Object o) throws IllegalArgumentException {
+        
+    }
+
+    public void removeNotificationListener(NotificationListener nl) throws ListenerNotFoundException {
+    }
+
+    public MBeanNotificationInfo[] getNotificationInfo() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
     
 }
-
 class PoolCameraController extends CameraController {
     PoolPanel pp;
     boolean doingDragAim = false;

@@ -5,7 +5,10 @@ import java.awt.Canvas;
 import java.awt.Point;
 import java.awt.event.*;
 import javax.media.j3d.Transform3D;
-import javax.vecmath.*;
+import javax.vecmath.Point3d;
+import javax.vecmath.Point3f;
+import javax.vecmath.Vector3d;
+import javax.vecmath.Vector3f;
 
 public class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
