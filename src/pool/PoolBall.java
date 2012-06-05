@@ -11,9 +11,10 @@ import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 import vector.ChangeBasis3f;
+import vector.Rotater3f;
 
 public class PoolBall {
-    protected static final float friction = .01f, rollingResistance = .01f, frictionThreshold = .01f;
+    protected static final float friction = .0075f, rollingResistance = .004f, frictionThreshold = .007f;
     Appearance appearance;
     Point3d pos, lpos;
     Vector3d vel, lvel;    
@@ -21,7 +22,7 @@ public class PoolBall {
     double size;
     boolean sunk, active;
     
-    ChangeBasis3f changeBasis = new ChangeBasis3f();
+    Rotater3f rotater = new Rotater3f();
         
     //Java 3D
     BranchGroup group;
@@ -85,19 +86,17 @@ public class PoolBall {
         pos.x += vel.x*t;
         pos.y += vel.y*t;
         pos.z += vel.z*t;
-        double angle = (vel.length()*t/size);
-        Vector3f velPerp = new Vector3f((float)-vel.y, (float)vel.x, 0f);
-        velPerp.normalize();
-        velPerp.scale((float)Math.sin(angle/2));
-        velRotation.set(velPerp.x,
-                     velPerp.y,
-                     0, 
-                     (float)Math.cos(angle/2));
-        
-        if(vel.length() > 0) {
+        double angle = (spin.length()*t);
+        Vector3f spinPerp = new Vector3f((float)-spin.y, (float)spin.x, 0f);
+        spinPerp.normalize();
+        spinPerp.scale((float)Math.sin(angle/2));
+        velRotation.set(spinPerp.x,
+                        spinPerp.y,
+                        0, 
+                        (float)Math.cos(angle/2));        
+        if(spin.length() > 0) {
             rotation.mul(velRotation, rotation);
-        }
-        
+        }        
         transform.setRotation(rotation);
         transform.setTranslation(new Vector3d(pos));                
         transformGroup.setTransform(transform);
@@ -172,6 +171,10 @@ public class PoolBall {
 
     void updateVelocity() {
         
+        if(vel.length() + spin.length() == 0) {
+            return;
+        }
+        
         if(vel.z != 0) {
             return;
         }
@@ -208,7 +211,8 @@ public class PoolBall {
         vel.x += fd.x;
         vel.y += fd.y;
         fd.scale((float)(2.5/size));
-        spin.x += fd.x;
-        spin.y += fd.y;     
+
+        spin.x -= fd.x;
+        spin.y -= fd.y;
     }
 }

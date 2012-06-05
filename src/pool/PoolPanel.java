@@ -4,6 +4,7 @@ import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.*;
 import java.util.*;
@@ -24,7 +25,7 @@ import unbboolean.solids.DefaultCoordinates;
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener, NotificationEmitter {
     
     static final float gravity = .01f;    
-    static double spinS = .05, powerS = 1.0f;
+    static double spinS = 4.0, powerS = 1.0f;
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
     boolean selectionMode = false, sliderPower = false, frameSkip = false, err = false;
@@ -421,7 +422,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //--------------------SIMULATION--------------------//
     
     public void actionPerformed(ActionEvent evt){
-        //this.repaint();
+        doOverlays(canvas.getGraphics());
         doAim();
 	Iterator<PoolBall> iter;
 	iter = activeBalls.iterator();
@@ -649,6 +650,16 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
          * g.drawString(Double.toString(cameraController.cameraTrans.y), 700, getHeight());
          * g.drawString(Double.toString(cameraController.cameraTrans.z), 800, getHeight());
          */                        
+    }
+    
+    void doOverlays(Graphics g) {
+        if(g != null) {
+            g.setColor(Color.yellow);
+            if(cueball != null) {
+                g.drawString("test", 100, 100);
+                g.drawString(String.format("%1.3f, %1.3f, %1.3f", (float)cueball.vel.x, (float)cueball.vel.y, (float)cueball.vel.z), 0, 0);
+            }
+        }
     }
     
     void doAim() {        
