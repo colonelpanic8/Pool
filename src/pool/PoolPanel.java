@@ -28,7 +28,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     static double spinS = 4.0, powerS = 1.3f;
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
-    boolean selectionMode = false, sliderPower = false, frameSkip = false, err = false;
+    boolean selectionMode = false, sliderPower = false;
     PoolBall cueball, shootingBall, ghostBallObjectBall;
     ArrayList<PoolBall>     balls = new ArrayList(16);
     ArrayList<PoolBall>  activeBalls = new ArrayList(16);
@@ -78,6 +78,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //Shared Scene Graph Objects
     TextureAttributes ta = new TextureAttributes();
     Material ballMaterial = new Material(new Color3f(.2f,.2f,.2f), white, white, white, 128f);
+    
+    //Debug
+    boolean frameSkip = false, err = false;
     
     
     //--------------------INITIALIZATION--------------------//
@@ -218,7 +221,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         sl.setSpreadAngle(spread);
         sl.setConcentration(concentration);
         return sl;
-  }
+    }
     
     void initPolygons() {
         //Appearance appearance = createMatAppear(turqoise, white, 5.0f);
@@ -921,11 +924,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         y += 2*ballSize + space;
         
         makeActive(last,x,y);                                
-    }
-    
-    
-    
-    
+    }                
      
     public void shoot() {
         shootingBall.vel.x = -aim.x * power * powerS;
