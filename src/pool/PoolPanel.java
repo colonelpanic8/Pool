@@ -2,10 +2,10 @@ package pool;
 
 import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
+import com.sun.j3d.utils.geometry.Text2D;
 import com.sun.j3d.utils.image.TextureLoader;
+import com.sun.j3d.utils.universe.PlatformGeometry;
 import com.sun.j3d.utils.universe.SimpleUniverse;
-import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.event.*;
 import java.util.*;
 import javax.management.*;
@@ -25,7 +25,7 @@ import unbboolean.solids.DefaultCoordinates;
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener, NotificationEmitter {
     
     static final float gravity = .01f;    
-    static double spinS = 4.0, powerS = 1.0f;
+    static double spinS = 4.0, powerS = 1.3f;
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
     boolean selectionMode = false, sliderPower = false, frameSkip = false, err = false;
@@ -422,7 +422,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //--------------------SIMULATION--------------------//
     
     public void actionPerformed(ActionEvent evt){
-        doOverlays(canvas.getGraphics());
+        //doOverlays();
         doAim();
 	Iterator<PoolBall> iter;
 	iter = activeBalls.iterator();
@@ -541,6 +541,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             } else {
                 ball.sunk = true;
                 ball.pos.set(balls.lastIndexOf(ball)*2*ballSize, height/2, 2.0);
+                ball.spin.set(ball.vel);
+                ball.rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
             }
             return;
         }
@@ -603,63 +605,58 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     //--------------------GRAPHICAL FUNCTIONS--------------------//
-    
-    @Override public void paintComponent(Graphics g){
         
-        /*super.paintComponent(g);
-        g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
-        g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
-        g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
-        * */
-        /*
-        super.paintComponent(g);
-        g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
-         g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
-         g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
-         */
-                 /*
-        g.setColor(Color.BLACK);
-        g.drawString(Float.toString(cueball.rotation.x), 0, getHeight()-20);
-         g.drawString(Float.toString(cueball.rotation.y), 100, getHeight()-20);
-         g.drawString(Float.toString(cueball.rotation.z), 200, getHeight()-20);*/
-        /*
-         * This was removed for performance reasons.
-         * super.paintComponent(g);
-         g.setColor(Color.BLACK);
-          g.drawString(Float.toString(cameraController.cameraPosition.x), 0, getHeight()-20);
-         g.drawString(Float.toString(cameraController.cameraPosition.y), 100, getHeight()-20);
-         g.drawString(Float.toString(cameraController.cameraPosition.z), 200, getHeight()-20);
-         * 
-         * g.drawString(Double.toString(cameraController.cameraPos.x), 0, getHeight());
-         * g.drawString(Double.toString(cameraController.cameraPos.y), 100, getHeight());
-         * g.drawString(Double.toString(cameraController.cameraPos.z), 200, getHeight());
-         * 
-         * g.drawString(Float.toString(cameraController.upVector.x), 300, getHeight()-20);
-         * g.drawString(Float.toString(cameraController.upVector.y), 400, getHeight()-20);
-         * g.drawString(Float.toString(cameraController.upVector.z), 500, getHeight()-20);
-         * 
-         * g.drawString(Double.toString(cameraController.upVec.x), 300, getHeight());
-         * g.drawString(Double.toString(cameraController.upVec.y), 400, getHeight());
-         * g.drawString(Double.toString(cameraController.upVec.z), 500, getHeight());
-         * 
-         * g.drawString(Float.toString(cameraController.cameraTranslation.x), 600, getHeight()-20);
-         * g.drawString(Float.toString(cameraController.cameraTranslation.y), 700, getHeight()-20);
-         * g.drawString(Float.toString(cameraController.cameraTranslation.z), 800, getHeight()-20);
-         * 
-         * g.drawString(Double.toString(cameraController.cameraTrans.x), 600, getHeight());
-         * g.drawString(Double.toString(cameraController.cameraTrans.y), 700, getHeight());
-         * g.drawString(Double.toString(cameraController.cameraTrans.z), 800, getHeight());
-         */                        
-    }
+    void doOverlays() {
+        
+        PlatformGeometry pg = new PlatformGeometry();
+
+        TransformGroup tg1 = new TransformGroup();
+        TransformGroup tg2 = new TransformGroup();
+        TransformGroup tg3 = new TransformGroup();        
+        Transform3D t1 = new Transform3D();
+        Transform3D t2 = new Transform3D();
+        Transform3D t3 = new Transform3D();
+        t1.setTranslation(new Vector3f(-1.5f, 1f, -5f));
+        t2.setTranslation(new Vector3f(-1.5f, 1.1f, -5f));
+        t3.setTranslation(new Vector3f(-1.5f, 1.2f, -5f));
+        tg1.setTransform(t1);
+        tg2.setTransform(t2);
+        tg3.setTransform(t3);
+        
+        int i = 0;
+        String str = String.format("cb:%b %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b",
+                                   balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling,
+                                   i, balls.get(i++).isRolling);
     
-    void doOverlays(Graphics g) {
-        if(g != null) {
-            g.setColor(Color.yellow);
-            if(cueball != null) {
-                g.drawString("test", 100, 100);
-                g.drawString(String.format("%1.3f, %1.3f, %1.3f", (float)cueball.vel.x, (float)cueball.vel.y, (float)cueball.vel.z), 0, 0);
-            }
+        Text2D text = new Text2D(str, white, "Verdana", 12, 1);
+        tg1.addChild(text);
+        
+        if(cueball != null) {
+            str = String.format("x:%1.3f, y:%1.3f, z:%1.3f",
+                    cueball.vel.x, cueball.vel.y, cueball.vel.z);
+            text = new Text2D(str, white, "Verdana", 12, 1);
+            tg2.addChild(text);
+            
+            str = String.format("x:%f, y:%f, z:%f",
+                    cueball.spin.x, cueball.spin.y, cueball.spin.z);
+            text = new Text2D(str, white, "Verdana", 12, 1);
+            tg3.addChild(text);
         }
+        
+        
+        pg.addChild(tg1);
+        pg.addChild(tg2);
+        pg.addChild(tg3);
+
+        universe.getViewingPlatform().setPlatformGeometry(pg);     
     }
     
     void doAim() {        
@@ -982,6 +979,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         activeBalls.add(ball);
         ball.active = true;
         ball.vel.set(0.0,0.0,0.0);
+        ball.spin.set(ball.vel);
         ball.pos.set(x,y,0);
     }
     
@@ -1014,7 +1012,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public void cueballSunk() {
         cueball.pos.set(0.0, 0.0, 0.0);
-        cueball.vel.set(0.0, 0.0, 0.0);
+        cueball.vel.set(cueball.pos);
+        cueball.spin.set(cueball.vel);
     }
 
     //--------------------COMPARATOR INTERFACE--------------------//
@@ -1116,9 +1115,9 @@ class PoolCameraController extends CameraController {
     
     @Override public void mouseClicked(MouseEvent me) {
         if(me.getButton() == MouseEvent.BUTTON1) {
-            pp.shoot();
-        } else {
             mouseAim = !mouseAim;
+        } else {
+            pp.shoot();
         }
     }
     

@@ -2,10 +2,10 @@ package pool;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.management.Notification;
-import javax.management.NotificationListener;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -13,7 +13,7 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class PoolFrame extends JFrame implements ChangeListener, ActionListener, NotificationListener {
+public class PoolFrame extends JFrame implements ChangeListener, ActionListener {
     PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);
     JPanel content = new JPanel();
     JPanel south = new JPanel();
@@ -38,13 +38,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener,
         powerSlider.setOrientation(JSlider.VERTICAL);                
 	        
         //Add listeners
-        selectionModeButton.addActionListener(this);
-	shootButton.addActionListener(this);
-        makeRackButton.addActionListener(this);
-        snapButton.addActionListener(this);
-	powerSlider.addChangeListener(this);
-        spinSlider.addChangeListener(this);
-        angleSlider.addChangeListener(this);
+        startListening();
         
         //Add content to frame.
 	content.setLayout(new BorderLayout());
@@ -62,8 +56,10 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener,
 	content.add(south, BorderLayout.SOUTH);
         
         //Finalize
+        Toolkit toolkit =  Toolkit.getDefaultToolkit ();
+        Dimension dim = toolkit.getScreenSize();
 	this.setContentPane(content);
-	this.setSize(1000, 700);
+	this.setSize(dim.width, dim.height);
 	this.setLocation(0,0);
 	this.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 	this.setVisible(true);
@@ -74,6 +70,16 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener,
         poolPanel.setPower(val/100);
         val = powerSlider.getValue();
         poolPanel.setPower(val/50);
+    }
+    
+    private void startListening() {
+        selectionModeButton.addActionListener(this);
+	shootButton.addActionListener(this);
+        makeRackButton.addActionListener(this);
+        snapButton.addActionListener(this);
+	powerSlider.addChangeListener(this);
+        spinSlider.addChangeListener(this);
+        angleSlider.addChangeListener(this);
     }
     
     public void actionPerformed(ActionEvent evt){        
@@ -104,10 +110,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener,
             double val = spinSlider.getValue();
             poolPanel.setSpin(val/spinRange);
         }        
-    }
-    
-    public void handleNotification(Notification ntfctn, Object o) {
-        
-    }
+    }    
     
 }

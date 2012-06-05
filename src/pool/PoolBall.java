@@ -10,17 +10,16 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
-import vector.ChangeBasis3f;
 import vector.Rotater3f;
 
 public class PoolBall {
-    protected static final float friction = .0075f, rollingResistance = .004f, frictionThreshold = .007f;
+    protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
     Appearance appearance;
     Point3d pos, lpos;
     Vector3d vel, lvel;    
     Vector3d spin;
     double size;
-    boolean sunk, active;
+    boolean sunk, active, isRolling = true;
     
     Rotater3f rotater = new Rotater3f();
         
@@ -179,6 +178,7 @@ public class PoolBall {
             return;
         }
         
+        isRolling = false;
         //Determine the dirction of friction.
         Vector3f fd = new Vector3f((float)spin.x, (float)spin.y, 0.0f);
         fd.scale((float)size);
@@ -187,6 +187,7 @@ public class PoolBall {
         
         //Rolling without slipping.
         if(fd.length() < frictionThreshold) {
+            isRolling = true;
             if(vel.length() > 0) {
                 Vector3d sub = new Vector3d();
                 sub.set(vel);
