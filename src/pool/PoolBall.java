@@ -10,14 +10,18 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
+import vector.ChangeBasis3f;
 
 public class PoolBall {
+    protected static final float friction = .01f, rollingResistance = .01f, frictionThreshold = .01f;
     Appearance appearance;
     Point3d pos, lpos;
     Vector3d vel, lvel;    
-    Point2D.Double acc;
+    Vector3d spin;
     double size;
     boolean sunk, active;
+    
+    ChangeBasis3f changeBasis = new ChangeBasis3f();
         
     //Java 3D
     BranchGroup group;
@@ -41,7 +45,7 @@ public class PoolBall {
         vel = new Vector3d();
         lpos = new Point3d();
         lvel = new Vector3d();
-        acc = new Point2D.Double(0,0);
+        spin = new Vector3d();
         transformGroup = new TransformGroup();
         group = new BranchGroup();
         sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
@@ -60,8 +64,8 @@ public class PoolBall {
 	vel = new Vector3d(a,b,0.0);
         lpos = new Point3d(x,y,0.0);
 	lvel = new Vector3d(a,b,0.0);
+        spin = new Vector3d();
         appearance = app;
-	acc = new Point2D.Double(0,0);
 	size = s;
 	sunk = false;
         active = true;
@@ -164,5 +168,47 @@ public class PoolBall {
         if(myCenter.distance(ball.pos.x, ball.pos.y)< ((double)(size + ball.size)))
             return true;
         return false; 
+    }
+
+    void updateVelocity() {
+        
+        if(vel.z != 0) {
+            return;
+        }
+        
+        //Determine the dirction of friction.
+        Vector3f fd = new Vector3f((float)spin.x, (float)spin.y, 0.0f);
+        fd.scale((float)size);
+        fd.x -= vel.x;
+        fd.y -= vel.y;
+        
+        //Rolling without slipping.
+        if(fd.length() < frictionThreshold) {
+            if(vel.length() > 0) {
+                Vector3d sub = new Vector3d();
+                sub.set(vel);
+                sub.normalize();
+                sub.scale(-1*rollingResistance);
+                if(sub.length() > vel.length()) {
+                    vel.set(0.0, 0.0, 0.0);
+                    spin.set(vel);
+                    return;
+                }
+                vel.add(sub);
+                spin.set(vel);
+                spin.scale(1/size);
+             
+            }
+            return;
+        }
+        
+        //Apply the force of friction.
+        fd.normalize();
+        fd.scale(friction);
+        vel.x += fd.x;
+        vel.y += fd.y;
+        fd.scale((float)(2.5/size));
+        spin.x += fd.x;
+        spin.y += fd.y;     
     }
 }

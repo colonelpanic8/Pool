@@ -4,7 +4,6 @@ import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.*;
 import java.util.*;
@@ -24,7 +23,7 @@ import unbboolean.solids.DefaultCoordinates;
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener, NotificationEmitter {
     
-    private static final float gravity = .01f;
+    static final float gravity = .01f;    
     static double spinS = .05, powerS = 1.0f;
     
     double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
@@ -136,7 +135,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         Vector3f lightDirection = new Vector3f(0.0f, -1.0f, -1.0f);        
         DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
         light.setInfluencingBounds(bounds);
-        //group.addChild(light);
+        group.addChild(light);
         
         Color3f ambientColor = white;        
         AmbientLight ambientLight = new AmbientLight(ambientColor);
@@ -146,8 +145,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         SpotLight sl = new SpotLight(true, white, new Point3f(0.0f,0.0f, 5.0f),
         new Point3f(1.0f,1.0f, 3.0f), new Vector3f(0.0f,0.0f, -1.0f), (float)Math.PI, 100.0f);
         sl.setInfluencingBounds(bounds);
-        group.addChild(sl);
-        group.addChild(this.newSpotLight(bounds, new Point3f(0.0f,0.0f, 5.0f), (float)Math.PI, 100.0f));
+        //group.addChild(sl);
+        //group.addChild(this.newSpotLight(bounds, new Point3f(0.0f,0.0f, 5.0f), (float)Math.PI, 100.0f));
         
         //Add aiming line.
         Appearance appearance = new Appearance();
@@ -476,22 +475,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    ball.move(1-timePassed);
-            ball.vel.x += ball.acc.x;
-            ball.vel.y += ball.acc.y;
-            if(ball.vel.length() < .01) {
-                ball.vel.x = 0;
-                ball.vel.y = 0;
-            } else {
-                ball.vel.x = ball.vel.x*.99;
-                ball.vel.y = ball.vel.y*.99;
-            }
-            if(ball.acc.distance(0,0) < .01) {
-                ball.acc.x = 0;
-                ball.acc.y = 0;
-            } else {
-                ball.acc.x = .98*ball.acc.x;
-                ball.acc.y = .98*ball.acc.y;
-            }
+            ball.updateVelocity();
             
 	}
         
@@ -551,10 +535,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     void doGravity(PoolBall ball, PoolPocket pocket) {
         if(ball.pos.z <= (-pocketDepth+ballSize)) {
             ball.vel.set(0.0,0.0,0.0);
-            ball.sunk = true;
             if(ball == cueball) {
                 cueballSunk();
             } else {
+                ball.sunk = true;
                 ball.pos.set(balls.lastIndexOf(ball)*2*ballSize, height/2, 2.0);
             }
             return;
@@ -938,8 +922,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public void shoot() {
         shootingBall.vel.x = -aim.x * power * powerS;
         shootingBall.vel.y = -aim.y * power * powerS;
-        shootingBall.acc.x = -aim.x * spin * spinS;
-        shootingBall.acc.y = -aim.y * spin * spinS;
+        shootingBall.spin.x = -aim.x * spin * spinS;
+        shootingBall.spin.y = -aim.y * spin * spinS;
         ghostBallRA.setVisible(false);
         aimLineRA.setVisible(false);
     }

@@ -9,6 +9,8 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
+import vector.ChangeBasis3f;
+import vector.Rotater3f;
 
 public class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
@@ -25,7 +27,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected Rotater3f rotater = new Rotater3f();
     protected float cameraDistance = 40f;
     protected float camDistance = cameraDistance;
-    protected ChangeBasis changeBasis;
+    protected ChangeBasis3f changeBasis;
     protected boolean updateCameraPos, rotateUpVector = true;
     
     //User configuration
@@ -65,7 +67,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         lookDirection.scale(-1f);
         Vector3f cross = new Vector3f();            
         cross.cross(lookDirection, upVector);
-        ChangeBasis cb = new ChangeBasis(cross, upVector, lookDirection);
+        ChangeBasis3f cb = new ChangeBasis3f(cross, upVector, lookDirection);
         cb.invert();
         Vector3f clickVector = new Vector3f(x,y,z);
         cb.transform(clickVector);
@@ -174,7 +176,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         Vector3f sideVector = new Vector3f(), camVec = new Vector3f();
         camVec.normalize(cameraPosition);
         sideVector.cross(upVector, camVec);
-        changeBasis = new ChangeBasis(sideVector, upVector, camVec,
+        changeBasis = new ChangeBasis3f(sideVector, upVector, camVec,
                       new Vector3f(1.0f, 0.0f, 0.0f),
                       new Vector3f(0.0f, 1.0f, 0.0f), 
                       new Vector3f(0.0f, 0.0f, 1.0f));

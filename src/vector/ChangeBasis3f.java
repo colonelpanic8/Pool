@@ -1,12 +1,25 @@
-package cameracontrol;
+package vector;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Tuple3f;
 
-public class ChangeBasis extends Matrix3f {
+public class ChangeBasis3f extends Matrix3f {
     
-    public ChangeBasis(Tuple3f a, Tuple3f b, Tuple3f c,
-		       Tuple3f x, Tuple3f y, Tuple3f z) {
+    public ChangeBasis3f() {
+        super();
+    }
+    
+    public ChangeBasis3f(Tuple3f a, Tuple3f b, Tuple3f c,
+		         Tuple3f x, Tuple3f y, Tuple3f z) {
+        set(a, b, c, x, y, z);         
+    }
+    
+    public ChangeBasis3f(Tuple3f x, Tuple3f y, Tuple3f z) {
+        set(x, y, z);
+    }
+    
+    final public void set(Tuple3f a, Tuple3f b, Tuple3f c,
+		          Tuple3f x, Tuple3f y, Tuple3f z) {
         m00 = -(a.x*(z.z*y.y - y.z*z.y) + a.y*(y.z*z.x - z.z*y.x) + a.z*(z.y*y.x - y.y*z.x))/
 	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m10 = -(a.x*(x.z*z.y - z.z*x.y) + a.y*(z.z*x.x - x.z*z.x) + a.z*(x.y*z.x - z.y*x.x))/
@@ -24,10 +37,11 @@ public class ChangeBasis extends Matrix3f {
         m12 = -(c.x*(x.z*z.y - z.z*x.y) + c.y*(z.z*x.x - x.z*z.x) + c.z*(x.y*z.x - z.y*x.x))/
 	    (z.z*(x.y*y.x - y.y*x.x) + y.z*(z.y*x.x - x.y*z.x) + x.z*(y.y*z.x - z.y*y.x));
         m22 = -(c.x*(y.z*x.y - x.z*y.y) + c.y*(x.z*y.x - y.z*x.x) + c.z*(y.y*x.x  - x.y*y.x))/
-	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));         
+	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
+        
     }
     
-    public ChangeBasis(Tuple3f x, Tuple3f y, Tuple3f z) {
+    final public void set(Tuple3f x, Tuple3f y, Tuple3f z) {
         m00 = -((z.z*y.y - y.z*z.y))/
 	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         m10 = -((x.z*z.y - z.z*x.y))/

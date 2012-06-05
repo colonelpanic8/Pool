@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package cameracontrol;
+package vector;
 
 import javax.vecmath.Quat4f;
 import javax.vecmath.Tuple3f;

@@ -1,10 +1,10 @@
 package pool;
 
-import cameracontrol.ChangeBasis;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
+import vector.ChangeBasis3f;
 
 public abstract class PoolCollision {
     double time;
@@ -220,7 +220,7 @@ class PocketCollision extends PoolCollision {
                 (float)(ball1.pos.y - pocket.pos.y),
                 0.0f);
         Vector3f vel = new Vector3f(0.0f, 0.0f, 1.0f);
-        ChangeBasis cb = new ChangeBasis(colDir, new Vector3f(colDir.y, -colDir.x, colDir.z),
+        ChangeBasis3f cb = new ChangeBasis3f(colDir, new Vector3f(colDir.y, -colDir.x, colDir.z),
                 vel);
         vel.set((float)ball1.vel.x, (float)ball1.vel.y, 0.0f);
         cb.transform(vel);
