@@ -1104,42 +1104,126 @@ class PoolCameraController extends CameraController implements ActionListener {
     PoolPanel pp;
     boolean mouseAim = true, shootingBallMode = false;
     int transitionFrame = 0;
-    float cameraVelMag = 0f;
+    float angleVelocity = 0f;
     Vector3f cameraRotationAxis = new Vector3f();
     float distanceVelocity = 0f;
     Vector3f translationalVelocity = new Vector3f(cameraRotationAxis);
     
+    static public float solveQuadratic(float a, float b, float c) {
+        if (a !=0 ){
+	    float smaller = (float) (( -b - Math.sqrt(b*b-4*a*c) )/(2 * a));
+	    float larger = (float) (( -b + Math.sqrt(b*b-4*a*c) )/(2 * a));
+            if(smaller > larger) {
+                float temp = smaller;
+                smaller = larger;
+                larger = temp;                        
+            }
+            if(smaller < 0) {
+                return larger;
+            } else {
+                return smaller;
+            }
+	} else {
+	    return -c/b;  
+	}
+    }
+    
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
         pp = p;
+        
+        //Start timer
+	Timer timer = new Timer(30, this);
+	timer.start();
     }
     
-    public void startTransitionTo(Point3f center, Vector3f cameraVec, float distance) {
-        cameraPosition.set(cameraVec);
-        cameraPosition.normalize();
-        cameraTranslation.set(center);
-        distanceVelocity = (distance - cameraDistance)*PoolSettings.initTransitionVel;
-        cameraVelMag = cameraVec.angle(cameraPosition)*PoolSettings.initTransitionVel;
-        cameraRotationAxis.cross(cameraVec, cameraPosition);        
+    public void startTransitionTo(Vector3f center, Vector3f cameraVec, float distance) {                
+        float a, b, c;
+        
+        //Camera distance polynomial.
+        a = 1/(2*PoolSettings.camDistAcc);
+        b = .5f;
+        c = -Math.abs(distance - camDistance);
+        distanceVelocity = solveQuadratic(a,b,c);
+        if(distance - camDistance < 0) {
+            distanceVelocity *= -1;
+        }
+        
+        //Angular velocity.
+        a = 1/(2*PoolSettings.camAngleAcc);
+        c = - cameraVec.angle(cameraPosition);
+        angleVelocity = solveQuadratic(a,b,c);
+        cameraRotationAxis.cross(cameraVec, cameraPosition);
+        
+        //Tranlational Velocity
         translationalVelocity.set(cameraTranslation);
         translationalVelocity.scale(-1f);
         translationalVelocity.add(center);
-        translationalVelocity.scale(PoolSettings.initTransitionVel);
-        transitionFrame = PoolSettings.transitionFrames;
-    }
+        a = 1/(2*PoolSettings.camTransAcc);
+        c = -translationalVelocity.length();
+        translationalVelocity.scale(solveQuadratic(a,b,c));
+        
+
+        //cameraPos.set(cameraPosition);        
+        //cameraPosition.set(cameraVec);
+        //cameraPosition.normalize();
+        //cameraTranslation.set(center);
+        cameraDistance = distance;
+    }       
+    
     
     public void actionPerformed(ActionEvent evt) {
-        if(transitionFrame > 0) {
-            camDistance += distanceVelocity;
-            rotater.setAndRotateInPlace(cameraRotationAxis, cameraVelMag, cameraPos);
-            cameraTrans.add(new Vector3d(translationalVelocity));
         
-            distanceVelocity *= PoolSettings.cameraSlowdown;
-            cameraVelMag *= PoolSettings.cameraSlowdown;
-            translationalVelocity.scale(PoolSettings.cameraSlowdown);
+        /*if(distanceVelocity != 0) {
+            if(Math.abs(camDistance-cameraDistance) > Math.abs(distanceVelocity)) {
+                camDistance += distanceVelocity;
+            } else {
+              camDistance = cameraDistance;
+              distanceVelocity = 0;
+            }            
+        }*/
+        camDistance += distanceVelocity;
+        if(angleVelocity != 0) {
+            rotater.setAndRotateInPlace(cameraRotationAxis, angleVelocity, cameraPos);
+            rotater.rotateInPlace(upVec);
         }
         
+        
+        if(distanceVelocity > 0) {
+            if(Math.abs(distanceVelocity) > PoolSettings.camDistAcc) {
+                distanceVelocity -= PoolSettings.camDistAcc;
+            } else {
+                distanceVelocity = 0;
+            }
+        } else if (distanceVelocity < 0) {
+            if(Math.abs(distanceVelocity) > PoolSettings.camAngleAcc) {
+                distanceVelocity += PoolSettings.camAngleAcc;
+            } else {
+                distanceVelocity = 0;
+            }
+        }
+        if(angleVelocity > 0) {
+            if(Math.abs(angleVelocity) > PoolSettings.camDistAcc) {
+                angleVelocity -= PoolSettings.camDistAcc;
+            } else {
+                angleVelocity = 0;
+            }
+        } else if (angleVelocity < 0) {
+            if(Math.abs(angleVelocity) > PoolSettings.camAngleAcc) {
+                angleVelocity += PoolSettings.camAngleAcc;
+            } else {
+                angleVelocity = 0;
+            }
+        }
+        
+        if(translationalVelocity.length() > PoolSettings.camTransAcc) {
+            cameraTrans.add(new Vector3d(translationalVelocity));
+            translationalVelocity.scale(translationalVelocity.length()-PoolSettings.camTransAcc);
+        }
+        
+        updateCamera();
     }
+        
     
     @Override public void mouseClicked(MouseEvent me) {
         if(me.getButton() == MouseEvent.BUTTON1) {
@@ -1184,6 +1268,7 @@ class PoolCameraController extends CameraController implements ActionListener {
     }
 
     public void snapToShootingBall() {
+        /*
         cameraTrans.set(pp.shootingBall.pos);
         cameraTranslation.set(cameraTrans);
         cameraPosition.set(pp.aim);
@@ -1198,6 +1283,17 @@ class PoolCameraController extends CameraController implements ActionListener {
         upVector.set(0.0f, 0.0f, 1.0f);
         upVec.set(upVector);    
         updateCamera();
+        */
+        /*
+        Vector3f newCamPos = new Vector3f(pp.aim);
+        double angle = .3;
+        Vector3f aimPerp = new Vector3f();
+        aimPerp.x = (float) pp.aim.y;
+        aimPerp.y = (float) -pp.aim.x;
+        aimPerp.z = (float) pp.aim.z;        
+        rotater.setAndRotateInPlace(aimPerp, angle, newCamPos);
+        this.startTransitionTo(new Vector3f(pp.shootingBall.pos), newCamPos, 10.0f);*/
+        this.startTransitionTo(new Vector3f(cameraTranslation), new Vector3f(pp.aim), 40.0f);
     }
     
     public void overheadView() {
