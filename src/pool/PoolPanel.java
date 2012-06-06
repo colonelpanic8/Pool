@@ -1099,17 +1099,45 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
 }
-class PoolCameraController extends CameraController {
+
+class PoolCameraController extends CameraController implements ActionListener {
     PoolPanel pp;
-    boolean mouseAim = true;
-    Vector3f cameraVelocity = new Vector3f(0.0f, 0.0f, 0.0f);
+    boolean mouseAim = true, shootingBallMode = false;
+    int transitionFrame = 0;
+    float cameraVelMag = 0f;
+    Vector3f cameraRotationAxis = new Vector3f();
+    float distanceVelocity = 0f;
+    Vector3f translationalVelocity = new Vector3f(cameraRotationAxis);
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
         pp = p;
     }
     
-    public void moveTowards(PoolBall ball) {
+    public void startTransitionTo(Point3f center, Vector3f cameraVec, float distance) {
+        cameraPosition.set(cameraVec);
+        cameraPosition.normalize();
+        cameraTranslation.set(center);
+        distanceVelocity = (distance - cameraDistance)*PoolSettings.initTransitionVel;
+        cameraVelMag = cameraVec.angle(cameraPosition)*PoolSettings.initTransitionVel;
+        cameraRotationAxis.cross(cameraVec, cameraPosition);        
+        translationalVelocity.set(cameraTranslation);
+        translationalVelocity.scale(-1f);
+        translationalVelocity.add(center);
+        translationalVelocity.scale(PoolSettings.initTransitionVel);
+        transitionFrame = PoolSettings.transitionFrames;
+    }
+    
+    public void actionPerformed(ActionEvent evt) {
+        if(transitionFrame > 0) {
+            camDistance += distanceVelocity;
+            rotater.setAndRotateInPlace(cameraRotationAxis, cameraVelMag, cameraPos);
+            cameraTrans.add(new Vector3d(translationalVelocity));
+        
+            distanceVelocity *= PoolSettings.cameraSlowdown;
+            cameraVelMag *= PoolSettings.cameraSlowdown;
+            translationalVelocity.scale(PoolSettings.cameraSlowdown);
+        }
         
     }
     
@@ -1130,6 +1158,29 @@ class PoolCameraController extends CameraController {
             pos.normalize();
             pp.setAim(pos);
         }
+    }
+    
+    @Override public void keyPressed(KeyEvent ke) {
+        if(!shootingBallMode) {
+            super.keyPressed(ke);
+            return;
+        }
+        switch(ke.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                break;
+            case KeyEvent.VK_DOWN:
+                break;
+            case KeyEvent.VK_LEFT:
+                break;
+            case KeyEvent.VK_RIGHT:
+                break;
+            default:
+                return;
+        }        
+    }
+    
+    @Override public void keyReleased(KeyEvent ke) {
+        
     }
 
     public void snapToShootingBall() {

@@ -5,6 +5,7 @@
 package vector;
 
 import javax.vecmath.Quat4f;
+import javax.vecmath.Tuple3d;
 import javax.vecmath.Tuple3f;
 import javax.vecmath.Vector3f;
 
@@ -60,6 +61,23 @@ public class Rotater3f {
         vector.set(obj.x,
                    obj.y,
                    obj.z,
+                   0.0f);
+        vector.mul(rotation,vector);
+        vector.mul(inverse);
+        obj.set(vector.x, vector.y, vector.z);
+    }
+    
+    public void setAndRotateInPlace(Vector3f axis, double angle, Tuple3d obj) {
+        Vector3f a = new Vector3f(axis);
+        a.scale((float)Math.sin(angle/2));
+        rotation.set(a.x,
+                     a.y,
+                     a.z, 
+                     (float)Math.cos(angle/2));
+        inverse.inverse(rotation);
+        vector.set((float)obj.x,
+                   (float)obj.y,
+                   (float)obj.z,
                    0.0f);
         vector.mul(rotation,vector);
         vector.mul(inverse);
