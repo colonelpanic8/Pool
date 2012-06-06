@@ -6,20 +6,17 @@ import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.vecmath.Point3d;
-import javax.vecmath.Quat4f;
-import javax.vecmath.Vector3d;
-import javax.vecmath.Vector3f;
+import javax.vecmath.*;
 import vector.Rotater3f;
 
-public class PoolBall {
-    protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
+public class PoolBall {    
     Appearance appearance;
-    Point3d pos, lpos;
+    Vector3d pos, lpos;
     Vector3d vel, lvel;    
     Vector3d spin;
     double size;
     boolean sunk, active, isRolling = true;
+    int ballNumber;
     
     Rotater3f rotater = new Rotater3f();
         
@@ -30,10 +27,11 @@ public class PoolBall {
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
     Transform3D transform = new Transform3D();
     
-    public PoolBall(Appearance app, double s){
+    public PoolBall(Appearance app, double s, int bn){
         //Get values
         size = s;
         appearance = app;
+        ballNumber = bn;
         
         //Set flags
         active = false;
@@ -41,9 +39,9 @@ public class PoolBall {
         rotation.w = 1.0f;
         
         //Initialize instance variables
-        pos = new Point3d();
+        pos = new Vector3d(2*ballNumber*size, PoolPanel.height/2, 3.0);
         vel = new Vector3d();
-        lpos = new Point3d();
+        lpos = new Vector3d();
         lvel = new Vector3d();
         spin = new Vector3d();
         transformGroup = new TransformGroup();
@@ -52,17 +50,17 @@ public class PoolBall {
         
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         sphere.setAppearance(appearance);
-        transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));
+        transform.setTranslation(pos);
         transformGroup.setTransform(transform);
         transformGroup.addChild(sphere);
-        group.addChild(transformGroup);
-                
+        group.addChild(transformGroup);                
+        move(0);
     }
     
     public PoolBall(Appearance app, double x, double y, double a, double b, double s){
-        pos = new Point3d(x,y,0.0);
+        pos = new Vector3d(x,y,0.0);
 	vel = new Vector3d(a,b,0.0);
-        lpos = new Point3d(x,y,0.0);
+        lpos = new Vector3d(x,y,0.0);
 	lvel = new Vector3d(a,b,0.0);
         spin = new Vector3d();
         appearance = app;
@@ -186,13 +184,13 @@ public class PoolBall {
         fd.y -= vel.y;
         
         //Rolling without slipping.
-        if(fd.length() < frictionThreshold) {
+        if(fd.length() < PoolPanel.frictionThreshold) {
             isRolling = true;
             if(vel.length() > 0) {
                 Vector3d sub = new Vector3d();
                 sub.set(vel);
                 sub.normalize();
-                sub.scale(-1*rollingResistance);
+                sub.scale(-1*PoolPanel.rollingResistance);
                 if(sub.length() > vel.length()) {
                     vel.set(0.0, 0.0, 0.0);
                     spin.set(vel);
@@ -208,12 +206,52 @@ public class PoolBall {
         
         //Apply the force of friction.
         fd.normalize();
-        fd.scale(friction);
+        fd.scale(PoolPanel.friction);
         vel.x += fd.x;
         vel.y += fd.y;
         fd.scale((float)(2.5/size));
 
         spin.x -= fd.x;
         spin.y -= fd.y;
+    }
+    
+    void doGravity(PoolPocket pocket) {
+        if(pos.z <= (-PoolPanel.pocketDepth+size)) {
+            vel.set(0.0,0.0,0.0);
+            if(this.ballNumber == 0) {
+                cueballSunk();
+            } else {
+                sunk = true;
+                active = false;
+                pos.set(ballNumber*2*size, PoolPanel.height/2, 3.0);
+                spin.set(vel);
+                rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
+            }
+            return;
+        }
+        Vector3f acceleration = new Vector3f((float)(pos.x - pocket.pos.x),
+                                             (float)(pos.y - pocket.pos.y),
+                                             0.0f);
+        acceleration.normalize();
+        acceleration.scale(pocket.size);        
+        Point3f contactPoint = new Point3f((float)pocket.pos.x, (float)pocket.pos.y, (float)-size);
+        contactPoint.add(acceleration);        
+        if(new Point3d(pos).distance(new Point3d(contactPoint)) <= size) {
+            Vector3f normal = new Vector3f(pos);
+            contactPoint.scale(-1);
+            normal.add(contactPoint);
+            normal.normalize();
+            float scale = 1/normal.z;
+            vel.x += normal.x*scale * PoolPanel.gravity;
+            vel.y += normal.y*scale * PoolPanel.gravity;
+        } else {
+            vel.z -= PoolPanel.gravity;
+        }  
+    }
+    
+    public void cueballSunk() {
+        pos.set(0.0, 0.0, 0.0);
+        vel.set(pos);
+        spin.set(vel);
     }
 }
