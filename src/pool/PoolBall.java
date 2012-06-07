@@ -8,7 +8,7 @@ import vector.Rotater3f;
 
 public class PoolBall {    
     Appearance appearance;
-    TransparencyAttributes ta = new TransparencyAttributes(TransparencyAttributes.FASTEST, 0.0f);
+    TransparencyAttributes ta = new TransparencyAttributes(TransparencyAttributes.NONE, .0f);
     Vector3d pos, lpos;
     Vector3d vel, lvel;    
     Vector3d spin;
@@ -49,6 +49,7 @@ public class PoolBall {
         
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         ta.setCapability(TransparencyAttributes.ALLOW_VALUE_WRITE);
+        ta.setCapability(TransparencyAttributes.ALLOW_MODE_WRITE);
         appearance.setCapability(Appearance.ALLOW_TRANSPARENCY_ATTRIBUTES_WRITE);
         appearance.setTransparencyAttributes(ta);
         sphere.setAppearance(appearance);
@@ -233,6 +234,7 @@ public class PoolBall {
             ta.setTransparency(transparency);
         } else {
             sunk = false;
+            ta.setTransparencyMode(TransparencyAttributes.NONE);
         }
     }
     
@@ -240,6 +242,7 @@ public class PoolBall {
         active = false;
         sunk = true;
         transparency = 1.0f;
+        ta.setTransparencyMode(TransparencyAttributes.FASTEST);
         ta.setTransparency(transparency);
         if(this.ballNumber == 0) {
             active = true;
