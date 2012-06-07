@@ -1,9 +1,8 @@
 package pool;
 
 public class PoolSettings {
-    static float camTransAcc = .5f;
-    static float camAngleAcc = .5f;
-    static float camDistAcc = .5f;
-    static float camDistThresh = .05f;
+    static float camTransThresh = .0001f;
+    static float camAngleThresh = .0001f;
+    static float camDistThresh = .001f;
     static float OverheadDistance = 40f;
 }
