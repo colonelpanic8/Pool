@@ -29,7 +29,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
     JButton selectionModeButton = new JButton("Selection Mode");  
     JButton shootButton = new JButton("Shoot");
     JButton makeRackButton = new JButton("Make Rack");
-    JButton snapButton = new JButton("Snap");                
+    JButton snapButton = new JButton("Snap");
+    JButton overheadViewButton = new JButton("Overhead");
     
     public PoolFrame(String str) {
         super(str);
@@ -49,6 +50,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         //Toolbar setup.
         south.setBackground(Color.BLACK);
         south.add(snapButton);
+        south.add(overheadViewButton);
         south.add(makeRackButton);
 	south.add(selectionModeButton);
 	south.add(shootButton);
@@ -80,6 +82,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
 	powerSlider.addChangeListener(this);
         spinSlider.addChangeListener(this);
         angleSlider.addChangeListener(this);
+        overheadViewButton.addActionListener(this);
     }
     
     public void actionPerformed(ActionEvent evt){        
@@ -92,6 +95,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
             poolPanel.flipSelectionMode();
         } else if(source == makeRackButton)      {
             poolPanel.new9BallRack();
+        } else if(source == overheadViewButton)  {
+            poolPanel.cameraController.overheadView();
         }
     }
     

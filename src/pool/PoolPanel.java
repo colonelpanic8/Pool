@@ -1102,10 +1102,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController implements ActionListener {
     PoolPanel pp;
-    boolean mouseAim = true, shootingBallMode = false;
+    boolean mouseAim = true, shootingBallMode = false, transitioning = false;
     int transitionFrame = 0;
     float angleVelocity = 0f;
     Vector3f cameraRotationAxis = new Vector3f();
+    Vector3f upVecRotationAxis = new Vector3f();
     float distanceVelocity = 0f;
     Vector3f translationalVelocity = new Vector3f(cameraRotationAxis);
     
@@ -1137,91 +1138,53 @@ class PoolCameraController extends CameraController implements ActionListener {
 	timer.start();
     }
     
-    public void startTransitionTo(Vector3f center, Vector3f cameraVec, float distance) {                
-        float a, b, c;
+    public void startTransitionTo(Vector3f center, Vector3f cameraVec, Vector3f up, float distance) {
         
-        //Camera distance polynomial.
-        a = 1/(2*PoolSettings.camDistAcc);
-        b = .5f;
-        c = -Math.abs(distance - camDistance);
-        distanceVelocity = solveQuadratic(a,b,c);
-        if(distance - camDistance < 0) {
-            distanceVelocity *= -1;
-        }
-        
+        transitioning = true;
         //Angular velocity.
-        a = 1/(2*PoolSettings.camAngleAcc);
-        c = - cameraVec.angle(cameraPosition);
-        angleVelocity = solveQuadratic(a,b,c);
         cameraRotationAxis.cross(cameraVec, cameraPosition);
         
+        //Upvector angular velocity
+        upVecRotationAxis.cross(up, upVector);
+        upVector.set(up);
+        
         //Tranlational Velocity
-        translationalVelocity.set(cameraTranslation);
+        /*translationalVelocity.set(cameraTranslation);
         translationalVelocity.scale(-1f);
         translationalVelocity.add(center);
-        a = 1/(2*PoolSettings.camTransAcc);
-        c = -translationalVelocity.length();
-        translationalVelocity.scale(solveQuadratic(a,b,c));
+        translationalVelocity.normalize();*/
         
-
-        //cameraPos.set(cameraPosition);        
-        //cameraPosition.set(cameraVec);
-        //cameraPosition.normalize();
-        //cameraTranslation.set(center);
+        cameraPos.set(cameraPosition);
+        cameraPosition.set(cameraVec);
+        cameraPosition.normalize();
+        cameraTranslation.set(center);
         cameraDistance = distance;
     }       
     
     
     public void actionPerformed(ActionEvent evt) {
-        
-        /*if(distanceVelocity != 0) {
-            if(Math.abs(camDistance-cameraDistance) > Math.abs(distanceVelocity)) {
-                camDistance += distanceVelocity;
+        if(transitioning) {
+            if(Math.abs(cameraDistance-camDistance) > PoolSettings.camDistThresh) {
+                camDistance += (cameraDistance-camDistance)*.06;
             } else {
-              camDistance = cameraDistance;
-              distanceVelocity = 0;
-            }            
-        }*/
-        camDistance += distanceVelocity;
-        if(angleVelocity != 0) {
-            rotater.setAndRotateInPlace(cameraRotationAxis, angleVelocity, cameraPos);
-            rotater.rotateInPlace(upVec);
-        }
-        
-        
-        if(distanceVelocity > 0) {
-            if(Math.abs(distanceVelocity) > PoolSettings.camDistAcc) {
-                distanceVelocity -= PoolSettings.camDistAcc;
-            } else {
-                distanceVelocity = 0;
+                camDistance = cameraDistance;
             }
-        } else if (distanceVelocity < 0) {
-            if(Math.abs(distanceVelocity) > PoolSettings.camAngleAcc) {
-                distanceVelocity += PoolSettings.camAngleAcc;
-            } else {
-                distanceVelocity = 0;
-            }
-        }
-        if(angleVelocity > 0) {
-            if(Math.abs(angleVelocity) > PoolSettings.camDistAcc) {
-                angleVelocity -= PoolSettings.camDistAcc;
-            } else {
-                angleVelocity = 0;
-            }
-        } else if (angleVelocity < 0) {
-            if(Math.abs(angleVelocity) > PoolSettings.camAngleAcc) {
-                angleVelocity += PoolSettings.camAngleAcc;
-            } else {
-                angleVelocity = 0;
-            }
-        }
         
-        if(translationalVelocity.length() > PoolSettings.camTransAcc) {
-            cameraTrans.add(new Vector3d(translationalVelocity));
-            translationalVelocity.scale(translationalVelocity.length()-PoolSettings.camTransAcc);
-        }
+            float angle = (float) (new Vector3f(cameraPos).angle(cameraPosition)*.06);
+            rotater.setAndRotateInPlace(cameraRotationAxis, -angle, cameraPos);
+            
+            angle = (float) (new Vector3f(upVec).angle(upVector)*.06);
+            rotater.setAndRotateInPlace(upVecRotationAxis, -angle, upVec);
+            
         
-        updateCamera();
+        
+            translationalVelocity.set(cameraTrans);
+            translationalVelocity.scale(-1f);
+            translationalVelocity.add(cameraTranslation);
+            translationalVelocity.scale(.06f);
+            cameraTrans.add(new Vector3d(translationalVelocity));        
+            updateCamera();
+        }
     }
         
     
@@ -1267,24 +1230,7 @@ class PoolCameraController extends CameraController implements ActionListener {
         
     }
 
-    public void snapToShootingBall() {
-        /*
-        cameraTrans.set(pp.shootingBall.pos);
-        cameraTranslation.set(cameraTrans);
-        cameraPosition.set(pp.aim);
-        double angle = .3;
-        Vector3f aimPerp = new Vector3f();
-        aimPerp.x = (float) pp.aim.y;
-        aimPerp.y = (float) -pp.aim.x;
-        aimPerp.z = (float) pp.aim.z;        
-        rotater.setAndRotateInPlace(aimPerp, angle, cameraPosition);                
-        cameraPosition.normalize();
-        cameraPos.set(cameraPosition);
-        upVector.set(0.0f, 0.0f, 1.0f);
-        upVec.set(upVector);    
-        updateCamera();
-        */
-        /*
+    public void snapToShootingBall() {   
         Vector3f newCamPos = new Vector3f(pp.aim);
         double angle = .3;
         Vector3f aimPerp = new Vector3f();
@@ -1292,17 +1238,13 @@ class PoolCameraController extends CameraController implements ActionListener {
         aimPerp.y = (float) -pp.aim.x;
         aimPerp.z = (float) pp.aim.z;        
         rotater.setAndRotateInPlace(aimPerp, angle, newCamPos);
-        this.startTransitionTo(new Vector3f(pp.shootingBall.pos), newCamPos, 10.0f);*/
-        this.startTransitionTo(new Vector3f(cameraTranslation), new Vector3f(pp.aim), 40.0f);
+        this.startTransitionTo(new Vector3f(pp.shootingBall.pos), newCamPos, new Vector3f(0.0f, 0.0f, 1.0f), 20.0f);
     }
     
     public void overheadView() {
-        cameraPos.set(0.0, 0.0, 1.0);
-        upVec.set(0.0, 1.0, 0.0);
-        cameraTrans.set(0.0, 0.0, 0.0f);
-        camDistance = 40f;
-        updateCamera();
-        updateCameraPos = true;
-        mouseReleased(null);
+        this.startTransitionTo(new Vector3f(0.0f, 0.0f, 0.0f), 
+                               new Vector3f(0.0f, 0.0f, 1.0f),
+                               new Vector3f(0.0f, 1.0f, 0.0f),
+                               40f);
     }    
 }
