@@ -2,20 +2,19 @@ package pool;
 
 import com.sun.j3d.utils.geometry.Sphere;
 import java.awt.geom.Point2D;
-import javax.media.j3d.Appearance;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 import javax.vecmath.*;
 import vector.Rotater3f;
 
 public class PoolBall {    
     Appearance appearance;
+    TransparencyAttributes ta = new TransparencyAttributes(TransparencyAttributes.FASTEST, 0.0f);
     Vector3d pos, lpos;
     Vector3d vel, lvel;    
     Vector3d spin;
     double size;
     boolean sunk, active, isRolling = true;
+    float transparency = 1.0f;
     int ballNumber;
     
     Rotater3f rotater = new Rotater3f();
@@ -39,7 +38,7 @@ public class PoolBall {
         rotation.w = 1.0f;
         
         //Initialize instance variables
-        pos = new Vector3d(2*ballNumber*size, PoolPanel.height/2, 3.0);
+        pos = new Vector3d();
         vel = new Vector3d();
         lpos = new Vector3d();
         lvel = new Vector3d();
@@ -49,35 +48,17 @@ public class PoolBall {
         sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
         
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        ta.setCapability(TransparencyAttributes.ALLOW_VALUE_WRITE);
+        appearance.setCapability(Appearance.ALLOW_TRANSPARENCY_ATTRIBUTES_WRITE);
+        appearance.setTransparencyAttributes(ta);
         sphere.setAppearance(appearance);
         transform.setTranslation(pos);
         transformGroup.setTransform(transform);
         transformGroup.addChild(sphere);
-        group.addChild(transformGroup);                
-        move(0);
-    }
-    
-    public PoolBall(Appearance app, double x, double y, double a, double b, double s){
-        pos = new Vector3d(x,y,0.0);
-	vel = new Vector3d(a,b,0.0);
-        lpos = new Vector3d(x,y,0.0);
-	lvel = new Vector3d(a,b,0.0);
-        spin = new Vector3d();
-        appearance = app;
-	size = s;
-	sunk = false;
-        active = true;
-        group = new BranchGroup();
-        transformGroup = new TransformGroup();
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
-        sphere.setAppearance(appearance);
-        transformGroup.addChild(sphere);
-        rotation.w = 1.0f;
-        transform.setTranslation(new Vector3d(pos.x, pos.y, 0.0));
-        transformGroup.setTransform(transform);
         group.addChild(transformGroup);
-    }
+        setInactivePos();
+        move(0);
+    }    
     
     public final void move(double t) {
         pos.x += vel.x*t;
@@ -97,6 +78,10 @@ public class PoolBall {
         transform.setRotation(rotation);
         transform.setTranslation(new Vector3d(pos));                
         transformGroup.setTransform(transform);
+    }
+    
+    public void setInactivePos() {
+        pos.set(2*(ballNumber-.5f)*size-(size*15), PoolPanel.height/2 + PoolPanel.borderSize, 3.0);
     }
     
 
@@ -217,16 +202,9 @@ public class PoolBall {
     
     void doGravity(PoolPocket pocket) {
         if(pos.z <= (-PoolPanel.pocketDepth+size)) {
-            vel.set(0.0,0.0,0.0);
-            if(this.ballNumber == 0) {
-                cueballSunk();
-            } else {
-                sunk = true;
-                active = false;
-                pos.set(ballNumber*2*size, PoolPanel.height/2, 3.0);
-                spin.set(vel);
-                rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
-            }
+            vel.set(0.0,0.0,0.0); 
+            spin.set(vel);
+            ballSunk();
             return;
         }
         Vector3f acceleration = new Vector3f((float)(pos.x - pocket.pos.x),
@@ -249,9 +227,28 @@ public class PoolBall {
         }  
     }
     
-    public void cueballSunk() {
-        pos.set(0.0, 0.0, 0.0);
-        vel.set(pos);
-        spin.set(vel);
+    public void decreaseTransparency() {
+        if(transparency > 0) {
+            transparency -=.006f;
+            ta.setTransparency(transparency);
+        } else {
+            sunk = false;
+        }
+    }
+    
+    public void ballSunk() {
+        active = false;
+        sunk = true;
+        transparency = 1.0f;
+        ta.setTransparency(transparency);
+        if(this.ballNumber == 0) {
+            active = true;
+            sunk = true;
+            pos.set(0.0,0.0,0.0);
+            
+        } else {
+            setInactivePos();           
+            rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
+        }            
     }
 }

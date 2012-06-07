@@ -2,17 +2,18 @@ package pool;
 
 import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
-import com.sun.j3d.utils.geometry.Text2D;
 import com.sun.j3d.utils.image.TextureLoader;
-import com.sun.j3d.utils.universe.PlatformGeometry;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import java.awt.Color;
 import java.awt.event.*;
 import java.util.*;
 import javax.management.*;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
+import javax.swing.OverlayLayout;
 import javax.swing.Timer;
 import javax.vecmath.*;
+import org.j3d.geom.overlay.ImageButtonOverlay;
 import unbboolean.j3dbool.BooleanModeller;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
@@ -24,8 +25,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     static final float gravity = .01f;
     protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
     static double spinS = 4.0, powerS = 1.3f;
-    static double height, width;
-    
+    static double height, width;    
     static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
     boolean selectionMode = false, sliderPower = false;
     PoolBall cueball, shootingBall, ghostBallObjectBall;
@@ -43,6 +43,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     SimpleUniverse universe;
     PoolCameraController cameraController;
     BranchGroup group;
+    
+    //Overlay Buttons
+    ImageButtonOverlay snapButton;
     
     //Aim
     Shape3D aimLine;    
@@ -85,6 +88,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
+        this.setLayout(new OverlayLayout(this));
         height = h;
         width = w;
         ballSize = bs;
@@ -102,8 +106,27 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPockets();
         initPolygons();
         initTable();
-        initBalls();                
+        initBalls();
         
+        /*
+        BufferedImage img = null;
+        try {
+            img = ImageIO.read(new File("images/SnapButton.jpg"));
+        } catch (IOException e) {
+        }*/
+        /*
+        snapButton = new ImageButtonOverlay(canvas, new Dimension(40,40), new BufferedImage[] {img, img, img, img});
+        snapButton.initialize();
+        if(snapButton.isVisible()) {
+            snapButton.setLocation(100, 100);
+            snapButton.setSize(100,100);
+            snapButton.repaint();
+        }*/
+        
+        /*
+        ImageOverlay io = new ImageOverlay(canvas, new Dimension(40,40), img);
+        io.initialize();*/
+                
         //Add listeners.
 	addHierarchyBoundsListener(this);
         
@@ -119,8 +142,17 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     void init3D() {
         //Initialize Java 3D components.
-        canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration());
-        add("Center", canvas);
+        canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration()){
+            
+            @Override
+            public void postRender()
+            {
+                this.getGraphics2D().setColor(Color.white);
+                this.getGraphics2D().drawString("Heads Up Display (HUD) Works!",100,100);
+                this.getGraphics2D().flush(false);
+            }
+        };
+        add(canvas);
         universe = new SimpleUniverse(canvas);
         universe.getViewer().getView().setBackClipDistance(width*3);
         group = new BranchGroup();
@@ -295,7 +327,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         appearance.setMaterial(ballMaterial);
         appearance.setTexture(cueballImage);
         appearance.setTextureAttributes(ta);
-        cueball = addBall(-width/4, 0, 0, 0, ballSize, appearance);
+        cueball = addBall(-width/4, 0, ballSize, appearance);
         shootingBall = cueball;
         
         for(int i = 1; i < 16; i++) {
@@ -402,7 +434,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         doAim();
 	Iterator<PoolBall> iter;
 	iter = activeBalls.iterator();
-        validate();
+        //validate();
         if(err) {
             rewind();
             frameSkip = true;
@@ -435,8 +467,10 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
                 PoolPocket pocket = pocketIterator.next();
                 if(pocket.ballIsOver(ball) && !ball.sunk) {
                     ball.doGravity(pocket);
+                }                
+                if(ball.sunk) {
+                    ball.decreaseTransparency();
                 }
-
             }
         }
     }
@@ -603,59 +637,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         sl.setSpreadAngle(spread);
         sl.setConcentration(concentration);
         return sl;
-    }
-        
-    void doOverlays() {
-        
-        PlatformGeometry pg = new PlatformGeometry();
-
-        TransformGroup tg1 = new TransformGroup();
-        TransformGroup tg2 = new TransformGroup();
-        TransformGroup tg3 = new TransformGroup();        
-        Transform3D t1 = new Transform3D();
-        Transform3D t2 = new Transform3D();
-        Transform3D t3 = new Transform3D();
-        t1.setTranslation(new Vector3f(-1.5f, 1f, -5f));
-        t2.setTranslation(new Vector3f(-1.5f, 1.1f, -5f));
-        t3.setTranslation(new Vector3f(-1.5f, 1.2f, -5f));
-        tg1.setTransform(t1);
-        tg2.setTransform(t2);
-        tg3.setTransform(t3);
-        
-        int i = 0;
-        String str = String.format("cb:%b %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b, %d:%b",
-                                   balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling,
-                                   i, balls.get(i++).isRolling);
-    
-        Text2D text = new Text2D(str, white, "Verdana", 12, 1);
-        tg1.addChild(text);
-        
-        if(cueball != null) {
-            str = String.format("x:%1.3f, y:%1.3f, z:%1.3f",
-                    cueball.vel.x, cueball.vel.y, cueball.vel.z);
-            text = new Text2D(str, white, "Verdana", 12, 1);
-            tg2.addChild(text);
-            
-            str = String.format("x:%f, y:%f, z:%f",
-                    cueball.spin.x, cueball.spin.y, cueball.spin.z);
-            text = new Text2D(str, white, "Verdana", 12, 1);
-            tg3.addChild(text);
-        }
-        
-        
-        pg.addChild(tg1);
-        pg.addChild(tg2);
-        pg.addChild(tg3);
-
-        universe.getViewingPlatform().setPlatformGeometry(pg);     
     }
     
     void doAim() {        
@@ -936,7 +917,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         aim.y = y;
     }
     
-    public void setAim(Vector3f v) {
+    public void setAim(Tuple3f v) {
         aim.x = v.x;
         aim.y = v.y;
         //PoolFrame pf = (PoolFrame)this.getParent().getParent().getParent().getParent();
@@ -959,9 +940,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         selectionMode = v;
     }            
     
-    public PoolBall addBall(double x, double y, double a, double b, double s, Appearance appearance) {        
-        PoolBall ball = new PoolBall(appearance, x, y, a, b, s);
-        //universe.addBranchGraph(ball.group);
+    public PoolBall addBall(double x, double y, double s, Appearance appearance) {        
+        PoolBall ball = new PoolBall(appearance, ballSize, 0);
+        ball.pos.x = x;
+        ball.pos.y = y;
+        ball.vel.x = 0.0;
+        ball.vel.y = 0.0;
+        ball.pos.z = 0.0;
         group.addChild(ball.group);
         balls.add(ball);
         activeBalls.add(ball);
@@ -1102,33 +1087,15 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController implements ActionListener {
     PoolPanel pp;
-    boolean mouseAim = true, shootingBallMode = false, transitioning = false;
-    int transitionFrame = 0;
+    boolean mouseAim = true, autoCamera = true, transitioning = false;
+    int keyPressed = 0;
     float angleVelocity = 0f;
+    float distanceVelocity = 0f;
     Vector3f cameraRotationAxis = new Vector3f();
     Vector3f upVecRotationAxis = new Vector3f();
     Vector3f translationalVelocity = new Vector3f();
     Vector3f aVector = new Vector3f();
-    float distanceVelocity = 0f;
-    
-    static public float solveQuadratic(float a, float b, float c) {
-        if (a !=0 ){
-	    float smaller = (float) (( -b - Math.sqrt(b*b-4*a*c) )/(2 * a));
-	    float larger = (float) (( -b + Math.sqrt(b*b-4*a*c) )/(2 * a));
-            if(smaller > larger) {
-                float temp = smaller;
-                smaller = larger;
-                larger = temp;                        
-            }
-            if(smaller < 0) {
-                return larger;
-            } else {
-                return smaller;
-            }
-	} else {
-	    return -c/b;  
-	}
-    }
+    Vector3f temp = new Vector3f();
     
     public PoolCameraController(PoolPanel p) {
         super(p.universe, p.canvas);
@@ -1185,7 +1152,7 @@ class PoolCameraController extends CameraController implements ActionListener {
             aVector.set(upVec);
             angle = (float) (aVector.angle(upVector)*.06);
             if(Math.abs(angle) < PoolSettings.camAngleThresh) {
-                upVec.set(aVector);
+                upVec.set(upVector);
             } else {
                 rotater.setAndRotateInPlace(upVecRotationAxis, -angle, upVec);
             }
@@ -1205,14 +1172,39 @@ class PoolCameraController extends CameraController implements ActionListener {
             //Setup temporary translations into Vector3fs
             aVector.set(cameraPos);
             translationalVelocity.set(cameraTrans);
+            
+            temp = new Vector3f(upVec);
 
             //Check to see if the transition is done.
             if(camDistance == cameraDistance                             && 
                cameraPosition.epsilonEquals(aVector, 0f)                 &&
-               cameraTranslation.epsilonEquals(translationalVelocity, 0) &&
-               upVector.epsilonEquals(new Vector3f(upVec), 0f))
+               cameraTranslation.epsilonEquals(translationalVelocity, 0f) &&
+               upVector.epsilonEquals(temp, 0f))
                 transitioning = false;
+        } else {
+            switch(keyPressed) {
+            case KeyEvent.VK_UP:
+                break;
+            case KeyEvent.VK_DOWN:
+                break;
+            case KeyEvent.VK_LEFT:
+                angleVelocity -= .001;
+                break;
+            case KeyEvent.VK_RIGHT:
+                angleVelocity += .001;
+                break;
+            default:
+                angleVelocity *=.95;
+                break;
+            }
+            if(Math.abs(angleVelocity) > 0.0001) {
+                rotater.setAndRotateInPlace(this.cameraRotationAxis, angleVelocity, cameraPos);
+                cameraPosition.set(cameraPos);
+                pp.setAim(cameraPosition);
+                updateCamera();
+            }
         }
+        
     }
         
     
@@ -1222,6 +1214,18 @@ class PoolCameraController extends CameraController implements ActionListener {
             
         } else {
             mouseAim = !mouseAim;
+        }
+    }
+    
+    @Override public void mouseDragged(MouseEvent me) {
+        if(!autoCamera && !transitioning) {
+            super.mouseDragged(me);
+        }
+    }
+    
+    @Override public void mouseReleased(MouseEvent me) {
+        if(!autoCamera && !transitioning) {
+            super.mouseReleased(me);
         }
     }
     
@@ -1236,26 +1240,38 @@ class PoolCameraController extends CameraController implements ActionListener {
     }
     
     @Override public void keyPressed(KeyEvent ke) {
-        if(!shootingBallMode) {
+        if(!autoCamera) {
             super.keyPressed(ke);
             return;
         }
-        switch(ke.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                break;
-            case KeyEvent.VK_DOWN:
-                break;
-            case KeyEvent.VK_LEFT:
-                break;
-            case KeyEvent.VK_RIGHT:
-                break;
-            default:
-                return;
-        }        
+        if(keyPressed == 0) {
+            switch(ke.getKeyCode()) {
+                case KeyEvent.VK_UP:
+                    keyPressed = KeyEvent.VK_UP;
+                    break;
+                case KeyEvent.VK_DOWN:
+                    keyPressed = KeyEvent.VK_DOWN;
+                    break;
+                case KeyEvent.VK_LEFT:
+                    keyPressed = KeyEvent.VK_LEFT;
+                    this.cameraRotationAxis.set(upVector);
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    keyPressed = KeyEvent.VK_RIGHT;
+                    this.cameraRotationAxis.set(upVector);
+                    break;
+                default:
+                    return;
+            }
+        }
+            
     }
     
+    
     @Override public void keyReleased(KeyEvent ke) {
-        
+        if(ke.getKeyCode() == keyPressed) {
+            keyPressed = 0;
+        }
     }
 
     public void snapToShootingBall() {   

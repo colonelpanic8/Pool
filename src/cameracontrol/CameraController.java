@@ -33,7 +33,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     //User configuration
     protected int leftClickMode = ROTATION, rightClickMode = TRANSLATION, keyPressMode = ZOOM_ROLL;
     protected float zoomSensitivity = 20f;
-    protected float translationSensitivity = 4f;
+    protected float translationSensitivity = 6f;
     protected float keyYSensitivity = .05f;
     protected float keyXSensitivity = .05f;
     

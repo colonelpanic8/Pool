@@ -1,22 +1,18 @@
 package pool;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class PoolFrame extends JFrame implements ChangeListener, ActionListener {
     PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);
     JPanel content = new JPanel();
-    JPanel south = new JPanel();
+    JToolBar toolbar = new JToolBar();
         
     int aimRange = 5000;
     int powerRange = 100;
@@ -29,12 +25,14 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
     JButton selectionModeButton = new JButton("Selection Mode");  
     JButton shootButton = new JButton("Shoot");
     JButton makeRackButton = new JButton("Make Rack");
-    JButton snapButton = new JButton("Snap");
+    JButton snapButton;// = new JButton();
     JButton overheadViewButton = new JButton("Overhead");
     
     public PoolFrame(String str) {
         super(str);
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
         
+        snapButton = new JButton(new ImageIcon(toolkit.createImage("images/SnapButton.jpg")));
         //Component Configuration
         powerSlider.setOrientation(JSlider.VERTICAL);                
 	        
@@ -44,21 +42,19 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         //Add content to frame.
 	content.setLayout(new BorderLayout());
 	content.add(poolPanel, BorderLayout.CENTER);
-	content.add(angleSlider, BorderLayout.NORTH);
+	content.add(angleSlider, BorderLayout.SOUTH);
 	content.add(powerSlider, BorderLayout.EAST);
         
         //Toolbar setup.
-        south.setBackground(Color.BLACK);
-        south.add(snapButton);
-        south.add(overheadViewButton);
-        south.add(makeRackButton);
-	south.add(selectionModeButton);
-	south.add(shootButton);
-        south.add(spinSlider);
-	content.add(south, BorderLayout.SOUTH);
+        toolbar.add(snapButton);
+        toolbar.add(overheadViewButton);
+        toolbar.add(makeRackButton);
+	toolbar.add(selectionModeButton);
+	toolbar.add(shootButton);
+        toolbar.add(spinSlider);
+	content.add(toolbar, BorderLayout.NORTH);
         
         //Finalize
-        Toolkit toolkit =  Toolkit.getDefaultToolkit ();
         Dimension dim = toolkit.getScreenSize();
 	this.setContentPane(content);
 	this.setSize(dim.width, dim.height);
