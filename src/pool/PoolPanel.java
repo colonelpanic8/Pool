@@ -13,7 +13,6 @@ import javax.swing.JPanel;
 import javax.swing.OverlayLayout;
 import javax.swing.Timer;
 import javax.vecmath.*;
-import org.j3d.geom.overlay.ImageButtonOverlay;
 import unbboolean.j3dbool.BooleanModeller;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
@@ -46,7 +45,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     BranchGroup group;
     
     //Overlay Buttons
-    ImageButtonOverlay snapButton;
+    //ImageButtonOverlay snapButton;
     
     //Aim
     Shape3D aimLine;    
