@@ -37,6 +37,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     double spin, power;
     int collisionsExecuted = 0;
     int numberOfAimLines = 3;
+    boolean inMotion = false;
     
     //Java3D
     Canvas3D canvas;
@@ -65,16 +66,17 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //Colors
     Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
     Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
+    Color3f gray = new Color3f(.5f, .5f, .5f);
     Color3f turqoise = new Color3f(0.0f, .5f, .5f);
     Color3f darkGreen = new Color3f(0.0f, 0.5f, 0.0f);
     Color3f darkBlue = new Color3f(0.0f, 0.0f, 0.5f);
     Color3f darkRed = new Color3f(.5f, 0.0f, 0.0f);
-    Color3f tableColor = turqoise;
+    Color3f tableColor = gray;
     Color3f darkerTableColor = new Color3f(tableColor.x*.80f, tableColor.y*.80f, tableColor.z*.80f);
     Color3f darkestTableColor = new Color3f(darkerTableColor.x*.80f, darkerTableColor.y*.80f, darkerTableColor.z*.80f);
     Color3f railColor = darkerTableColor;
     Color3f borderColor = darkestTableColor;
-    Color3f pocketColor = darkRed;
+    Color3f pocketColor = turqoise;
     
     //Shared Scene Graph Objects
     TextureAttributes ta = new TextureAttributes();
@@ -82,7 +84,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //Debug
     boolean frameSkip = false, err = false;
-    
     
     //--------------------INITIALIZATION--------------------//
     
@@ -390,16 +391,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             solid1 = bm.getDifference();
         }
         
-        /*
+        
         Solid solid3 = new Solid();
+        /*
         solid3.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
                 
-        solid2.setData(DefaultCoordinates.DEFAULT_CYLINDER_VERTICES, DefaultCoordinates.DEFAULT_CYLINDER_COORDINATES, darkBlue);
-        solid2.rotate(Math.PI/2, 0);
-        
-        bm = new BooleanModeller(solid3, solid2);
-        solid3 = bm.getDifference();
+        solid2.setData(DefaultCoordinates.DEFAULT_SPHERE_VERTICES, DefaultCoordinates.DEFAULT_SPHERE_COORDINATES, darkBlue);
+        //solid3.scale(.5f,.5f,1f);
+        //solid3.translate(.25,.25);
+        //bm = new BooleanModeller(solid3, solid2);
+        //solid3 = bm.getDifference();
         //solid3.translate(0,2);
+        borderGroup.addChild(solid2);
         borderGroup.addChild(solid3);
         //solid2.scale(ballSize, ballSize, 2*ballSize);
         
@@ -493,13 +496,19 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             collisionsExecuted++;
 	    collision = collisions.poll();	    
 	}
+        boolean ballsMoving = false;
         ballIterator = activeBalls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
-	    ball.move(1-timePassed);
-            ball.updateVelocity();
-            
-	}                
+            if(ball.move(1-timePassed)) {
+               ballsMoving = true; 
+            }
+            ball.updateVelocity();            
+	}
+        if(!ballsMoving && inMotion) {
+            inMotion = false;
+            ballsStopped();
+        }
     }
     
     void updateGhostBall() {
@@ -538,39 +547,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 		}
 	    }
 	}
-    }
-    
-    void doGravity(PoolBall ball, PoolPocket pocket) {
-        if(ball.pos.z <= (-pocketDepth+ballSize)) {
-            ball.vel.set(0.0,0.0,0.0);
-            if(ball == cueball) {
-                cueballSunk();
-            } else {
-                ball.sunk = true;
-                ball.pos.set(balls.lastIndexOf(ball)*2*ballSize, height/2, 2.0);
-                ball.spin.set(ball.vel);
-                ball.rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
-            }
-            return;
-        }
-        Vector3f acceleration = new Vector3f((float)(ball.pos.x - pocket.pos.x),
-                                           (float)(ball.pos.y - pocket.pos.y),
-                                           0.0f);
-        acceleration.normalize();
-        acceleration.scale(pocket.size);        
-        Point3f contactPoint = new Point3f((float)pocket.pos.x, (float)pocket.pos.y, (float)-ballSize);
-        contactPoint.add(acceleration);        
-        if(new Point3d(ball.pos).distance(new Point3d(contactPoint)) <= ball.size) {
-            Vector3f normal = new Vector3f(ball.pos);
-            contactPoint.scale(-1);
-            normal.add(contactPoint);
-            normal.normalize();
-            float scale = 1/normal.z;
-            ball.vel.x += normal.x*scale * gravity;
-            ball.vel.y += normal.y*scale * gravity;
-        } else {
-            ball.vel.z -= gravity;
-        }  
     }
     
     //--------------------COLLISION DETECTION--------------------//
@@ -616,7 +592,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     //--------------------GRAPHICAL FUNCTIONS--------------------//
-    
         
     Appearance createMatAppear(Color3f dColor, Color3f sColor, float shine) {
         
@@ -640,7 +615,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     void doAim() {        
-        if(shootingBall != null && shootingBall.vel.length() < .01) {
+        if(shootingBall != null && shootingBall.vel.length() == 0) {
             aimLineRA.setVisible(true);
             if(ghostBallObjectBall == null) {
                 Vector3f unit = new Vector3f();
@@ -904,6 +879,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }                
      
     public void shoot() {
+        inMotion = true;
         shootingBall.vel.x = -aim.x * power * powerS;
         shootingBall.vel.y = -aim.y * power * powerS;
         shootingBall.spin.x = -aim.x * spin * spinS;
@@ -988,12 +964,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         }                
     }
     
-    //--------------------EVENTS--------------------//
+    //--------------------EVENTS--------------------//    
     
-    public void cueballSunk() {
-        cueball.pos.set(0.0, 0.0, 0.0);
-        cueball.vel.set(cueball.pos);
-        cueball.spin.set(cueball.vel);
+    void ballsStopped() {
+        if(cameraController.autoCamera) {
+            cameraController.snapToShootingBall();
+        }
     }
 
     //--------------------COMPARATOR INTERFACE--------------------//
@@ -1087,9 +1063,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
 class PoolCameraController extends CameraController implements ActionListener {
     PoolPanel pp;
-    boolean mouseAim = true, autoCamera = true, transitioning = false;
-    int keyPressed = 0;
+    boolean mouseAim = true, autoCamera = false, transitioning = false;
     float angleVelocity = 0f;
+    int keyPressed = 0;
     float distanceVelocity = 0f;
     Vector3f cameraRotationAxis = new Vector3f();
     Vector3f upVecRotationAxis = new Vector3f();
@@ -1127,8 +1103,7 @@ class PoolCameraController extends CameraController implements ActionListener {
         cameraPosition.normalize();
         cameraTranslation.set(center);
         cameraDistance = distance;
-    }       
-    
+    }    
     
     public void actionPerformed(ActionEvent evt) {
         if(transitioning) {            
@@ -1205,8 +1180,7 @@ class PoolCameraController extends CameraController implements ActionListener {
             }
         }
         
-    }
-        
+    }        
     
     @Override public void mouseClicked(MouseEvent me) {
         if(me.getButton() == MouseEvent.BUTTON1) {
@@ -1265,8 +1239,7 @@ class PoolCameraController extends CameraController implements ActionListener {
             }
         }
             
-    }
-    
+    }    
     
     @Override public void keyReleased(KeyEvent ke) {
         if(ke.getKeyCode() == keyPressed) {

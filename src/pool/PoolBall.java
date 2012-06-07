@@ -61,7 +61,7 @@ public class PoolBall {
         move(0);
     }    
     
-    public final void move(double t) {
+    public final boolean move(double t) {
         pos.x += vel.x*t;
         pos.y += vel.y*t;
         pos.z += vel.z*t;
@@ -79,6 +79,7 @@ public class PoolBall {
         transform.setRotation(rotation);
         transform.setTranslation(new Vector3d(pos));                
         transformGroup.setTransform(transform);
+        return vel.length() != 0;
     }
     
     public void setInactivePos() {
