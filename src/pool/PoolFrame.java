@@ -9,7 +9,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class PoolFrame extends JFrame implements ChangeListener, ActionListener {
+public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     
     PoolPanel poolPanel = PoolPanel.getPoolPanel();    
     JPanel content = new JPanel();
@@ -30,6 +30,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
     JButton snapButton;
     JButton settingsButton = new JButton("Settings");
     JButton overheadViewButton = new JButton("Overhead");
+    JButton breakPowerButton = new JButton("Break Power");
     
     public PoolFrame(String str) {
         super(str);
@@ -68,6 +69,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         toolbar.add(makeRackButton);
 	toolbar.add(selectionModeButton);
 	toolbar.add(shootButton);
+        toolbar.add(breakPowerButton);
         toolbar.add(spinSlider);
         toolbar.add(settingsButton);
 	content.add(toolbar, BorderLayout.NORTH);
@@ -84,7 +86,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         double val = angleSlider.getValue();
         poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
         val = powerSlider.getValue();
-        poolPanel.setPower(1.5);
+        poolPanel.setPower(val/powerRange);
     }
     
     private void startListening() {
@@ -97,6 +99,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         angleSlider.addChangeListener(this);
         overheadViewButton.addActionListener(this);
         settingsButton.addActionListener(this);
+        breakPowerButton.addActionListener(this);
     }
     
     @Override
@@ -112,8 +115,10 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
             poolPanel.new9BallRack();
         } else if(source == overheadViewButton)  {
             poolPanel.mouseController.overheadView();
-        }  else if(source == settingsButton)     {
+        } else if(source == settingsButton)      {
             settings.setVisible(true);
+        } else if(source == breakPowerButton)    {
+            poolPanel.setPower(1.5);
         }
     }
     
@@ -133,6 +138,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
             double val = spinSlider.getValue();
             poolPanel.setSpin(val/spinRange);
         }        
-    }    
+    }
     
 }

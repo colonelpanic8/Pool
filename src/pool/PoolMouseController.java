@@ -193,6 +193,10 @@ class PoolMouseController extends CameraController implements ActionListener {
     }
     
     @Override public void keyPressed(KeyEvent ke) {
+        if(ke.getKeyCode() == KeyEvent.VK_SPACE) {
+            pp.shoot();
+            return;
+        }
         if(!autoCamera) {
             super.keyPressed(ke);
             return;
@@ -212,7 +216,7 @@ class PoolMouseController extends CameraController implements ActionListener {
                 case KeyEvent.VK_RIGHT:
                     keyPressed = KeyEvent.VK_RIGHT;
                     this.cameraRotationAxis.set(upVector);
-                    break;
+                    break;                
                 default:
                     return;
             }
