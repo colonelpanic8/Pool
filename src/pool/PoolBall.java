@@ -1,6 +1,8 @@
 package pool;
 
 import com.sun.j3d.utils.geometry.Sphere;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.geom.Point2D;
 import javax.media.j3d.*;
 import javax.vecmath.*;
@@ -239,17 +241,18 @@ public class PoolBall extends Sphere{
     }
     
     public void ballSunk() {
-        active = false;
-        sunk = true;
         transparency = 1.0f;
         ta.setTransparencyMode(TransparencyAttributes.FASTEST);
         ta.setTransparency(transparency);
         if(this.ballNumber == 0) {
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            pos.set((double)p.x, (double)p.y, 0.0);
             active = true;
-            sunk = true;
-            pos.set(0.0,0.0,0.0);
-            
+            sunk = true;            
+            PoolPanel.ref.mouseController.putBallInHand(this);                        
         } else {
+            active = false;
+            sunk = true;            
             setInactivePos();           
             rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
         }            

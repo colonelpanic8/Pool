@@ -37,7 +37,6 @@ class PoolMouseController extends CameraController implements ActionListener {
     }
     
     public void putBallInHand(PoolBall ball) {
-        ball.active = false;
         ballInHand = ball;
     }
     
@@ -79,7 +78,7 @@ class PoolMouseController extends CameraController implements ActionListener {
                         
             //Up Vector
             aVector.set(upVec);
-            angle = (float) (aVector.angle(upVector)*.06);
+            angle = (float) (aVector.angle(upVector)*.08);
             if(Math.abs(angle) < PoolSettings.camAngleThresh) {
                 upVec.set(upVector);
             } else {
@@ -136,25 +135,27 @@ class PoolMouseController extends CameraController implements ActionListener {
         
     }        
     
-    @Override public void mouseClicked(MouseEvent me) {
+    @Override public void mouseClicked(MouseEvent me) {        
         if(ballInHand == null) {
-            pp.pickCanvas.setShapeLocation(me);
-            PickResult res = pp.pickCanvas.pickClosest();
-            if(res != null) {
-                Primitive obj = (Primitive) res.getNode(PickResult.PRIMITIVE);
-                if(obj == null) {
-                    System.out.println("Nothing Picked");
-                } else {
-                    if(obj instanceof PoolBall) {
-                        putBallInHand((PoolBall)obj);
-                        return;
+            if(selectionMode) {
+                pp.pickCanvas.setShapeLocation(me);
+                PickResult res = pp.pickCanvas.pickClosest();
+                if(res != null) {
+                    Primitive obj = (Primitive) res.getNode(PickResult.PRIMITIVE);
+                    if(obj == null) {
+                        System.out.println("Nothing Picked");
+                    } else {
+                        if(obj instanceof PoolBall) {
+                            putBallInHand((PoolBall)obj);
+                        }
                     }
                 }
-            }        
-            if(me.getButton() == MouseEvent.BUTTON1) {
-                pp.shoot();            
             } else {
-                mouseAim = !mouseAim;
+                if(me.getButton() == MouseEvent.BUTTON1) {
+                    pp.shoot();            
+                } else {
+                    mouseAim = !mouseAim;
+                }
             }
         } else {
             if(!pp.checkOverlaps(ballInHand)) {
@@ -179,6 +180,7 @@ class PoolMouseController extends CameraController implements ActionListener {
     @Override public void mouseMoved(MouseEvent me) {
         if(ballInHand != null) {
             ballInHand.pos.set(mouseToXYPlaneLocal(me.getX(), me.getY()));
+            return;
         }
         if(mouseAim) {
             Vector3f pos = mouseToXYPlaneLocal(me.getX(), me.getY());

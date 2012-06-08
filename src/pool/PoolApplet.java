@@ -13,7 +13,7 @@ import javax.swing.event.ChangeListener;
 
 public class PoolApplet extends JApplet implements ActionListener, ChangeListener {
     
-    PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);
+    PoolPanel poolPanel = PoolPanel.getPoolPanel();
     JPanel content = new JPanel();
     JPanel south = new JPanel();
         

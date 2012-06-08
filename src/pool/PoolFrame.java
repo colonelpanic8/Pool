@@ -10,7 +10,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class PoolFrame extends JFrame implements ChangeListener, ActionListener {
-    PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);    
+    
+    PoolPanel poolPanel = PoolPanel.getPoolPanel();    
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
     PoolSettings settings = PoolSettings.getSettings();

@@ -21,7 +21,7 @@ import unbboolean.solids.DefaultCoordinates;
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
     
-    private static PoolPanel ref;
+    static PoolPanel ref;
     
     static final float gravity = .01f;
     protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
@@ -84,7 +84,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //--------------------INITIALIZATION--------------------//
     
-    public PoolPanel(double bs, double rs, double w, double h) {
+    private PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
         this.setLayout(new OverlayLayout(this));
         height = h;
@@ -122,7 +122,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public static PoolPanel getPoolPanel()
     {
         if (ref == null){}
-            //ref = new PoolPanel();		
+            ref = new PoolPanel(.3,.35, 25, 13);		
         return ref;
     }
     
@@ -493,7 +493,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ballIterator = balls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
-            if(ball.move(1-timePassed)) {
+            if(ball.move(1 - timePassed)) {
                ballsMoving = true; 
             }
             ball.updateVelocity();            
@@ -511,7 +511,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	ghostBallObjectBall = null;
 	while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
-	    if(ball != shootingBall){
+	    if(ball != shootingBall && ball.active){
                 double t;
 		double a = aim.x*aim.x + aim.y*aim.y;
                 
