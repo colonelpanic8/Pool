@@ -15,6 +15,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
     PoolSettings settings = PoolSettings.getSettings();
+    PoolHelp help;
         
     int aimRange = 5000;
     int powerRange = 100;
@@ -24,13 +25,17 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     JSlider angleSlider = new JSlider(0, aimRange, 0);//Defines angle of shot
     JSlider powerSlider = new JSlider(0, powerRange, powerRange/4);
     JSlider spinSlider = new JSlider(-spinRange, spinRange, 0);
+    
     JButton selectionModeButton = new JButton("Selection Mode");  
     JButton shootButton = new JButton("Shoot");
     JButton makeRackButton = new JButton("Make Rack");
-    JButton snapButton;
     JButton settingsButton = new JButton("Settings");
     JButton overheadViewButton = new JButton("Overhead");
     JButton breakPowerButton = new JButton("Break Power");
+    JButton helpButton = new JButton("Help");
+    
+    JButton snapButton;
+    ImageIcon snapIcon;
     
     public PoolFrame(String str) {
         super(str);
@@ -51,8 +56,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         spinSlider.setMinorTickSpacing(3);
         spinSlider.setBorder(BorderFactory.createTitledBorder("Spin"));
         
-        
-        snapButton = new JButton(new ImageIcon(toolkit.createImage("images/SnapButton.jpg")));        
+        snapIcon = new ImageIcon(toolkit.createImage("images/SnapButton.jpg"));
+        snapButton = new JButton(snapIcon);        
 	        
         //Add listeners
         startListening();
@@ -72,6 +77,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         toolbar.add(breakPowerButton);
         toolbar.add(spinSlider);
         toolbar.add(settingsButton);
+        toolbar.add(helpButton);
 	content.add(toolbar, BorderLayout.NORTH);
         
         //Finalize
@@ -87,6 +93,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
         val = powerSlider.getValue();
         poolPanel.setPower(val/powerRange);
+        help = new PoolHelp(this);
     }
     
     private void startListening() {
@@ -100,6 +107,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         overheadViewButton.addActionListener(this);
         settingsButton.addActionListener(this);
         breakPowerButton.addActionListener(this);
+        helpButton.addActionListener(this);
     }
     
     @Override
@@ -119,6 +127,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
             settings.setVisible(true);
         } else if(source == breakPowerButton)    {
             poolPanel.setPower(1.5);
+        } else if(source == helpButton)          {
+            help.setVisible(true);
         }
     }
     
