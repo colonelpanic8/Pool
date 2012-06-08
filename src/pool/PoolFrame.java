@@ -65,9 +65,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         //Init proper shooting values
         double val = angleSlider.getValue();
         poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
-        poolPanel.setPower(val/100);
         val = powerSlider.getValue();
-        poolPanel.setPower(val/50);
+        poolPanel.setPower(1.5);
     }
     
     private void startListening() {

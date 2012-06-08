@@ -1,16 +1,17 @@
 package pool;
 
 import cameracontrol.CameraController;
+import com.sun.j3d.utils.geometry.Primitive;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
+import com.sun.j3d.utils.pickfast.PickCanvas;
+import com.sun.j3d.utils.picking.PickResult;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
 import java.awt.event.*;
 import java.util.*;
-import javax.management.*;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
-import javax.swing.OverlayLayout;
 import javax.swing.Timer;
 import javax.vecmath.*;
 import unbboolean.j3dbool.BooleanModeller;
@@ -19,7 +20,7 @@ import unbboolean.solids.DefaultCoordinates;
 
 
 
-public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener, NotificationEmitter {
+public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
     
     static final float gravity = .01f;
     protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
@@ -40,6 +41,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //Java3D
     Canvas3D canvas;
+    PickCanvas ballPicker;
     SimpleUniverse universe;
     PoolCameraController cameraController;
     BranchGroup group;
@@ -88,7 +90,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
-        this.setLayout(new OverlayLayout(this));
+        //this.setLayout(new OverlayLayout(this));
         height = h;
         width = w;
         ballSize = bs;
@@ -158,6 +160,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         group = new BranchGroup();
         group.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
         group.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
+        ballPicker = new PickCanvas(canvas, group);
+        ballPicker.setMode(PickCanvas.TYPE_PRIMITIVE);
         
         //Create the bounding box for the game.
         BoundingBox bounds = new BoundingBox();
@@ -431,6 +435,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //--------------------SIMULATION--------------------//
     
+    @Override
     public void actionPerformed(ActionEvent evt){
         //doOverlays();
         doAim();
@@ -973,6 +978,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 
     //--------------------COMPARATOR INTERFACE--------------------//
     
+    @Override
     public int compare(Object a, Object b) {
 	double val =  ((PoolCollision)a).time - ((PoolCollision)b).time;
 	if(val < 0) {
@@ -1006,10 +1012,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //--------------------HIERARCHY BOUNDS INTERFACE--------------------//
     
+    @Override
     public void ancestorResized(HierarchyEvent he) {        
         canvas.setSize(getWidth(), getHeight());
     }
     
+    @Override
     public void ancestorMoved(HierarchyEvent he) { }
     
     //--------------------ERROR HANDLING--------------------//
@@ -1039,23 +1047,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     public void fixOverlap(PoolBall a, PoolBall b) {
         err = true;
         
-    }
-    
-    //--------------------NOTIFICATION EMMITER INTERFACE--------------------//
-
-    public void removeNotificationListener(NotificationListener nl, NotificationFilter nf, Object o) throws ListenerNotFoundException {
-        
-    }
-
-    public void addNotificationListener(NotificationListener nl, NotificationFilter nf, Object o) throws IllegalArgumentException {
-        
-    }
-
-    public void removeNotificationListener(NotificationListener nl) throws ListenerNotFoundException {
-    }
-
-    public MBeanNotificationInfo[] getNotificationInfo() {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
     
 }
@@ -1104,6 +1095,7 @@ class PoolCameraController extends CameraController implements ActionListener {
         cameraDistance = distance;
     }    
     
+    @Override
     public void actionPerformed(ActionEvent evt) {
         if(transitioning) {            
             //Camera distance
@@ -1182,11 +1174,16 @@ class PoolCameraController extends CameraController implements ActionListener {
     }        
     
     @Override public void mouseClicked(MouseEvent me) {
-        if(me.getButton() == MouseEvent.BUTTON1) {
-            pp.shoot();
-            
+        pp.ballPicker.setShapeLocation(me);
+        PickInfo res = pp.ballPicker.pickClosest();
+        if(res == null) {
+            if(me.getButton() == MouseEvent.BUTTON1) {
+                pp.shoot();            
+            } else {
+                mouseAim = !mouseAim;
+            }
         } else {
-            mouseAim = !mouseAim;
+            Primitive p = (Primitive)res.getNode();
         }
     }
     

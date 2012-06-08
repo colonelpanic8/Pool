@@ -6,7 +6,7 @@ import javax.media.j3d.*;
 import javax.vecmath.*;
 import vector.Rotater3f;
 
-public class PoolBall {    
+public class PoolBall{    
     Appearance appearance;
     TransparencyAttributes ta = new TransparencyAttributes(TransparencyAttributes.NONE, .0f);
     Vector3d pos, lpos;
