@@ -73,12 +73,13 @@ public class PoolApplet extends JApplet implements ActionListener, ChangeListene
         poolPanel.setPower(val/50);
     }
     
+    @Override
     public void actionPerformed(ActionEvent evt){        
         Object source = evt.getSource();
         if       (source == shootButton)         {
             poolPanel.shoot();
         } else if(source == snapButton)          {
-            poolPanel.cameraController.snapToShootingBall();
+            poolPanel.mouseController.snapToShootingBall();
         } else if(source == selectionModeButton) {
             poolPanel.flipSelectionMode();
         } else if(source == makeRackButton)      {

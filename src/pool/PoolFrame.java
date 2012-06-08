@@ -80,21 +80,23 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         overheadViewButton.addActionListener(this);
     }
     
+    @Override
     public void actionPerformed(ActionEvent evt){        
         Object source = evt.getSource();
         if       (source == shootButton)         {
             poolPanel.shoot();
         } else if(source == snapButton)          {
-            poolPanel.cameraController.snapToShootingBall();
+            poolPanel.mouseController.snapToShootingBall();
         } else if(source == selectionModeButton) {
             poolPanel.flipSelectionMode();
         } else if(source == makeRackButton)      {
             poolPanel.new9BallRack();
         } else if(source == overheadViewButton)  {
-            poolPanel.cameraController.overheadView();
+            poolPanel.mouseController.overheadView();
         }
     }
     
+    @Override
     public void stateChanged(ChangeEvent ce) {
         Object source = ce.getSource();
             

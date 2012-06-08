@@ -1,9 +1,9 @@
 package cameracontrol;
 
 import com.sun.j3d.utils.universe.SimpleUniverse;
-import java.awt.Canvas;
 import java.awt.Point;
 import java.awt.event.*;
+import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Transform3D;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
@@ -15,7 +15,7 @@ import vector.Rotater3f;
 public class CameraController implements MouseMotionListener, MouseListener, KeyListener {
 
     protected SimpleUniverse universe;
-    protected Canvas canvas;
+    protected Canvas3D canvas;
     protected Point click = new Point(0,0);
     protected Transform3D transform = new Transform3D();
     protected Vector3f cameraPosition = new Vector3f(0f, 0f, 1f);
@@ -42,7 +42,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     static final int ZOOM_ROLL = 1;
     static final int ROTATION = 2;    
 
-    public CameraController(SimpleUniverse u, Canvas c) {
+    public CameraController(SimpleUniverse u, Canvas3D c) {
         universe = u;
         canvas = c;
         canvas.addMouseListener(this);

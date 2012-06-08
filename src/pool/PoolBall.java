@@ -6,7 +6,7 @@ import javax.media.j3d.*;
 import javax.vecmath.*;
 import vector.Rotater3f;
 
-public class PoolBall{    
+public class PoolBall extends Sphere{
     Appearance appearance;
     TransparencyAttributes ta = new TransparencyAttributes(TransparencyAttributes.NONE, .0f);
     Vector3d pos, lpos;
@@ -22,11 +22,11 @@ public class PoolBall{
     //Java 3D
     BranchGroup group;
     TransformGroup transformGroup;
-    Sphere sphere;
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
     Transform3D transform = new Transform3D();
     
     public PoolBall(Appearance app, double s, int bn){
+        super((float)s, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
         //Get values
         size = s;
         appearance = app;
@@ -34,7 +34,7 @@ public class PoolBall{
         
         //Set flags
         active = false;
-        sunk = false;  
+        sunk = false;
         rotation.w = 1.0f;
         
         //Initialize instance variables
@@ -44,18 +44,17 @@ public class PoolBall{
         lvel = new Vector3d();
         spin = new Vector3d();
         transformGroup = new TransformGroup();
-        group = new BranchGroup();
-        sphere = new Sphere((float)size, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
+        group = new BranchGroup();        
         
         transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         ta.setCapability(TransparencyAttributes.ALLOW_VALUE_WRITE);
         ta.setCapability(TransparencyAttributes.ALLOW_MODE_WRITE);
         appearance.setCapability(Appearance.ALLOW_TRANSPARENCY_ATTRIBUTES_WRITE);
         appearance.setTransparencyAttributes(ta);
-        sphere.setAppearance(appearance);
+        this.setAppearance(appearance);
         transform.setTranslation(pos);
         transformGroup.setTransform(transform);
-        transformGroup.addChild(sphere);
+        transformGroup.addChild(this);
         group.addChild(transformGroup);
         setInactivePos();
         move(0);
@@ -82,7 +81,7 @@ public class PoolBall{
         return vel.length() != 0;
     }
     
-    public void setInactivePos() {
+    public final void setInactivePos() {
         pos.set(2*(ballNumber-.5f)*size-(size*15), PoolPanel.height/2 + PoolPanel.borderSize, 3.0);
     }
     
