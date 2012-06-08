@@ -924,13 +924,13 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public void makeActive(PoolBall ball, double x, double y) {        
         ball.pos.set(x,y,0);
+        ball.startFadeIn();
         makeActive(ball);
     }
     
     public void makeActive(PoolBall ball) {
         ball.vel.set(0.0,0.0,0.0);
         ball.spin.set(ball.vel);
-        ball.sunk = false;
         ball.active = true;
     }
     

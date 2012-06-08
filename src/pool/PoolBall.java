@@ -240,10 +240,15 @@ public class PoolBall extends Sphere{
         }
     }
     
-    public void ballSunk() {
+    public void startFadeIn() {
         transparency = 1.0f;
         ta.setTransparencyMode(TransparencyAttributes.FASTEST);
         ta.setTransparency(transparency);
+        sunk = true;
+    }
+    
+    public void ballSunk() {
+        startFadeIn();
         if(this.ballNumber == 0) {
             Point p = MouseInfo.getPointerInfo().getLocation();
             pos.set((double)p.x, (double)p.y, 0.0);
@@ -252,7 +257,6 @@ public class PoolBall extends Sphere{
             PoolPanel.ref.mouseController.putBallInHand(this);                        
         } else {
             active = false;
-            sunk = true;            
             setInactivePos();           
             rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
         }            
