@@ -18,6 +18,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected Canvas3D canvas;
     protected Point click = new Point(0,0);
     protected Transform3D transform = new Transform3D();
+    protected Vector3f planePosition = new Vector3f();
     protected Vector3f cameraPosition = new Vector3f(0f, 0f, 1f);
     protected Vector3f upVector = new Vector3f(0f, 1f, 0f);
     protected Point3f cameraTranslation = new Point3f();
@@ -74,7 +75,41 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         lookDirection.set(clickVector);        
         
         //Get camera translation
-        Vector3f planePosition = new Vector3f();
+        Vector3f planePos = new Vector3f();
+        universe.getViewingPlatform().getViewPlatformTransform().getTransform(transform);
+        transform.get(planePos);
+        
+        //Calculate the maginitude of the ray from the camera position
+        //defined by the mouse to the x,y plane to get the x,y values.
+        float magnitude = -planePos.z/lookDirection.z;
+        lookDirection.scale(magnitude);
+        planePos.add(lookDirection);
+        return planePos;
+    }
+    
+    protected Vector3f mouseToXYPlaneLocal(int mx, int my) {
+        //Calculate the constants
+        float x,y;
+        float fieldOfView = (float) universe.getViewer().getView().getFieldOfView();
+        x = ((float)(mx - canvas.getWidth()/2)/(canvas.getWidth()/2));
+        y = ((float)(canvas.getHeight()/2 - my)/(canvas.getWidth()/2));                        
+        x *= fieldOfView/2;
+        y *= fieldOfView/2;
+        x = (float) Math.sin(x);
+        y = (float) Math.sin(y);
+        float _z = 1 - x * x - y * y;
+        float z = (float) (_z > 0 ? Math.sqrt(_z) : 0);
+        Vector3f lookDirection = new Vector3f(cameraPosition);
+        lookDirection.scale(-1f);
+        Vector3f cross = new Vector3f();            
+        cross.cross(lookDirection, upVector);
+        ChangeBasis3f cb = new ChangeBasis3f(cross, upVector, lookDirection);
+        cb.invert();
+        Vector3f clickVector = new Vector3f(x,y,z);
+        cb.transform(clickVector);
+        lookDirection.set(clickVector);        
+        
+        //Get camera translation
         universe.getViewingPlatform().getViewPlatformTransform().getTransform(transform);
         transform.get(planePosition);
         

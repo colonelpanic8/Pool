@@ -254,4 +254,8 @@ public class PoolBall extends Sphere{
             rotation.set(0.0f, 0.0f, 0.0f, 1.0f);
         }            
     }
+
+    boolean checkOverlap(Vector3f loc) {
+        return loc.epsilonEquals(new Vector3f(pos), (float)(2*size));
+    }
 }

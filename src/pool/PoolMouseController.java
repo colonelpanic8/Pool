@@ -5,11 +5,13 @@
 package pool;
 
 import cameracontrol.CameraController;
+import com.sun.j3d.utils.geometry.Primitive;
 import com.sun.j3d.utils.picking.PickResult;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import javax.media.j3d.Shape3D;
 import javax.swing.Timer;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
@@ -22,14 +24,18 @@ import javax.vecmath.Vector3f;
 class PoolMouseController extends CameraController implements ActionListener {
     PoolPanel pp;
     boolean mouseAim = true, autoCamera = false, transitioning = false;
+    
     float angleVelocity = 0f;
     int keyPressed = 0;
-    float distanceVelocity = 0f;
+    
+    float distanceVelocity = 0f;  
     Vector3f cameraRotationAxis = new Vector3f();
     Vector3f upVecRotationAxis = new Vector3f();
     Vector3f translationalVelocity = new Vector3f();
     Vector3f aVector = new Vector3f();
     Vector3f temp = new Vector3f();
+    
+    PoolBall ballInHand = null;
     
     public PoolMouseController(PoolPanel p) {
         super(p.universe, p.canvas);
@@ -38,6 +44,12 @@ class PoolMouseController extends CameraController implements ActionListener {
         //Start timer
 	Timer timer = new Timer(30, this);
 	timer.start();
+    }
+    
+    public void putBallInHand(PoolBall ball) {
+        ball.active = false;
+        //pp.activeBalls.remove(ball);
+        ballInHand = ball;
     }
     
     public void startTransitionTo(Vector3f center, Vector3f cameraVec, Vector3f up, float distance) {
@@ -110,8 +122,8 @@ class PoolMouseController extends CameraController implements ActionListener {
             temp = new Vector3f(upVec);
 
             //Check to see if the transition is done.
-            if(camDistance == cameraDistance                             && 
-               cameraPosition.epsilonEquals(aVector, 0f)                 &&
+            if(camDistance == cameraDistance                              && 
+               cameraPosition.epsilonEquals(aVector, 0f)                  &&
                cameraTranslation.epsilonEquals(translationalVelocity, 0f) &&
                upVector.epsilonEquals(temp, 0f))
                 transitioning = false;
@@ -142,14 +154,32 @@ class PoolMouseController extends CameraController implements ActionListener {
     }        
     
     @Override public void mouseClicked(MouseEvent me) {
-        pp.pickCanvas.setShapeLocation(me);
-        PickResult res = pp.pickCanvas.pickAny();
-        if(me.getButton() == MouseEvent.BUTTON1) {
-            pp.shoot();            
+        if(ballInHand == null) {
+            pp.pickCanvas.setShapeLocation(me);
+            PickResult res = pp.pickCanvas.pickClosest();
+            if(res != null) {
+                Primitive obj = (Primitive) res.getNode(PickResult.PRIMITIVE);
+                if(obj == null) {
+                    System.out.println("Nothing Picked");
+                } else {
+                    if(obj instanceof PoolBall) {
+                        putBallInHand((PoolBall)obj);
+                        return;
+                    }
+                }
+            }        
+            if(me.getButton() == MouseEvent.BUTTON1) {
+                pp.shoot();            
+            } else {
+                mouseAim = !mouseAim;
+            }
         } else {
-            mouseAim = !mouseAim;
+            if(!pp.checkOverlaps(ballInHand)) {
+                pp.makeActive(ballInHand);
+                ballInHand = null;
+            }        
         }
-    }
+    }        
     
     @Override public void mouseDragged(MouseEvent me) {
         if(!autoCamera && !transitioning) {
@@ -164,10 +194,14 @@ class PoolMouseController extends CameraController implements ActionListener {
     }
     
     @Override public void mouseMoved(MouseEvent me) {
+        if(ballInHand != null) {
+            ballInHand.pos.set(mouseToXYPlaneLocal(me.getX(), me.getY()));
+        }
         if(mouseAim) {
-            Vector3f pos = mouseToXYPlane(me.getX(), me.getY());
+            Vector3f pos = mouseToXYPlaneLocal(me.getX(), me.getY());
             pos.scale(-1f);
-            pos.add(new Vector3f(pp.shootingBall.pos));
+            aVector.set(pp.shootingBall.pos);
+            pos.add(aVector);
             pos.normalize();
             pp.setAim(pos);
         }

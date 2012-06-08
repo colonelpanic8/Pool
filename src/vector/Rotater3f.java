@@ -1,15 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package vector;
 
 import javax.vecmath.*;
 
-/**
- *
- * @author ivanmalison
- */
 public class Rotater3f {
     
     protected Quat4f rotation = new Quat4f(), inverse = new Quat4f(), vector = new Quat4f();

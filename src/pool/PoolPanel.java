@@ -878,8 +878,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         y += 2*ballSize + space;
         
         makeActive(last,x,y);                                
-    }                
-     
+    }
+
     public void shoot() {
         inMotion = true;
         shootingBall.vel.x = -aim.x * power * powerS;
@@ -931,14 +931,18 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         return ball;
     }
     
-    public void makeActive(PoolBall ball, double x, double y) {
+    public void makeActive(PoolBall ball, double x, double y) {        
+        ball.pos.set(x,y,0);
+        makeActive(ball);
+    }
+    
+    public void makeActive(PoolBall ball) {
+        ball.vel.set(0.0,0.0,0.0);
+        ball.spin.set(ball.vel);
         ball.sunk = false;
         activeBalls.remove(ball);
         activeBalls.add(ball);
         ball.active = true;
-        ball.vel.set(0.0,0.0,0.0);
-        ball.spin.set(ball.vel);
-        ball.pos.set(x,y,0);
     }
     
     public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
@@ -1020,31 +1024,31 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     //--------------------ERROR HANDLING--------------------//
     
-    public boolean checkBounds(PoolBall b) {
-        return false;
-    }
-    
-    public void checkOverlaps(PoolBall ball) {
+    public boolean checkOverlaps(PoolBall ball) {
         Iterator<PoolBall> ballIterator = activeBalls.iterator();
         while(ballIterator.hasNext()) {
             PoolBall ball2 = ballIterator.next();
             if(ball2 != ball && ball.checkOverlap(ball2)) {
-               fixOverlap(ball, ball2);
+                return true;
+            }            
+        }
+        return false;
+    }
+    
+    public boolean checkOverlaps(Vector3f pos) {
+        Iterator<PoolBall> ballIterator = activeBalls.iterator();
+        while(ballIterator.hasNext()) {
+            PoolBall ball = ballIterator.next();
+            if(ball.checkOverlap(pos)) {
+                return true;
             }
         }
-        Iterator<PoolPolygon> polyIterator = polygons.iterator();
-        while(polyIterator.hasNext()) {
-            PoolPolygon poly = polyIterator.next();
-            if(poly.checkOverlap(ball)) {
-
-                err = true;
-            }
-        }
+        return false;
     }
     
     public void fixOverlap(PoolBall a, PoolBall b) {
         err = true;
         
-    }
+    }    
     
 }

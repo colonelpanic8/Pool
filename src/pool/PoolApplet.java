@@ -87,6 +87,7 @@ public class PoolApplet extends JApplet implements ActionListener, ChangeListene
         }
     }
     
+    @Override
     public void stateChanged(ChangeEvent ce) {
         Object source = ce.getSource();
             
