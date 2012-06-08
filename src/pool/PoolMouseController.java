@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package pool;
 
 import cameracontrol.CameraController;
@@ -11,19 +7,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import javax.media.j3d.Shape3D;
 import javax.swing.Timer;
 import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 
-/**
- *
- * @author ivanmalison
- */
-
 class PoolMouseController extends CameraController implements ActionListener {
     PoolPanel pp;
-    boolean mouseAim = true, autoCamera = false, transitioning = false;
+    boolean mouseAim = true, autoCamera = false, transitioning = false, selectionMode = false;
     
     float angleVelocity = 0f;
     int keyPressed = 0;
@@ -48,7 +38,6 @@ class PoolMouseController extends CameraController implements ActionListener {
     
     public void putBallInHand(PoolBall ball) {
         ball.active = false;
-        //pp.activeBalls.remove(ball);
         ballInHand = ball;
     }
     
@@ -61,12 +50,6 @@ class PoolMouseController extends CameraController implements ActionListener {
         //Upvector angular velocity
         upVecRotationAxis.cross(up, upVector);
         upVector.set(up);
-        
-        //Tranlational Velocity
-        /*translationalVelocity.set(cameraTranslation);
-        translationalVelocity.scale(-1f);
-        translationalVelocity.add(center);
-        translationalVelocity.normalize();*/
         
         cameraPos.set(cameraPosition);
         cameraPosition.set(cameraVec);

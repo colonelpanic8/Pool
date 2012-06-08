@@ -24,7 +24,7 @@ public abstract class PoolCollision {
 	    }
 	}
 	doEffects(pp);
-	ballIterator = pp.activeBalls.iterator();
+	ballIterator = pp.balls.iterator();
         
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
@@ -81,7 +81,7 @@ class BallCollision extends PoolCollision {
         
        
         //Check for new collisions involving the balls
-	ballIterator = pp.activeBalls.iterator();
+	ballIterator = pp.balls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2) {
@@ -93,7 +93,7 @@ class BallCollision extends PoolCollision {
 	    }
 	}
         
-        ballIterator = pp.activeBalls.iterator();
+        ballIterator = pp.balls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2){

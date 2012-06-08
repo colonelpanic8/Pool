@@ -10,9 +10,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class PoolFrame extends JFrame implements ChangeListener, ActionListener {
-    PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);
+    PoolPanel poolPanel = new PoolPanel(.3,.35, 25, 13);    
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
+    PoolSettings settings = PoolSettings.getSettings();
         
     int aimRange = 5000;
     int powerRange = 100;
@@ -25,16 +26,31 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
     JButton selectionModeButton = new JButton("Selection Mode");  
     JButton shootButton = new JButton("Shoot");
     JButton makeRackButton = new JButton("Make Rack");
-    JButton snapButton;// = new JButton();
+    JButton snapButton;
+    JButton settingsButton = new JButton("Settings");
     JButton overheadViewButton = new JButton("Overhead");
     
     public PoolFrame(String str) {
         super(str);
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        
-        snapButton = new JButton(new ImageIcon(toolkit.createImage("images/SnapButton.jpg")));
+                
         //Component Configuration
-        powerSlider.setOrientation(JSlider.VERTICAL);                
+        powerSlider.setOrientation(JSlider.VERTICAL);
+        powerSlider.setPaintTicks(true);
+        powerSlider.setMajorTickSpacing(20);
+        powerSlider.setMinorTickSpacing(5);
+        powerSlider.setBorder(BorderFactory.createTitledBorder("Power"));
+        
+        angleSlider.setBorder(BorderFactory.createTitledBorder("Angle"));
+        
+        spinSlider.setPaintTicks(true);
+        spinSlider.setSnapToTicks(true);
+        spinSlider.setMajorTickSpacing(24);
+        spinSlider.setMinorTickSpacing(3);
+        spinSlider.setBorder(BorderFactory.createTitledBorder("Spin"));
+        
+        
+        snapButton = new JButton(new ImageIcon(toolkit.createImage("images/SnapButton.jpg")));        
 	        
         //Add listeners
         startListening();
@@ -52,6 +68,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
 	toolbar.add(selectionModeButton);
 	toolbar.add(shootButton);
         toolbar.add(spinSlider);
+        toolbar.add(settingsButton);
 	content.add(toolbar, BorderLayout.NORTH);
         
         //Finalize
@@ -78,6 +95,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
         spinSlider.addChangeListener(this);
         angleSlider.addChangeListener(this);
         overheadViewButton.addActionListener(this);
+        settingsButton.addActionListener(this);
     }
     
     @Override
@@ -93,6 +111,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener 
             poolPanel.new9BallRack();
         } else if(source == overheadViewButton)  {
             poolPanel.mouseController.overheadView();
+        }  else if(source == settingsButton)     {
+            settings.setVisible(true);
         }
     }
     

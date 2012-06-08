@@ -1,16 +1,18 @@
 package pool;
 
-import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickResult;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.Color;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
 import java.util.*;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
+import javax.swing.OverlayLayout;
 import javax.swing.Timer;
 import javax.vecmath.*;
 import unbboolean.j3dbool.BooleanModeller;
@@ -19,15 +21,15 @@ import unbboolean.solids.DefaultCoordinates;
 
 public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
     
+    private static PoolPanel ref;
+    
     static final float gravity = .01f;
     protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
     static double spinS = 4.0, powerS = 1.3f;
     static double height, width;    
-    static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
-    boolean selectionMode = false, sliderPower = false;
+    static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;   
     PoolBall cueball, shootingBall, ghostBallObjectBall;
     ArrayList<PoolBall>     balls = new ArrayList(16);
-    ArrayList<PoolBall>  activeBalls = new ArrayList(16);
     ArrayList<PoolPocket> pockets = new ArrayList(6);
     ArrayList<PoolPolygon> polygons = new ArrayList(10);
     PriorityQueue<PoolCollision> collisions;
@@ -41,10 +43,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     PickCanvas pickCanvas;
     SimpleUniverse universe;
     PoolMouseController mouseController;
-    BranchGroup group;
-    
-    //Overlay Buttons
-    //ImageButtonOverlay snapButton;
+    BranchGroup group;    
     
     //Aim
     Shape3D aimLine;    
@@ -87,7 +86,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     public PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
-        //this.setLayout(new OverlayLayout(this));
+        this.setLayout(new OverlayLayout(this));
         height = h;
         width = w;
         ballSize = bs;
@@ -105,26 +104,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         initPockets();
         initPolygons();
         initTable();
-        initBalls();
-        
-        /*
-        BufferedImage img = null;
-        try {
-            img = ImageIO.read(new File("images/SnapButton.jpg"));
-        } catch (IOException e) {
-        }*/
-        /*
-        snapButton = new ImageButtonOverlay(canvas, new Dimension(40,40), new BufferedImage[] {img, img, img, img});
-        snapButton.initialize();
-        if(snapButton.isVisible()) {
-            snapButton.setLocation(100, 100);
-            snapButton.setSize(100,100);
-            snapButton.repaint();
-        }*/
-        
-        /*
-        ImageOverlay io = new ImageOverlay(canvas, new Dimension(40,40), img);
-        io.initialize();*/
+        initBalls();                        
                 
         //Add listeners.
 	addHierarchyBoundsListener(this);
@@ -137,6 +117,19 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         //Start timer
 	Timer timer = new Timer(30, this);
 	timer.start();
+    }    
+
+    public static PoolPanel getPoolPanel()
+    {
+        if (ref == null){}
+            //ref = new PoolPanel();		
+        return ref;
+    }
+    
+    @Override
+    public Object clone()
+            throws CloneNotSupportedException {
+        throw new CloneNotSupportedException(); 
     }
     
     void init3D() {
@@ -435,36 +428,34 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     @Override
     public void actionPerformed(ActionEvent evt){
-        //doOverlays();
-        doAim();
-	Iterator<PoolBall> iter;
-	iter = activeBalls.iterator();
-        //validate();
-        if(err) {
-            rewind();
-            frameSkip = true;
-        }
-        if(frameSkip) {
-            err = false;
-        }
-	while(iter.hasNext()) {
-	    PoolBall ball = iter.next();            
-            //For error handling           
-            //ball.lpos.set(ball.pos);
-            //ball.lvel.set(ball.vel);            
-            detectPolygonCollisions(ball, 0);
-	    detectPocketCollisions(ball, 0);
-            for(int i = balls.lastIndexOf(ball) + 1; i < balls.size(); i++) {
-                double t = ball.detectCollisionWith(balls.get(i));
-                if(t < 1 && 0 <= t){
-                    collisions.add(new BallCollision(t, ball, balls.get(i)));
+        Iterator<PoolBall> iter;
+        
+        //Collision detection.
+        iter = balls.iterator();
+        while(iter.hasNext()) {
+	    PoolBall ball = iter.next();
+            if(ball.active) {
+                detectPolygonCollisions(ball, 0);
+                detectPocketCollisions(ball, 0);
+                for(int i = balls.lastIndexOf(ball) + 1; i < balls.size(); i++) {
+                    PoolBall aBall = balls.get(i);
+                    if(aBall.active) {
+                        double t = ball.detectCollisionWith(aBall);
+                        if(t < 1 && 0 <= t){
+                            collisions.add(new BallCollision(t, ball, aBall));
+                        }
+                    }
                 }
             }
 	}
+        
+        //Visual updates
+        doAim();
         updateBallPositions();
         updateGhostBall();
         
-        iter = activeBalls.iterator();        
+        //Gravity and misc.
+        iter = balls.iterator();        
         while(iter.hasNext()) {
             Iterator<PoolPocket> pocketIterator = pockets.iterator();
             PoolBall ball = iter.next();
@@ -486,7 +477,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	double timePassed = 0;
         while(collision != null) {
 	    //Advance balls to the point where the collision occurs.
-            ballIterator = activeBalls.iterator();
+            ballIterator = balls.iterator();
 	    while(ballIterator.hasNext()) {
 		PoolBall ball = ballIterator.next();
 		ball.move(collision.time-timePassed);
@@ -499,7 +490,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
 	    collision = collisions.poll();	    
 	}
         boolean ballsMoving = false;
-        ballIterator = activeBalls.iterator();
+        ballIterator = balls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
             if(ball.move(1-timePassed)) {
@@ -516,7 +507,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     void updateGhostBall() {
 	Iterator<PoolBall> iter;
         double min = Double.POSITIVE_INFINITY;
-	iter = activeBalls.iterator();
+	iter = balls.iterator();
 	ghostBallObjectBall = null;
 	while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
@@ -911,11 +902,11 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void flipSelectionMode() {
-        selectionMode = !selectionMode;
+        mouseController.selectionMode = !mouseController.selectionMode;
     }
     
     public void setSelectionMode(boolean v) {
-        selectionMode = v;
+        mouseController.selectionMode = v;
     }            
     
     public PoolBall addBall(double x, double y, double s, Appearance appearance) {        
@@ -927,7 +918,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ball.pos.z = 0.0;
         group.addChild(ball.group);
         balls.add(ball);
-        activeBalls.add(ball);
+        makeActive(ball);
         return ball;
     }
     
@@ -940,8 +931,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         ball.vel.set(0.0,0.0,0.0);
         ball.spin.set(ball.vel);
         ball.sunk = false;
-        activeBalls.remove(ball);
-        activeBalls.add(ball);
         ball.active = true;
     }
     
@@ -962,7 +951,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public void rewind() {
-       Iterator<PoolBall> iter = activeBalls.iterator();
+       Iterator<PoolBall> iter = balls.iterator();
         while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
@@ -1025,7 +1014,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     //--------------------ERROR HANDLING--------------------//
     
     public boolean checkOverlaps(PoolBall ball) {
-        Iterator<PoolBall> ballIterator = activeBalls.iterator();
+        Iterator<PoolBall> ballIterator = balls.iterator();
         while(ballIterator.hasNext()) {
             PoolBall ball2 = ballIterator.next();
             if(ball2 != ball && ball.checkOverlap(ball2)) {
@@ -1036,7 +1025,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     public boolean checkOverlaps(Vector3f pos) {
-        Iterator<PoolBall> ballIterator = activeBalls.iterator();
+        Iterator<PoolBall> ballIterator = balls.iterator();
         while(ballIterator.hasNext()) {
             PoolBall ball = ballIterator.next();
             if(ball.checkOverlap(pos)) {
