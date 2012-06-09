@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
+import java.net.URL;
 import java.util.*;
 import javax.media.j3d.*;
 import javax.swing.JPanel;
@@ -64,11 +65,12 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
     Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
     Color3f gray = new Color3f(.5f, .5f, .5f);
-    Color3f turqoise = new Color3f(0.0f, .5f, .5f);
-    Color3f darkGreen = new Color3f(0.0f, 0.5f, 0.0f);
-    Color3f darkBlue = new Color3f(0.0f, 0.0f, 0.5f);
-    Color3f darkRed = new Color3f(.5f, 0.0f, 0.0f);
-    Color3f tableColor = gray;
+    Color3f turqoise = new Color3f(0.0f, .3f, .3f);
+    Color3f darkGreen = new Color3f(0.0f, 0.3f, 0.0f);
+    Color3f darkBlue = new Color3f(0.0f, 0.0f, 0.3f);
+    Color3f darkRed = new Color3f(.3f, 0.0f, 0.0f);
+    Color3f darkBrown = new Color3f(.2f,.2f,0f);
+    Color3f tableColor = darkRed;
     Color3f darkerTableColor = new Color3f(tableColor.x*.80f, tableColor.y*.80f, tableColor.z*.80f);
     Color3f darkestTableColor = new Color3f(darkerTableColor.x*.80f, darkerTableColor.y*.80f, darkerTableColor.z*.80f);
     Color3f railColor = darkerTableColor;
@@ -317,7 +319,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     void initBalls() {
         //Initialize cueball.
-        Texture cueballImage = new TextureLoader("textures/cueball.jpg",this).getTexture();        
+        URL filename = this.getClass().getResource("/textures/cueball.jpg");
+        System.out.println(filename.toString());
+        Texture cueballImage = new TextureLoader(filename,this).getTexture();        
         Appearance appearance = new Appearance();
         appearance.setMaterial(ballMaterial);
         appearance.setTexture(cueballImage);
@@ -326,7 +330,8 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         shootingBall = cueball;
         
         for(int i = 1; i < 16; i++) {
-            Texture texture = new TextureLoader(String.format("textures/%d.jpg",i),this).getTexture();
+            filename = this.getClass().getResource(String.format("/textures/%d.jpg",i));
+            Texture texture = new TextureLoader(filename,this).getTexture();
             Appearance app = new Appearance();
             app.setTexture(texture);
             app.setTextureAttributes(ta);

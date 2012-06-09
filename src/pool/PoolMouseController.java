@@ -152,7 +152,7 @@ class PoolMouseController extends CameraController implements ActionListener {
                 }
             } else {
                 if(me.getButton() == MouseEvent.BUTTON1) {
-                    pp.shoot();            
+                    pp.shoot();
                 } else {
                     mouseAim = !mouseAim;
                 }

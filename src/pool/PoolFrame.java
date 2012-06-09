@@ -28,7 +28,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     
     JButton selectionModeButton = new JButton("Selection Mode");  
     JButton shootButton = new JButton("Shoot");
-    JButton makeRackButton = new JButton("Make Rack");
     JButton settingsButton = new JButton("Settings");
     JButton overheadViewButton = new JButton("Overhead");
     JButton breakPowerButton = new JButton("Break Power");
@@ -36,6 +35,9 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     
     JButton snapButton;
     ImageIcon snapIcon;
+    
+    ImageIcon makeRackIcon;
+    JButton makeRackButton;
     
     public PoolFrame(String str) {
         super(str);
@@ -56,8 +58,13 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         spinSlider.setMinorTickSpacing(3);
         spinSlider.setBorder(BorderFactory.createTitledBorder("Spin"));
         
-        snapIcon = new ImageIcon(toolkit.createImage("images/SnapButton.jpg"));
-        snapButton = new JButton(snapIcon);        
+        snapIcon = new ImageIcon(toolkit.createImage("src/images/SnapIcon.jpg"));        
+        snapButton = new JButton(snapIcon);
+        snapButton.setMaximumSize(new Dimension(64,64));
+        
+        makeRackIcon = new ImageIcon(toolkit.createImage("src/images/NewRackIcon.jpg"));
+        makeRackButton = new JButton(makeRackIcon);
+        makeRackButton.setMaximumSize(new Dimension(64,64));
 	        
         //Add listeners
         startListening();
