@@ -142,7 +142,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
             public void postRender()
             {
                 this.getGraphics2D().setColor(Color.white);
-                this.getGraphics2D().drawString("Heads Up Display (HUD) Works!",100,100);
                 this.getGraphics2D().flush(false);
             }
         };
@@ -319,18 +318,21 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     void initBalls() {
         //Initialize cueball.
-        URL filename = this.getClass().getResource("/textures/cueball.jpg");
-        System.out.println(filename.toString());
-        Texture cueballImage = new TextureLoader(filename,this).getTexture();        
-        Appearance appearance = new Appearance();
-        appearance.setMaterial(ballMaterial);
-        appearance.setTexture(cueballImage);
-        appearance.setTextureAttributes(ta);
-        cueball = addBall(-width/4, 0, ballSize, appearance);
-        shootingBall = cueball;
-        
+        try {
+            URL filename = this.getClass().getResource("/textures/cueball.jpg");        
+            Texture cueballImage = new TextureLoader(filename,this).getTexture();        
+            Appearance appearance = new Appearance();
+            appearance.setMaterial(ballMaterial);
+            appearance.setTexture(cueballImage);
+            appearance.setTextureAttributes(ta);
+            cueball = addBall(-width/4, 0, ballSize, appearance);
+        } catch(NullPointerException npe) {
+            System.err.println("Could not find texture file.");
+            cueball = addBall(-width/4, 0, ballSize, null);
+        }
+        shootingBall = cueball;        
         for(int i = 1; i < 16; i++) {
-            filename = this.getClass().getResource(String.format("/textures/%d.jpg",i));
+            URL filename = this.getClass().getResource(String.format("/textures/%d.jpg",i));
             Texture texture = new TextureLoader(filename,this).getTexture();
             Appearance app = new Appearance();
             app.setTexture(texture);
@@ -392,21 +394,6 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         
         
         Solid solid3 = new Solid();
-        /*
-        solid3.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, darkBlue);
-                
-        solid2.setData(DefaultCoordinates.DEFAULT_SPHERE_VERTICES, DefaultCoordinates.DEFAULT_SPHERE_COORDINATES, darkBlue);
-        //solid3.scale(.5f,.5f,1f);
-        //solid3.translate(.25,.25);
-        //bm = new BooleanModeller(solid3, solid2);
-        //solid3 = bm.getDifference();
-        //solid3.translate(0,2);
-        borderGroup.addChild(solid2);
-        borderGroup.addChild(solid3);
-        //solid2.scale(ballSize, ballSize, 2*ballSize);
-        
-        //solid2.translate(width/2+borderSize-ballSize, height/2+borderSize-ballSize);
-        //bm = new BooleanModeller(solid1, solid2);        */
         
         borderGroup.addChild(solid1);
         

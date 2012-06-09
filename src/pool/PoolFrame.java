@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -58,11 +59,13 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         spinSlider.setMinorTickSpacing(3);
         spinSlider.setBorder(BorderFactory.createTitledBorder("Spin"));
         
-        snapIcon = new ImageIcon(toolkit.createImage("src/images/SnapIcon.jpg"));        
+        URL filename = this.getClass().getResource("/images/SnapIcon.jpg");
+        snapIcon = new ImageIcon(toolkit.createImage(filename));        
         snapButton = new JButton(snapIcon);
         snapButton.setMaximumSize(new Dimension(64,64));
         
-        makeRackIcon = new ImageIcon(toolkit.createImage("src/images/NewRackIcon.jpg"));
+        filename = this.getClass().getResource("/images/NewRackIcon.jpg");
+        makeRackIcon = new ImageIcon(toolkit.createImage(filename));
         makeRackButton = new JButton(makeRackIcon);
         makeRackButton.setMaximumSize(new Dimension(64,64));
 	        
