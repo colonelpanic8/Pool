@@ -4,7 +4,9 @@ import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.universe.SimpleUniverse;
+import java.awt.Button;
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
@@ -12,15 +14,14 @@ import java.awt.event.HierarchyEvent;
 import java.net.URL;
 import java.util.*;
 import javax.media.j3d.*;
-import javax.swing.JPanel;
-import javax.swing.OverlayLayout;
+import javax.swing.JLayeredPane;
 import javax.swing.Timer;
 import javax.vecmath.*;
 import unbboolean.j3dbool.BooleanModeller;
 import unbboolean.j3dbool.Solid;
 import unbboolean.solids.DefaultCoordinates;
 
-public final class PoolPanel extends JPanel implements ActionListener, Comparator, HierarchyBoundsListener {
+public final class PoolPanel extends JLayeredPane implements ActionListener, Comparator, HierarchyBoundsListener {
     
     static PoolPanel ref;
     
@@ -88,7 +89,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     
     private PoolPanel(double bs, double rs, double w, double h) {
         //Initialize size values
-        this.setLayout(new OverlayLayout(this));
+        //this.setLayout(new OverlayLayout(this));
         height = h;
         width = w;
         ballSize = bs;
@@ -98,16 +99,32 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         borderSize = pocketSize + .4;
         railIndent = railSize;
         sideIndent = railIndent/4;
-        pocketDepth = ballSize*8;       
+        pocketDepth = ballSize*8;
+        
+        /*
+        Button button = new Button("test");
+        add(button, JLayeredPane.DRAG_LAYER);
+        validate();
+        Point p = button.getLocation();
+        System.out.println(String.format("%d, %d", p.x, p.y));
+        validate();        */
         
         //Initialize 3D components
-        ta.setTextureMode(TextureAttributes.MODULATE);
+        ta.setTextureMode(TextureAttributes.MODULATE);       
         init3D();        
         initPockets();
         initPolygons();
         initTable();
-        initBalls();                        
-                
+        initBalls();
+        
+        /*
+        button.validate();        
+        p = button.getLocation();
+        System.out.println(String.format("%d, %d", p.x, p.y));
+        * 
+        */
+        
+        
         //Add listeners.
 	addHierarchyBoundsListener(this);
         
@@ -600,7 +617,7 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
     }
     
     void doAim() {        
-        if(shootingBall != null && shootingBall.vel.length() == 0) {
+        if(shootingBall != null && !mouseController.selectionMode && !this.inMotion) {
             aimLineRA.setVisible(true);
             if(ghostBallObjectBall == null) {
                 Vector3f unit = new Vector3f();
@@ -893,8 +910,9 @@ public final class PoolPanel extends JPanel implements ActionListener, Comparato
         power = p;
     }
     
-    public void flipSelectionMode() {
+    public boolean flipSelectionMode() {
         mouseController.selectionMode = !mouseController.selectionMode;
+        return mouseController.selectionMode;
     }
     
     public void setSelectionMode(boolean v) {

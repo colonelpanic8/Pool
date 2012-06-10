@@ -79,10 +79,11 @@ class PoolMouseController extends CameraController implements ActionListener {
             //Up Vector
             aVector.set(upVec);
             angle = (float) (aVector.angle(upVector)*.08);
-            if(Math.abs(angle) < PoolSettings.camAngleThresh) {
+            if(Math.abs(angle) < PoolSettings.camUpVecThresh) {
                 upVec.set(upVector);
             } else {
                 rotater.setAndRotateInPlace(upVecRotationAxis, -angle, upVec);
+                upVec.normalize();
             }
         
             //Camera Tranlation

@@ -26,19 +26,22 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     JSlider angleSlider = new JSlider(0, aimRange, 0);//Defines angle of shot
     JSlider powerSlider = new JSlider(0, powerRange, powerRange/4);
     JSlider spinSlider = new JSlider(-spinRange, spinRange, 0);
-    
-    JButton selectionModeButton = new JButton("Selection Mode");  
-    JButton shootButton = new JButton("Shoot");
+        
     JButton settingsButton = new JButton("Settings");
-    JButton overheadViewButton = new JButton("Overhead");
-    JButton breakPowerButton = new JButton("Break Power");
     JButton helpButton = new JButton("Help");
     
     JButton snapButton;
     ImageIcon snapIcon;
     
-    ImageIcon makeRackIcon;
+    JButton overheadViewButton;
+    ImageIcon overheadViewIcon;
+    
     JButton makeRackButton;
+    ImageIcon makeRackIcon;
+    
+    JButton selectionModeButton;
+    ImageIcon selectionModeIcon;
+    ImageIcon stopIcon;
     
     public PoolFrame(String str) {
         super(str);
@@ -59,6 +62,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         spinSlider.setMinorTickSpacing(3);
         spinSlider.setBorder(BorderFactory.createTitledBorder("Spin"));
         
+        
+        //Button construction.
         URL filename = this.getClass().getResource("/images/SnapIcon.jpg");
         snapIcon = new ImageIcon(toolkit.createImage(filename));        
         snapButton = new JButton(snapIcon);
@@ -68,6 +73,17 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         makeRackIcon = new ImageIcon(toolkit.createImage(filename));
         makeRackButton = new JButton(makeRackIcon);
         makeRackButton.setMaximumSize(new Dimension(64,64));
+        
+        filename = this.getClass().getResource("/images/SelectionModeIcon.jpg");
+        selectionModeIcon = new ImageIcon(toolkit.createImage(filename));
+        filename = this.getClass().getResource("/images/StopIcon.jpg");
+        stopIcon = new ImageIcon(toolkit.createImage(filename));
+        selectionModeButton = new JButton(selectionModeIcon);
+        selectionModeButton.setMaximumSize(new Dimension(64,64));
+        
+        filename = this.getClass().getResource("/images/OverheadViewIcon.jpg");
+        overheadViewIcon = new ImageIcon(toolkit.createImage(filename));
+        overheadViewButton = new JButton(overheadViewIcon);
 	        
         //Add listeners
         startListening();
@@ -83,8 +99,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         toolbar.add(overheadViewButton);
         toolbar.add(makeRackButton);
 	toolbar.add(selectionModeButton);
-	toolbar.add(shootButton);
-        toolbar.add(breakPowerButton);
         toolbar.add(spinSlider);
         toolbar.add(settingsButton);
         toolbar.add(helpButton);
@@ -96,6 +110,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
 	this.setSize(dim.width, dim.height);
 	this.setLocation(0,0);
 	this.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+        this.validate();
 	this.setVisible(true);
         
         //Init proper shooting values
@@ -108,7 +123,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     
     private void startListening() {
         selectionModeButton.addActionListener(this);
-	shootButton.addActionListener(this);
         makeRackButton.addActionListener(this);
         snapButton.addActionListener(this);
 	powerSlider.addChangeListener(this);
@@ -116,27 +130,26 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         angleSlider.addChangeListener(this);
         overheadViewButton.addActionListener(this);
         settingsButton.addActionListener(this);
-        breakPowerButton.addActionListener(this);
         helpButton.addActionListener(this);
     }
     
     @Override
     public void actionPerformed(ActionEvent evt){        
         Object source = evt.getSource();
-        if       (source == shootButton)         {
-            poolPanel.shoot();
-        } else if(source == snapButton)          {
+        if(source == snapButton)          {
             poolPanel.mouseController.snapToShootingBall();
         } else if(source == selectionModeButton) {
-            poolPanel.flipSelectionMode();
+            if(poolPanel.flipSelectionMode()) {
+                selectionModeButton.setIcon(stopIcon);
+            } else {
+                selectionModeButton.setIcon(selectionModeIcon);
+            }
         } else if(source == makeRackButton)      {
             poolPanel.new9BallRack();
         } else if(source == overheadViewButton)  {
             poolPanel.mouseController.overheadView();
         } else if(source == settingsButton)      {
             settings.setVisible(true);
-        } else if(source == breakPowerButton)    {
-            poolPanel.setPower(1.5);
         } else if(source == helpButton)          {
             help.setVisible(true);
         }
