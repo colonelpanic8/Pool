@@ -39,12 +39,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected float zoomSensitivity = 20f;
     protected float translationSensitivity = 6f;
     protected float keyYSensitivity = .05f;
-    protected float keyXSensitivity = .05f;
-    
-    //Constants
-    protected static final int TRANSLATION = 0;
-    protected static final int ZOOM_ROLL = 1;
-    protected static final int ROTATION = 2;
+    protected float keyXSensitivity = .05f;        
     
     //Camera motion.
     protected Vector3f cameraRotationAxis = new Vector3f();
@@ -52,24 +47,30 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected Vector3f aVector = new Vector3f();
     protected Vector3f temp = new Vector3f();
     
+    protected Vector3f translationalVelocity = new Vector3f();
     protected float distanceVelocity = 0f;
     protected float upVecVelocity = 0f;
     protected float angleVelocity = 0f;
-    protected Vector3f translationalVelocity = new Vector3f();
     protected int keyPressed = 0;
     protected boolean transitioning = false;
     
+    //Speed Constants
     static float camTransThresh = .001f;
     static float camAngleThresh = .001f;
     static float camUpVecThresh = .001f;
     static float camDistThresh = .01f;
-    static int threshFrames = 10;
     static float transitionSpeed = .06f;
+    static int threshFrames = 10;
     
     static float distanceAcc = .05f;
     static float camAngleAcc = .001f;
     static float upVecAcc = .003f;
     static float transAcc = .004f;
+    
+    //Mode Constants
+    protected static final int TRANSLATION = 0;
+    protected static final int ZOOM_ROLL = 1;
+    protected static final int ROTATION = 2;
 
     public CameraController(SimpleUniverse u, Canvas3D c) {
         universe = u;
