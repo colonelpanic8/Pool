@@ -8,7 +8,7 @@ import javax.swing.JFrame;
 public class PoolSettings extends JFrame implements ActionListener {
     //Values    
     static float OverheadDistance = 40f;
-    public static float englishDecay = .01f;
+    public static float englishDecay = .001f;
     static double englishConstant = .5f;
     
     JCheckBox enableBallSelection;

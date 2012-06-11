@@ -159,8 +159,8 @@ class WallCollision extends PoolCollision {
     }
 
     @Override public void doEffects(PoolPanel pp) {        
-        ball1.vel = newVel;
-        ball1.spin = newSpin;
+        ball1.vel.set(newVel);
+        ball1.spin.set(newSpin);
     }
     
     @Override public void detectPolygonCollisions(PoolPanel pp, PoolBall x) {

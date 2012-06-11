@@ -164,6 +164,10 @@ public class PoolBall extends Sphere{
             return;
         }
         
+        if(Math.abs(spin.z) > 0)
+            spin.z -= Math.copySign(PoolSettings.englishDecay, spin.z);
+        else
+            spin.z = 0;
         isRolling = false;
         //Determine the dirction of friction.
         Vector3f fd = new Vector3f((float)spin.x, (float)spin.y, 0.0f);
@@ -181,14 +185,13 @@ public class PoolBall extends Sphere{
                 sub.scale(-1*PoolPanel.rollingResistance);
                 if(sub.length() > vel.length()) {
                     vel.set(0.0, 0.0, 0.0);
-                    spin.set(vel);
+                    spin.set(vel.x, vel.y, spin.z);
                     return;
                 }
                 vel.add(sub);
                 aVector.set(vel);
                 aVector.scale((float)(1/size));
-                spin.set(aVector.x, aVector.y, spin.z);
-             
+                spin.set(aVector.x, aVector.y, spin.z);             
             }
             return;
         }

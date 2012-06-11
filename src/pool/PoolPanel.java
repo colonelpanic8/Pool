@@ -151,15 +151,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     
     void init3D() {
         //Initialize Java 3D components.
-        canvas = new Canvas3D(SimpleUniverse.getPreferredConfiguration()){
-            
-            @Override
-            public void postRender()
-            {
-                this.getGraphics2D().setColor(Color.white);
-                this.getGraphics2D().flush(false);
-            }
-        };
+        canvas = new PoolCanvas(SimpleUniverse.getPreferredConfiguration(), this);
         add(canvas);
         universe = new SimpleUniverse(canvas);
         universe.getViewer().getView().setBackClipDistance(width*3);
@@ -885,7 +877,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             shootingBall.vel.y = -aim.y * power * powerS;
             shootingBall.spin.x = -aim.x * spin * spinS;
             shootingBall.spin.y = -aim.y * spin * spinS;
-            shootingBall.spin.z = .2;
+            shootingBall.spin.z = .3;
             ghostBallRA.setVisible(false);
             aimLineRA.setVisible(false);
         }

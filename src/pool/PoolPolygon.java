@@ -229,8 +229,9 @@ public class PoolPolygon extends Polygon2D {
             englishEffect = maxEffect;
             sres.set(ball.spin.x, ball.spin.y, 0.0);
         } else {
-             velInNewBasis.x += englishEffect;
+             sres.set(ball.spin.x, ball.spin.y, ball.spin.z - englishEffect/ball.size/2);
         }
+        velInNewBasis.x -= englishEffect;
         
         velInNewBasis.y = -velInNewBasis.y;
 	res.set(velInNewBasis.x*unit.x + velInNewBasis.y*unit.y,

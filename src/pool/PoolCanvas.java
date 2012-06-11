@@ -18,13 +18,18 @@ public class PoolCanvas extends Canvas3D {
     
     public PoolCanvas(GraphicsConfiguration g, PoolPanel pp) {
         super(g);
-        pp = poolPanel;
+        poolPanel = pp;
     }        
     
     @Override
     public void postRender()  {
         J3DGraphics2D g = this.getGraphics2D();
         g.setColor(Color.white);
+        if(poolPanel.cueball != null) {
+            g.drawString(poolPanel.cueball.spin.toString(), 0, 20);
+            g.drawString(poolPanel.cueball.vel.toString(), 0, 40);
+            g.drawString(String.format("%.3f", poolPanel.cueball.spin.z ), 0, 60);
+        }
         g.flush(false);
     }
 }
