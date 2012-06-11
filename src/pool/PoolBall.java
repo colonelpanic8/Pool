@@ -26,6 +26,7 @@ public class PoolBall extends Sphere{
     TransformGroup transformGroup;
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
     Transform3D transform = new Transform3D();
+    private Vector3f aVector = new Vector3f();
     
     public PoolBall(Appearance app, double s, int bn){
         super((float)s, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
@@ -67,12 +68,12 @@ public class PoolBall extends Sphere{
         pos.y += vel.y*t;
         pos.z += vel.z*t;
         double angle = (spin.length()*t);
-        Vector3f spinPerp = new Vector3f((float)-spin.y, (float)spin.x, 0f);
+        Vector3f spinPerp = new Vector3f((float)-spin.y, (float)spin.x, (float)spin.z);
         spinPerp.normalize();
         spinPerp.scale((float)Math.sin(angle/2));
         velRotation.set(spinPerp.x,
                         spinPerp.y,
-                        0, 
+                        spinPerp.z, 
                         (float)Math.cos(angle/2));        
         if(spin.length() > 0) {
             rotation.mul(velRotation, rotation);
@@ -184,8 +185,9 @@ public class PoolBall extends Sphere{
                     return;
                 }
                 vel.add(sub);
-                spin.set(vel);
-                spin.scale(1/size);
+                aVector.set(vel);
+                aVector.scale((float)(1/size));
+                spin.set(aVector.x, aVector.y, spin.z);
              
             }
             return;

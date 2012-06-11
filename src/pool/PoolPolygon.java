@@ -13,8 +13,7 @@ public class PoolPolygon extends Polygon2D {
     QuadArray vertices;
     BranchGroup group = new BranchGroup();
     Shape3D shape;
-    Color3f color;
-    
+    Color3f color;            
     
     public PoolPolygon(double[] xpoints, double[] ypoints, int npoints, Appearance appearance, double ballsize) {
         super(xpoints, ypoints, npoints);
@@ -97,17 +96,20 @@ public class PoolPolygon extends Polygon2D {
         int minWall = -1;
         boolean minIsPoint = false;
         Vector3d minVel = new Vector3d();
+        Vector3d minSpin = new Vector3d();
         Vector3d newVel = new Vector3d();
+        Vector3d newSpin = new Vector3d();
         Point2D.Double point = new Point2D.Double();
         Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
         Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
         min = Double.POSITIVE_INFINITY;
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
-            t = detectWallCollision(a,b, ball, newVel);
+            t = detectWallCollision(a,b, ball, newVel, newSpin);
             if(t >= 0 && t < min) {
                 min = t;
                 minWall = i;
+                minSpin.set(newSpin);
                 minVel.set(newVel);
                 minIsPoint = false;
             }
@@ -123,7 +125,7 @@ public class PoolPolygon extends Polygon2D {
             if(minIsPoint) {
                 collisions.add(new PointCollision(min + timePassed, point, ball));              
             } else {
-                collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
+                collisions.add(new WallCollision(min + timePassed, ball, minVel, minSpin, this, minWall));               
             }
         }    
     }
@@ -133,7 +135,9 @@ public class PoolPolygon extends Polygon2D {
         boolean minIsPoint = false;
         int minWall = -1;
         Vector3d minVel = new Vector3d();
+        Vector3d minSpin = new Vector3d();
         Vector3d newVel = new Vector3d();
+        Vector3d newSpin = new Vector3d();
         Point2D.Double point = new Point2D.Double();
         Point2D.Double a = new Point2D.Double(xpoints[npoints-1], ypoints[npoints-1]);
         Point2D.Double b = new Point2D.Double(xpoints[0],ypoints[0]);
@@ -141,10 +145,11 @@ public class PoolPolygon extends Polygon2D {
         for(int i = 0; i < npoints; i++) {
             b.setLocation(xpoints[i], ypoints[i]);
             if(i != wall) {
-                t = detectWallCollision(a,b, ball, newVel);
+                t = detectWallCollision(a,b, ball, newVel, newSpin);
                 if(t > 0 && t < min) {
                     min = t;
                     minWall = i;
+                    minSpin.set(newSpin);
                     minVel.set(newVel);
                     minIsPoint = false;
                 }
@@ -161,14 +166,14 @@ public class PoolPolygon extends Polygon2D {
             if(minIsPoint) {
                 collisions.add(new PointCollision(min + timePassed, point, ball));              
             } else {
-                collisions.add(new WallCollision(min + timePassed, ball, minVel, this, minWall));               
+                collisions.add(new WallCollision(min + timePassed, ball, minVel, minSpin, this, minWall));               
             }
         }   
     }
     
     
     
-    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Vector3d res) {
+    public static double detectWallCollision(Point2D.Double a, Point2D.Double b, PoolBall ball, Vector3d res, Vector3d sres) {
 	Point2D.Double unit, trans, aInNewBasis, bInNewBasis, velInNewBasis, posInNewBasis;
 	double dist = a.distance(b);
 	unit          = new Point2D.Double((a.x-b.x)/dist,
@@ -216,10 +221,21 @@ public class PoolPolygon extends Polygon2D {
 	if(posInNewBasis.x > larger || posInNewBasis.x < smaller) {
 	    return Double.POSITIVE_INFINITY;
 	}
-	
-	velInNewBasis.y = -velInNewBasis.y;
+        
+        float maxEffect =     (float) (ball.spin.z*Math.copySign(1.0,velInNewBasis.y)*ball.size*2);
+        float englishEffect = (float) (velInNewBasis.y*Math.copySign(1.0, ball.spin.z)*PoolSettings.englishConstant);
+        
+        if(Math.abs(englishEffect) > Math.abs(maxEffect)) {
+            englishEffect = maxEffect;
+            sres.set(ball.spin.x, ball.spin.y, 0.0);
+        } else {
+             velInNewBasis.x += englishEffect;
+        }
+        
+        velInNewBasis.y = -velInNewBasis.y;
 	res.set(velInNewBasis.x*unit.x + velInNewBasis.y*unit.y,
-			velInNewBasis.x*unit.y - velInNewBasis.y*unit.x, res.z);
+		velInNewBasis.x*unit.y - velInNewBasis.y*unit.x, res.z);
+        
 	return t;
     }
     

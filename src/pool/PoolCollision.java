@@ -7,6 +7,8 @@ import javax.vecmath.Vector3f;
 import vector.ChangeBasis3f;
 
 public abstract class PoolCollision {
+    
+    static ChangeBasis3f cb = new ChangeBasis3f();
     double time;
     PoolBall ball1;
     
@@ -144,18 +146,21 @@ class BallCollision extends PoolCollision {
 
 class WallCollision extends PoolCollision {
     Vector3d newVel;
+    Vector3d newSpin;
     PoolPolygon poly;
     int wall;
-    public WallCollision(double t, PoolBall b, Vector3d v, PoolPolygon p, int w) {
+    public WallCollision(double t, PoolBall b, Vector3d v, Vector3d s, PoolPolygon p, int w) {
 	time = t;
 	ball1 = b;
         newVel = v;
         poly = p;
         wall = w;
+        newSpin = s;
     }
 
-    @Override public void doEffects(PoolPanel pp) {
+    @Override public void doEffects(PoolPanel pp) {        
         ball1.vel = newVel;
+        ball1.spin = newSpin;
     }
     
     @Override public void detectPolygonCollisions(PoolPanel pp, PoolBall x) {
@@ -220,8 +225,8 @@ class PocketCollision extends PoolCollision {
                 (float)(ball1.pos.y - pocket.pos.y),
                 0.0f);
         Vector3f vel = new Vector3f(0.0f, 0.0f, 1.0f);
-        ChangeBasis3f cb = new ChangeBasis3f(colDir, new Vector3f(colDir.y, -colDir.x, colDir.z),
-                vel, false);
+        cb.set(colDir, new Vector3f(colDir.y, -colDir.x, colDir.z),
+                new Vector3f(vel));
         vel.set((float)ball1.vel.x, (float)ball1.vel.y, 0.0f);
         cb.transform(vel);
         vel.x *= -1;

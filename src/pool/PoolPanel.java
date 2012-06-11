@@ -885,6 +885,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             shootingBall.vel.y = -aim.y * power * powerS;
             shootingBall.spin.x = -aim.x * spin * spinS;
             shootingBall.spin.y = -aim.y * spin * spinS;
+            shootingBall.spin.z = .2;
             ghostBallRA.setVisible(false);
             aimLineRA.setVisible(false);
         }
