@@ -85,8 +85,7 @@ public class PoolBall extends Sphere{
     
     public final void setInactivePos() {
         pos.set(2*(ballNumber-.5f)*size-(size*15), PoolPanel.height/2 + PoolPanel.borderSize, 3.0);
-    }
-    
+    }    
 
     public double detectCollisionWith(PoolBall ball) {
 	// a b c are the terms of a quadratic.  at^2 + bt + c  This code uses the quadratic equation to check for collisions.
