@@ -48,7 +48,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         Toolkit toolkit = Toolkit.getDefaultToolkit();
                 
         //Component Configuration
-        powerSlider.setOrientation(JSlider.VERTICAL);
         powerSlider.setPaintTicks(true);
         powerSlider.setMajorTickSpacing(20);
         powerSlider.setMinorTickSpacing(5);
@@ -93,7 +92,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
 	content.setLayout(new BorderLayout());
 	content.add(poolPanel, BorderLayout.CENTER);
 	content.add(angleSlider, BorderLayout.SOUTH);
-	content.add(powerSlider, BorderLayout.EAST);
         
         //Toolbar setup.
         toolbar.add(snapButton);
@@ -101,6 +99,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         toolbar.add(makeRackButton);
 	toolbar.add(selectionModeButton);
         toolbar.add(spinSlider);
+        toolbar.add(powerSlider);
         toolbar.add(settingsButton);
         toolbar.add(helpButton);
 	content.add(toolbar, BorderLayout.NORTH);

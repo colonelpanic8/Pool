@@ -5,6 +5,7 @@ import java.awt.Point;
 import java.awt.event.*;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Transform3D;
+import javax.swing.Timer;
 import javax.vecmath.Point3d;
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3d;
@@ -12,7 +13,9 @@ import javax.vecmath.Vector3f;
 import vector.ChangeBasis3f;
 import vector.Rotater3f;
 
-public class CameraController implements MouseMotionListener, MouseListener, KeyListener {
+public class CameraController implements MouseMotionListener, MouseListener, KeyListener, ActionListener {
+    
+    public static final Vector3f zero = new Vector3f(0.0f, 0.0f, 0.0f);
 
     protected SimpleUniverse universe;
     protected Canvas3D canvas;
@@ -39,22 +42,221 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected float keyXSensitivity = .05f;
     
     //Constants
-    static final int TRANSLATION = 0;
-    static final int ZOOM_ROLL = 1;
-    static final int ROTATION = 2;
+    protected static final int TRANSLATION = 0;
+    protected static final int ZOOM_ROLL = 1;
+    protected static final int ROTATION = 2;
     
     //Camera motion.
-    float distanceVelocity = 0f;
-    float upVecVelocity = 0f;
-    int keyPressed = 0;
+    protected Vector3f cameraRotationAxis = new Vector3f();
+    protected Vector3f upVecRotationAxis = new Vector3f();
+    protected Vector3f aVector = new Vector3f();
+    protected Vector3f temp = new Vector3f();
+    
+    protected float distanceVelocity = 0f;
+    protected float upVecVelocity = 0f;
+    protected float angleVelocity = 0f;
+    protected Vector3f translationalVelocity = new Vector3f();
+    protected int keyPressed = 0;
+    protected boolean transitioning = false;
+    
+    static float camTransThresh = .0001f;
+    static float camAngleThresh = .0001f;
+    static float camUpVecThresh = .0001f;
+    static float camDistThresh = .001f;   
 
     public CameraController(SimpleUniverse u, Canvas3D c) {
         universe = u;
         canvas = c;
         canvas.addMouseListener(this);
         canvas.addMouseMotionListener(this);
-        canvas.addKeyListener(this); 
+        canvas.addKeyListener(this);
+        Timer timer = new Timer(30, this);
+        timer.start();
         updateCamera();
+    }
+    
+    public void startTransitionTo(Vector3f center, Vector3f cameraVec, Vector3f up, float distance) {        
+        transitioning = true;
+        //Angular velocity.
+        cameraRotationAxis.cross(cameraVec, cameraPosition);
+        
+        //Upvector angular velocity
+        upVecRotationAxis.cross(up, upVector);
+        upVector.set(up);
+        
+        cameraPos.set(cameraPosition);
+        cameraPosition.set(cameraVec);
+        cameraPosition.normalize();
+        cameraTranslation.set(center);
+        cameraDistance = distance;
+    }    
+    
+    @Override
+    public void actionPerformed(ActionEvent evt) {
+        if(transitioning) {            
+            doTransition();
+        } else {
+            doCameraVelocity();
+            
+            if(Math.abs(angleVelocity) > camAngleThresh) {
+                rotater.setAndRotateInPlace(upVector, angleVelocity, cameraPos);
+                cameraPosition.set(cameraPos);                
+            } else {
+                angleVelocity = 0f;
+            }
+            
+            if(Math.abs(upVecVelocity) > camUpVecThresh) {
+                rotater.setAndRotateInPlace(cameraPosition, upVecVelocity, upVec);
+                upVector.set(upVec);
+            } else {
+                upVecVelocity = 0f;
+            }
+            
+            if(Math.abs(distanceVelocity) > camDistThresh) {
+                this.camDistance += distanceVelocity;
+                this.cameraDistance = camDistance;
+            } else {
+                distanceVelocity = 0f;
+            }
+            
+            if(translationalVelocity.length() > camTransThresh) {
+                cameraTranslation.add(translationalVelocity);
+                cameraTrans.set(cameraTranslation);
+            } else {
+                translationalVelocity.set(zero);
+            }            
+            updateCamera();
+        }        
+    }
+    
+    protected void doCameraVelocity() {
+        switch(keyPressMode) {
+            case ZOOM_ROLL:
+                switch(keyPressed) {
+                    case KeyEvent.VK_UP:
+                        distanceVelocity -= .05;
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        distanceVelocity += .05;
+                        break;
+                    case KeyEvent.VK_LEFT:
+                        upVecVelocity -= .003;
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        upVecVelocity += .003;
+                        break;
+                    default:                        
+                        break;
+                }
+                break;
+            case ROTATION:
+                switch(keyPressed) {
+                    case KeyEvent.VK_UP:
+                        upVecVelocity -= .003;
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        upVecVelocity += .003;
+                        break;
+                    case KeyEvent.VK_LEFT:
+                        angleVelocity -= .001;
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        angleVelocity += .001;
+                        break;
+                    default:                        
+                        break;
+                }
+                break;
+            case TRANSLATION:
+                if(keyPressed != 0) {
+                    temp.set(cameraPosition);
+                    temp.scale(-1f);
+                    aVector.cross(upVector, temp);
+                    this.changeBasis.setFrom(aVector, upVector , temp);
+                    changeBasis.transform(translationalVelocity);
+                    switch(keyPressed) {
+                        case KeyEvent.VK_UP:
+                            translationalVelocity.y += .004;
+                            break;
+                        case KeyEvent.VK_DOWN:
+                            translationalVelocity.y -= .004;
+                            break;
+                        case KeyEvent.VK_LEFT:
+                            translationalVelocity.x += .004;
+                            break;
+                        case KeyEvent.VK_RIGHT:
+                            translationalVelocity.x -= .004;
+                            break;
+                        default:                        
+                            break;
+                    }
+                    changeBasis.invert();
+                    changeBasis.transform(translationalVelocity);
+                }
+                break;
+            default:
+                break;
+        }
+        distanceVelocity *= .95f;
+        upVecVelocity *=.95f;
+        translationalVelocity.scale(.95f);
+        angleVelocity *= .95f;
+    }
+    
+    protected void doTransition() {
+        //Camera distance
+        if(Math.abs(cameraDistance-camDistance) > camDistThresh) {
+            camDistance += (cameraDistance-camDistance)*.06;
+        } else {
+            camDistance = cameraDistance;
+        }
+        
+        //Camera angle
+        aVector.set(cameraPos);
+        float angle = (float) (aVector.angle(cameraPosition)*.06);
+        if(Math.abs(angle) < camAngleThresh) {
+            cameraPos.set(cameraPosition);
+        } else {
+            rotater.setAndRotateInPlace(cameraRotationAxis, -angle, cameraPos);
+        }
+        
+        //Up Vector
+        aVector.set(upVec);
+        angle = (float) (aVector.angle(upVector)*.08);
+        if(Math.abs(angle) < camUpVecThresh) {
+            upVec.set(upVector);
+        } else {
+            rotater.setAndRotateInPlace(upVecRotationAxis, -angle, upVec);
+            upVec.normalize();
+        }
+        
+        //Camera Tranlation
+        translationalVelocity.set(cameraTrans);
+        translationalVelocity.scale(-1f);
+        translationalVelocity.add(cameraTranslation);
+        translationalVelocity.scale(.06f);
+        if(translationalVelocity.length() < camTransThresh) {
+            cameraTrans.set(cameraTranslation);
+        } else {
+            cameraTrans.add(new Vector3d(translationalVelocity));
+        }            
+        updateCamera();
+        
+        //Setup temporary translations into Vector3fs
+        aVector.set(cameraPos);
+        translationalVelocity.set(cameraTrans);
+        
+        temp = new Vector3f(upVec);
+        
+        //Check to see if the transition is done.
+        if(camDistance == cameraDistance                                   && 
+                cameraPosition.epsilonEquals(aVector, 0f)                  &&
+                cameraTranslation.epsilonEquals(translationalVelocity, 0f) &&
+                upVector.epsilonEquals(temp, 0f)) {
+            transitioning = false;
+            translationalVelocity.set(zero);
+        }
+        
     }
     
     public Vector3f mouseToXYPlane(int mx, int my) {
@@ -73,8 +275,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         lookDirection.scale(-1f);
         Vector3f cross = new Vector3f();            
         cross.cross(lookDirection, upVector);
-        ChangeBasis3f cb = new ChangeBasis3f(cross, upVector, lookDirection);
-        cb.invert();
+        ChangeBasis3f cb = new ChangeBasis3f(cross, upVector, lookDirection, true);
         Vector3f clickVector = new Vector3f(x,y,z);
         cb.transform(clickVector);
         lookDirection.set(clickVector);        
@@ -108,8 +309,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         lookDirection.scale(-1f);
         Vector3f cross = new Vector3f();            
         cross.cross(lookDirection, upVector);
-        ChangeBasis3f cb = new ChangeBasis3f(cross, upVector, lookDirection);
-        cb.invert();
+        ChangeBasis3f cb = new ChangeBasis3f(cross, upVector, lookDirection, true);
         Vector3f clickVector = new Vector3f(x,y,z);
         cb.transform(clickVector);
         lookDirection.set(clickVector);        
@@ -135,6 +335,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         universe.getViewingPlatform().getViewPlatformTransform().setTransform(transform);        
     }
     
+    @Override
     public void mouseDragged(MouseEvent me) {
         float x,y;
         x = ((float)(me.getX() - click.x))/(canvas.getWidth()/2);
@@ -208,6 +409,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         updateCameraPos = true;
     }
     
+    @Override
     public void mousePressed(MouseEvent me) {
         if(cameraPosition.length() > 1 ) {
             cameraPosition.normalize();
@@ -223,6 +425,7 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
        
     }  
 
+    @Override
     public void mouseReleased(MouseEvent me) {
         if(updateCameraPos) {
             cameraPosition.set(cameraPos);
@@ -234,53 +437,45 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
         cameraDistance = camDistance;
     }
     
+    @Override
     public void keyPressed(KeyEvent ke) {
-        float x = keyXSensitivity, y = keyYSensitivity;
-        switch(ke.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                x *= 0;
-                y *= 1;
-                break;
-            case KeyEvent.VK_DOWN:
-                x *= 0;
-                y *= -1;
-                break;
-            case KeyEvent.VK_LEFT:
-                x *= 1;
-                y *= 0;
-                break;
-            case KeyEvent.VK_RIGHT:
-                x *= -1;
-                y *= 0;
-                break;
-            default:
-                return;
+        if(keyPressed == 0) {
+            switch(ke.getKeyCode()) {
+                case KeyEvent.VK_UP:
+                    keyPressed = KeyEvent.VK_UP;
+                    break;
+                case KeyEvent.VK_DOWN:
+                    keyPressed = KeyEvent.VK_DOWN;
+                    break;
+                case KeyEvent.VK_LEFT:
+                    keyPressed = KeyEvent.VK_LEFT;
+                    this.cameraRotationAxis.set(upVector);
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    keyPressed = KeyEvent.VK_RIGHT;
+                    this.cameraRotationAxis.set(upVector);
+                    break;                
+                default:
+            }
         }
-        switch(keyPressMode) {
-            case ROTATION:
-                doRotation(x,y);
-                break;
-	    case TRANSLATION:            
-		doTranslation(x,y);                 
-		break;
-	    case ZOOM_ROLL:
-		doZoomRoll(x,y);                 
-		break;
-        }
-        updateCamera();
-        mouseReleased(null);
     }
 
+    @Override
     public void keyReleased(KeyEvent ke) { }
     
+    @Override
     public void mouseClicked(MouseEvent me) { }
     
+    @Override
     public void mouseMoved(MouseEvent me) { }
 
+    @Override
     public void mouseEntered(MouseEvent me) { }
 
+    @Override
     public void mouseExited(MouseEvent me) { }
 
-    public void keyTyped(KeyEvent ke) { }
+    @Override
+    public void keyTyped(KeyEvent ke) { }    
 
 }

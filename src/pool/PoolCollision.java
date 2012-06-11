@@ -221,7 +221,7 @@ class PocketCollision extends PoolCollision {
                 0.0f);
         Vector3f vel = new Vector3f(0.0f, 0.0f, 1.0f);
         ChangeBasis3f cb = new ChangeBasis3f(colDir, new Vector3f(colDir.y, -colDir.x, colDir.z),
-                vel);
+                vel, false);
         vel.set((float)ball1.vel.x, (float)ball1.vel.y, 0.0f);
         cb.transform(vel);
         vel.x *= -1;

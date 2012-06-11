@@ -4,13 +4,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
+import javax.vecmath.Vector3f;
 
 public class PoolSettings extends JFrame implements ActionListener {
-    //Values
-    static float camTransThresh = .0001f;
-    static float camAngleThresh = .0001f;
-    static float camUpVecThresh = .001f;
-    static float camDistThresh = .001f;
+    //Values    
     static float OverheadDistance = 40f;
     
     JCheckBox enableBallSelection;

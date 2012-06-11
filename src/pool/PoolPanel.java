@@ -4,9 +4,7 @@ import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.universe.SimpleUniverse;
-import java.awt.Button;
 import java.awt.Color;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
@@ -65,18 +63,18 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     //Colors
     Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
     Color3f white = new Color3f(1.0f, 1.0f, 1.0f);
-    Color3f gray = new Color3f(.5f, .5f, .5f);
+    Color3f gray = new Color3f(.3f, .3f, .3f);
     Color3f turqoise = new Color3f(0.0f, .3f, .3f);
     Color3f darkGreen = new Color3f(0.0f, 0.3f, 0.0f);
     Color3f darkBlue = new Color3f(0.0f, 0.0f, 0.3f);
     Color3f darkRed = new Color3f(.3f, 0.0f, 0.0f);
     Color3f darkBrown = new Color3f(.2f,.2f,0f);
-    Color3f tableColor = darkRed;
+    Color3f tableColor = turqoise;
     Color3f darkerTableColor = new Color3f(tableColor.x*.80f, tableColor.y*.80f, tableColor.z*.80f);
     Color3f darkestTableColor = new Color3f(darkerTableColor.x*.80f, darkerTableColor.y*.80f, darkerTableColor.z*.80f);
     Color3f railColor = darkerTableColor;
-    Color3f borderColor = darkestTableColor;
-    Color3f pocketColor = turqoise;
+    Color3f borderColor = darkRed;
+    Color3f pocketColor = darkRed;
     
     //Shared Scene Graph Objects
     TextureAttributes ta = new TextureAttributes();

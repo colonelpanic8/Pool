@@ -2,6 +2,7 @@ package vector;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Tuple3f;
+import javax.vecmath.Vector3f;
 
 public class ChangeBasis3f extends Matrix3f {
     
@@ -14,8 +15,13 @@ public class ChangeBasis3f extends Matrix3f {
         set(a, b, c, x, y, z);         
     }
     
-    public ChangeBasis3f(Tuple3f x, Tuple3f y, Tuple3f z) {
-        set(x, y, z);
+    public ChangeBasis3f(Tuple3f x, Tuple3f y, Tuple3f z, boolean from) {
+        if(from) {
+            setFrom(x,y,z);
+            
+        } else {
+            set(x, y, z);
+        }
     }
     
     final public void set(Tuple3f a, Tuple3f b, Tuple3f c,
@@ -40,6 +46,10 @@ public class ChangeBasis3f extends Matrix3f {
 	    (y.z*(z.y*x.x - x.y*z.x) + z.z*(x.y*y.x - y.y*x.x) + x.z*(y.y*z.x - z.y*y.x));
         
     }
+    
+    final public void setFrom(Tuple3f x, Tuple3f y, Tuple3f z) {
+        set(x,y,z, new Vector3f(1.0f, 0.0f, 0.0f), new Vector3f(0.0f, 1.0f, 0.0f), new Vector3f(0.0f, 0.0f, 1.0f));
+    }            
     
     final public void set(Tuple3f x, Tuple3f y, Tuple3f z) {
         m00 = -((z.z*y.y - y.z*z.y))/

@@ -3,140 +3,50 @@ package pool;
 import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Primitive;
 import com.sun.j3d.utils.picking.PickResult;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import javax.swing.Timer;
-import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 
-class PoolMouseController extends CameraController implements ActionListener {
+class PoolMouseController extends CameraController{
     PoolPanel pp;
-    boolean mouseAim = true, autoCamera = false, transitioning = false,
-            selectionMode = false;
-    
-    float angleVelocity = 0f;
-    float distanceVelocity = 0f;
-    float upVecVelocity = 0f;
-    int keyPressed = 0;
-    
-    Vector3f cameraRotationAxis = new Vector3f();
-    Vector3f upVecRotationAxis = new Vector3f();
-    Vector3f translationalVelocity = new Vector3f();
-    Vector3f aVector = new Vector3f();
-    Vector3f temp = new Vector3f();
-    
+    boolean mouseAim = true, autoCamera = false,
+            selectionMode = false;    
     PoolBall ballInHand = null;
     
     public PoolMouseController(PoolPanel p) {
         super(p.universe, p.canvas);
         pp = p;
-        
         //Start timer
-	Timer timer = new Timer(30, this);
-	timer.start();
     }
     
     public void putBallInHand(PoolBall ball) {
         ballInHand = ball;
     }
     
-    public void startTransitionTo(Vector3f center, Vector3f cameraVec, Vector3f up, float distance) {
-        
-        transitioning = true;
-        //Angular velocity.
-        cameraRotationAxis.cross(cameraVec, cameraPosition);
-        
-        //Upvector angular velocity
-        upVecRotationAxis.cross(up, upVector);
-        upVector.set(up);
-        
-        cameraPos.set(cameraPosition);
-        cameraPosition.set(cameraVec);
-        cameraPosition.normalize();
-        cameraTranslation.set(center);
-        cameraDistance = distance;
-    }    
-    
     @Override
-    public void actionPerformed(ActionEvent evt) {
-        if(transitioning) {            
-            //Camera distance
-            if(Math.abs(cameraDistance-camDistance) > PoolSettings.camDistThresh) {
-                camDistance += (cameraDistance-camDistance)*.06;
-            } else {
-                camDistance = cameraDistance;
-            }
-        
-            //Camera angle
-            aVector.set(cameraPos);
-            float angle = (float) (aVector.angle(cameraPosition)*.06);
-            if(Math.abs(angle) < PoolSettings.camAngleThresh) {
-                cameraPos.set(cameraPosition);
-            } else {
-                rotater.setAndRotateInPlace(cameraRotationAxis, -angle, cameraPos);
-            }
-                        
-            //Up Vector
-            aVector.set(upVec);
-            angle = (float) (aVector.angle(upVector)*.08);
-            if(Math.abs(angle) < PoolSettings.camUpVecThresh) {
-                upVec.set(upVector);
-            } else {
-                rotater.setAndRotateInPlace(upVecRotationAxis, -angle, upVec);
-                upVec.normalize();
-            }
-        
-            //Camera Tranlation
-            translationalVelocity.set(cameraTrans);
-            translationalVelocity.scale(-1f);
-            translationalVelocity.add(cameraTranslation);
-            translationalVelocity.scale(.06f);
-            if(translationalVelocity.length() < PoolSettings.camTransThresh) {
-                cameraTrans.set(cameraTranslation);
-            } else {
-                cameraTrans.add(new Vector3d(translationalVelocity));
-            }            
-            updateCamera();
-            
-            //Setup temporary translations into Vector3fs
-            aVector.set(cameraPos);
-            translationalVelocity.set(cameraTrans);
-            
-            temp = new Vector3f(upVec);
-
-            //Check to see if the transition is done.
-            if(camDistance == cameraDistance                              && 
-               cameraPosition.epsilonEquals(aVector, 0f)                  &&
-               cameraTranslation.epsilonEquals(translationalVelocity, 0f) &&
-               upVector.epsilonEquals(temp, 0f))
-                transitioning = false;
-        } else {
+    protected void doCameraVelocity() {
+        if(autoCamera) {
             switch(keyPressed) {
-            case KeyEvent.VK_UP:
-                break;
-            case KeyEvent.VK_DOWN:
-                break;
-            case KeyEvent.VK_LEFT:
-                angleVelocity -= .001;
-                break;
-            case KeyEvent.VK_RIGHT:
-                angleVelocity += .001;
-                break;
-            default:
-                angleVelocity *=.95;
-                break;
+                case KeyEvent.VK_UP:
+                    break;
+                case KeyEvent.VK_DOWN:
+                    break;
+                case KeyEvent.VK_LEFT:
+                    angleVelocity -= .001;
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    angleVelocity += .001;
+                    break;
+                default:
+                    angleVelocity *=.95;
+                    break;
             }
-            if(Math.abs(angleVelocity) > 0.0001) {
-                rotater.setAndRotateInPlace(this.cameraRotationAxis, angleVelocity, cameraPos);
-                cameraPosition.set(cameraPos);
-                pp.setAim(cameraPosition);
-                updateCamera();
-            }
+            pp.setAim(cameraPosition);
+        } else {
+            super.doCameraVelocity();
         }
-        
-    }        
+    }
+
     
     @Override public void mouseClicked(MouseEvent me) {        
         if(ballInHand == null) {
