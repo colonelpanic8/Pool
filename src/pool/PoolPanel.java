@@ -881,13 +881,15 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     }
 
     public void shoot() {
-        inMotion = true;
-        shootingBall.vel.x = -aim.x * power * powerS;
-        shootingBall.vel.y = -aim.y * power * powerS;
-        shootingBall.spin.x = -aim.x * spin * spinS;
-        shootingBall.spin.y = -aim.y * spin * spinS;
-        ghostBallRA.setVisible(false);
-        aimLineRA.setVisible(false);
+        if(!inMotion) {
+            inMotion = true;
+            shootingBall.vel.x = -aim.x * power * powerS;
+            shootingBall.vel.y = -aim.y * power * powerS;
+            shootingBall.spin.x = -aim.x * spin * spinS;
+            shootingBall.spin.y = -aim.y * spin * spinS;
+            ghostBallRA.setVisible(false);
+            aimLineRA.setVisible(false);
+        }
     }
     
     public void setAim(double x, double y) {
@@ -912,12 +914,16 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     
     public boolean flipSelectionMode() {
         mouseController.selectionMode = !mouseController.selectionMode;
+        ghostBallRA.setVisible(!mouseController.selectionMode);
+        aimLineRA.setVisible(!mouseController.selectionMode);
         return mouseController.selectionMode;
     }
     
     public void setSelectionMode(boolean v) {
         mouseController.selectionMode = v;
-    }            
+        ghostBallRA.setVisible(!v);
+        aimLineRA.setVisible(!v);
+    }
     
     public PoolBall addBall(double x, double y, double s, Appearance appearance) {        
         PoolBall ball = new PoolBall(appearance, ballSize, 0);

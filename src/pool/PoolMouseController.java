@@ -13,12 +13,14 @@ import javax.vecmath.Vector3f;
 
 class PoolMouseController extends CameraController implements ActionListener {
     PoolPanel pp;
-    boolean mouseAim = true, autoCamera = false, transitioning = false, selectionMode = false;
+    boolean mouseAim = true, autoCamera = false, transitioning = false,
+            selectionMode = false;
     
     float angleVelocity = 0f;
+    float distanceVelocity = 0f;
+    float upVecVelocity = 0f;
     int keyPressed = 0;
     
-    float distanceVelocity = 0f;  
     Vector3f cameraRotationAxis = new Vector3f();
     Vector3f upVecRotationAxis = new Vector3f();
     Vector3f translationalVelocity = new Vector3f();
@@ -140,9 +142,19 @@ class PoolMouseController extends CameraController implements ActionListener {
         if(ballInHand == null) {
             if(selectionMode) {
                 pp.pickCanvas.setShapeLocation(me);
-                PickResult res = pp.pickCanvas.pickClosest();
-                if(res != null) {
-                    Primitive obj = (Primitive) res.getNode(PickResult.PRIMITIVE);
+                PickResult[] res = pp.pickCanvas.pickAllSorted();
+                int i;
+                for(i = 0; i < res.length; i++) {
+                    if(res[i].getNode(PickResult.PRIMITIVE) instanceof PoolBall) {
+                        break;
+                    }
+                }
+                if(i == res.length) {
+                    return;
+                }
+                
+                if(res[i] != null) {
+                    Primitive obj = (Primitive) res[i].getNode(PickResult.PRIMITIVE);
                     if(obj == null) {
                         System.out.println("Nothing Picked");
                     } else {

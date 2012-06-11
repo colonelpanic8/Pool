@@ -84,6 +84,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         filename = this.getClass().getResource("/images/OverheadViewIcon.jpg");
         overheadViewIcon = new ImageIcon(toolkit.createImage(filename));
         overheadViewButton = new JButton(overheadViewIcon);
+        overheadViewButton.setMaximumSize(new Dimension(64,64));
 	        
         //Add listeners
         startListening();

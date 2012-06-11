@@ -41,7 +41,12 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     //Constants
     static final int TRANSLATION = 0;
     static final int ZOOM_ROLL = 1;
-    static final int ROTATION = 2;    
+    static final int ROTATION = 2;
+    
+    //Camera motion.
+    float distanceVelocity = 0f;
+    float upVecVelocity = 0f;
+    int keyPressed = 0;
 
     public CameraController(SimpleUniverse u, Canvas3D c) {
         universe = u;
