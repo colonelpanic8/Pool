@@ -59,10 +59,17 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected int keyPressed = 0;
     protected boolean transitioning = false;
     
-    static float camTransThresh = .0001f;
-    static float camAngleThresh = .0001f;
-    static float camUpVecThresh = .0001f;
-    static float camDistThresh = .001f;   
+    static float camTransThresh = .001f;
+    static float camAngleThresh = .001f;
+    static float camUpVecThresh = .001f;
+    static float camDistThresh = .01f;
+    static int threshFrames = 10;
+    static float transitionSpeed = .06f;
+    
+    static float distanceAcc = .05f;
+    static float camAngleAcc = .001f;
+    static float upVecAcc = .003f;
+    static float transAcc = .004f;
 
     public CameraController(SimpleUniverse u, Canvas3D c) {
         universe = u;
@@ -134,16 +141,16 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
             case ZOOM_ROLL:
                 switch(keyPressed) {
                     case KeyEvent.VK_UP:
-                        distanceVelocity -= .05;
+                        distanceVelocity -= distanceAcc;
                         break;
                     case KeyEvent.VK_DOWN:
-                        distanceVelocity += .05;
+                        distanceVelocity += distanceAcc;
                         break;
                     case KeyEvent.VK_LEFT:
-                        upVecVelocity -= .003;
+                        upVecVelocity -= upVecAcc;
                         break;
                     case KeyEvent.VK_RIGHT:
-                        upVecVelocity += .003;
+                        upVecVelocity += upVecAcc;
                         break;
                     default:                        
                         break;
@@ -152,16 +159,16 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
             case ROTATION:
                 switch(keyPressed) {
                     case KeyEvent.VK_UP:
-                        upVecVelocity -= .003;
+                        upVecVelocity -= upVecAcc;
                         break;
                     case KeyEvent.VK_DOWN:
-                        upVecVelocity += .003;
+                        upVecVelocity += upVecAcc;
                         break;
                     case KeyEvent.VK_LEFT:
-                        angleVelocity -= .001;
+                        angleVelocity -= camAngleAcc;
                         break;
                     case KeyEvent.VK_RIGHT:
-                        angleVelocity += .001;
+                        angleVelocity += camAngleAcc;
                         break;
                     default:                        
                         break;
@@ -176,16 +183,16 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
                     changeBasis.transform(translationalVelocity);
                     switch(keyPressed) {
                         case KeyEvent.VK_UP:
-                            translationalVelocity.y += .004;
+                            translationalVelocity.y += transAcc;
                             break;
                         case KeyEvent.VK_DOWN:
-                            translationalVelocity.y -= .004;
+                            translationalVelocity.y -= transAcc;
                             break;
                         case KeyEvent.VK_LEFT:
-                            translationalVelocity.x += .004;
+                            translationalVelocity.x += transAcc;
                             break;
                         case KeyEvent.VK_RIGHT:
-                            translationalVelocity.x -= .004;
+                            translationalVelocity.x -= transAcc;
                             break;
                         default:                        
                             break;
@@ -206,35 +213,43 @@ public class CameraController implements MouseMotionListener, MouseListener, Key
     protected void doTransition() {
         //Camera distance
         if(Math.abs(cameraDistance-camDistance) > camDistThresh) {
-            camDistance += (cameraDistance-camDistance)*.06;
+            camDistance += (cameraDistance-camDistance)*transitionSpeed;
         } else {
             camDistance = cameraDistance;
         }
         
         //Camera angle
         aVector.set(cameraPos);
-        float angle = (float) (aVector.angle(cameraPosition)*.06);
-        if(Math.abs(angle) < camAngleThresh) {
-            cameraPos.set(cameraPosition);
+        float angle = (float) (aVector.angle(cameraPosition));
+        if(Math.abs(angle) < camAngleThresh*threshFrames) {
+            if(Math.abs(angle) < camAngleThresh) {
+                cameraPos.set(cameraPosition);
+            } else {
+                rotater.setAndRotateInPlace(cameraRotationAxis, -angle*camAngleThresh/Math.abs(angle), cameraPos);
+            }
         } else {
-            rotater.setAndRotateInPlace(cameraRotationAxis, -angle, cameraPos);
+            rotater.setAndRotateInPlace(cameraRotationAxis, -angle*transitionSpeed, cameraPos);
         }
         
         //Up Vector
         aVector.set(upVec);
-        angle = (float) (aVector.angle(upVector)*.08);
-        if(Math.abs(angle) < camUpVecThresh) {
-            upVec.set(upVector);
+        angle = (float) (aVector.angle(upVector));
+        if(Math.abs(angle) < camUpVecThresh*threshFrames) {
+            if(Math.abs(angle) < camUpVecThresh) {
+                upVec.set(upVector);
+            } else {
+                rotater.setAndRotateInPlace(upVecRotationAxis, camUpVecThresh*-angle/Math.abs(angle), upVec);
+                upVec.normalize();
+            }
         } else {
-            rotater.setAndRotateInPlace(upVecRotationAxis, -angle, upVec);
-            upVec.normalize();
+            rotater.setAndRotateInPlace(upVecRotationAxis, -angle*transitionSpeed, upVec);
         }
         
         //Camera Tranlation
         translationalVelocity.set(cameraTrans);
         translationalVelocity.scale(-1f);
         translationalVelocity.add(cameraTranslation);
-        translationalVelocity.scale(.06f);
+        translationalVelocity.scale(transitionSpeed);
         if(translationalVelocity.length() < camTransThresh) {
             cameraTrans.set(cameraTranslation);
         } else {

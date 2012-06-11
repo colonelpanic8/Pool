@@ -1,6 +1,7 @@
 package pool;
 
 import java.awt.Dimension;
+import java.awt.Point;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 
@@ -8,7 +9,6 @@ public class PoolHelp extends JFrame {
         
     public PoolHelp(PoolFrame pf) {
         super("Help");
-        this.setSize(new Dimension(700,500));
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.PAGE_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -77,5 +77,11 @@ public class PoolHelp extends JFrame {
         content.add(Box.createRigidArea(new Dimension(0, space)));
         content.add(overheadInfo);
         this.add(content);
+        content.validate();
+        this.validate();
+        int y = overheadInfo.getLocation().y + space + overheadInfo.getSize().height;
+        System.out.println(y);
+        this.setSize(500, 750);
+        
     }    
 }
