@@ -24,7 +24,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     static PoolPanel ref;
     
     static final float gravity = .01f;
-    protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
+    protected static final float friction = .005f, rollingResistance = .001f, frictionThreshold = .015f;
     static double spinS = 4.0, powerS = 1.3f;
     static double height, width;    
     static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;   
