@@ -29,6 +29,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         
     JButton settingsButton = new JButton("Settings");
     JButton helpButton = new JButton("Help");
+    JButton undoButton = new JButton("Undo");
     
     JButton snapButton;
     ImageIcon snapIcon;
@@ -99,6 +100,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         //toolbar.add(spinSlider);
         toolbar.add(powerSlider);
         toolbar.add(spinController);
+        toolbar.add(undoButton);
         toolbar.add(settingsButton);
         toolbar.add(helpButton);
 	content.add(toolbar, BorderLayout.NORTH);
@@ -127,6 +129,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         overheadViewButton.addActionListener(this);
         settingsButton.addActionListener(this);
         helpButton.addActionListener(this);
+        undoButton.addActionListener(this);
     }
     
     @Override
@@ -148,6 +151,8 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
             settings.setVisible(true);
         } else if(source == helpButton)          {
             help.setVisible(true);
+        } else if(source == undoButton) {
+            poolPanel.rewind();
         }
     }
     

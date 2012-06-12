@@ -15,7 +15,7 @@ public class PoolBall extends Sphere{
     Vector3d vel, lvel;    
     Vector3d spin;
     double size;
-    boolean sunk, active, isRolling = true;
+    boolean sunk, active, wasactive, isRolling = true;
     float transparency = 1.0f;
     int ballNumber;
     
@@ -37,7 +37,7 @@ public class PoolBall extends Sphere{
         
         //Set flags
         active = false;
-        sunk = false;
+        sunk = false;        
         rotation.w = 1.0f;
         
         //Initialize instance variables

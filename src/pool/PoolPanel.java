@@ -1,10 +1,10 @@
 package pool;
 
+import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.universe.SimpleUniverse;
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
@@ -879,6 +879,12 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
 
     public void shoot() {
         if(!inMotion) {
+            Iterator<PoolBall> iter = balls.iterator();
+            while(iter.hasNext()) {
+                PoolBall ball = iter.next();
+                ball.lpos.set(ball.pos);
+                ball.wasactive = ball.active;
+            }
             inMotion = true;
             shootingBall.vel.x = -aim.x * power * powerS;
             shootingBall.vel.y = -aim.y * power * powerS;
@@ -887,7 +893,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             shootingBall.spin.z = spin.x;
             ghostBallRA.setVisible(false);
             aimLineRA.setVisible(false);
-        }
+        }        
     }
     
     public void setAim(double x, double y) {
@@ -970,7 +976,10 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         while(iter.hasNext()) {
 	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
-            ball.vel.set(ball.lvel);
+            ball.vel.set(CameraController.zero);
+            if(ball.wasactive && !ball.active) {
+                ball.active = true;
+            }
         }                
     }
     
@@ -979,7 +988,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     void ballsStopped() {
         if(mouseController.autoCamera) {
             mouseController.snapToShootingBall();
-        }
+        }        
     }
 
     //--------------------COMPARATOR INTERFACE--------------------//
