@@ -5,7 +5,10 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import javax.media.j3d.*;
-import javax.vecmath.*;
+import javax.vecmath.Point3d;
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3d;
+import javax.vecmath.Vector3f;
 import vector.Rotater3f;
 
 public class PoolBall extends Sphere{
@@ -27,6 +30,11 @@ public class PoolBall extends Sphere{
     Quat4f rotation = new Quat4f(), velRotation = new Quat4f();
     Transform3D transform = new Transform3D();
     private Vector3f aVector = new Vector3f();
+    
+    //For dogravity
+    Vector3d acceleration = new Vector3d();
+    Point3d contactPoint = new Point3d();
+    Point3d sub = new Point3d();
     
     public PoolBall(Appearance app, double s, int bn){
         super((float)s, Sphere.GENERATE_TEXTURE_COORDS | Sphere.GENERATE_NORMALS, 30);
@@ -96,7 +104,7 @@ public class PoolBall extends Sphere{
 	
 	double b = 2 * ((ball.pos.x * ball.vel.x) + (pos.x * vel.x) - (ball.pos.x * vel.x) - (pos.x * ball.vel.x) + 
                         (ball.pos.y * ball.vel.y) + (pos.y * vel.y) - (ball.pos.y * vel.y) - (pos.y * ball.vel.y) +
-                        (ball.pos.z * ball.vel.z) + (pos.y * vel.z) - (ball.pos.z * vel.z) - (pos.z * ball.vel.z));
+                        (ball.pos.z * ball.vel.z) + (pos.z * vel.z) - (ball.pos.z * vel.z) - (pos.z * ball.vel.z));
 	
 	double c = ball.pos.x * ball.pos.x + pos.x * pos.x - 2 * (pos.x * ball.pos.x) +
                    ball.pos.y * ball.pos.y + pos.y * pos.y - 2 * (pos.y * ball.pos.y) +
@@ -214,24 +222,33 @@ public class PoolBall extends Sphere{
             ballSunk();
             return;
         }
-        Vector3f acceleration = new Vector3f((float)(pos.x - pocket.pos.x),
-                                             (float)(pos.y - pocket.pos.y),
-                                             0.0f);
+        acceleration.set((float)(pos.x - pocket.pos.x),
+                         (float)(pos.y - pocket.pos.y),
+                         0.0f);
         acceleration.normalize();
         acceleration.scale(pocket.size);        
-        Point3f contactPoint = new Point3f((float)pocket.pos.x, (float)pocket.pos.y, (float)-size);
+        contactPoint.set(pocket.pos.x, pocket.pos.y, -size);
         contactPoint.add(acceleration);        
-        if(new Point3d(pos).distance(new Point3d(contactPoint)) <= size) {
-            Vector3f normal = new Vector3f(pos);
-            contactPoint.scale(-1);
-            normal.add(contactPoint);
-            normal.normalize();
-            float scale = 1/normal.z;
-            vel.x += normal.x*scale * PoolPanel.gravity;
-            vel.y += normal.y*scale * PoolPanel.gravity;
+        if(pos.epsilonEquals(contactPoint, size)) {
+            acceleration.set(pos);
+            sub.set(contactPoint);
+            sub.scale(-1);
+            acceleration.add(sub);
+            acceleration.normalize();
+            if(acceleration.z != 0) {
+                double scale = (1/acceleration.z);
+                vel.x += acceleration.x*scale * PoolPanel.gravity;
+                vel.y += acceleration.y*scale * PoolPanel.gravity;
+            }
+            
+            acceleration.set(pos);
+            acceleration.add(vel);
+            if(acceleration.epsilonEquals(contactPoint, size-.01)) {
+                System.out.println("Problem");
+            }            
         } else {
             vel.z -= PoolPanel.gravity;
-        }  
+        }        
     }
     
     public void decreaseTransparency() {

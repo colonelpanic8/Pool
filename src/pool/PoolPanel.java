@@ -25,7 +25,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     static PoolPanel ref;
     
     static final float gravity = .01f;
-    protected static final float friction = .005f, rollingResistance = .001f, frictionThreshold = .015f;
+    protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
     static double spinS = 4.0, powerS = 1.3f;
     static double height, width;    
     static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;   
@@ -80,7 +80,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     
     //Shared Scene Graph Objects
     TextureAttributes ta = new TextureAttributes();
-    Material ballMaterial = new Material(new Color3f(.2f,.2f,.2f), white, white, white, 128f);
+    Material ballMaterial = new Material(new Color3f(.5f,.5f,.5f), white, white, black, 128f);
     
     //Debug
     boolean frameSkip = false, err = false;
@@ -316,13 +316,21 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     }
 
     void initPockets() {
+        Appearance pocketAppearance = new Appearance();
+        pocketAppearance.setMaterial(ballMaterial);
         Iterator<PoolPocket> iter;
-        pockets.add(new PoolPocket(width/2,  height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
-        pockets.add(new PoolPocket(-width/2, height/2,  pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
-        pockets.add(new PoolPocket(0.0,      height/2,  sidePocketSize, (float)pocketDepth, (float)ballSize, pocketColor));        
-        pockets.add(new PoolPocket(width/2,  -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
-	pockets.add(new PoolPocket(-width/2, -height/2, pocketSize,     (float)pocketDepth, (float)ballSize, pocketColor));
-        pockets.add(new PoolPocket(0.0,      -height/2, sidePocketSize, (float)pocketDepth, (float)ballSize, pocketColor));        
+        pockets.add(new PoolPocket(width/2,  height/2,  pocketSize,     
+                (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));
+        pockets.add(new PoolPocket(-width/2, height/2,  pocketSize,     
+                (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));
+        pockets.add(new PoolPocket(0.0,      height/2,  sidePocketSize, 
+                (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));        
+        pockets.add(new PoolPocket(width/2,  -height/2, pocketSize,     
+                (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));
+	pockets.add(new PoolPocket(-width/2, -height/2, pocketSize,     
+                (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));
+        pockets.add(new PoolPocket(0.0,      -height/2, sidePocketSize, 
+                (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));        
         iter = pockets.iterator();
         while(iter.hasNext()) {
             PoolPocket pocket = iter.next();
@@ -408,6 +416,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         
         
         Solid solid3 = new Solid();
+                
         
         borderGroup.addChild(solid1);
         
@@ -436,6 +445,22 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     public void actionPerformed(ActionEvent evt){
         Iterator<PoolBall> iter;
         
+        //Gravity and misc.
+        iter = balls.iterator();        
+        while(iter.hasNext()) {
+            Iterator<PoolPocket> pocketIterator = pockets.iterator();
+            PoolBall ball = iter.next();
+            while(pocketIterator.hasNext()) {
+                PoolPocket pocket = pocketIterator.next();
+                if(pocket.ballIsOver(ball) && !ball.sunk) {
+                    ball.doGravity(pocket);
+                }                
+                if(ball.sunk) {
+                    ball.decreaseTransparency();
+                }
+            }
+        }
+        
         //Collision detection.
         iter = balls.iterator();
         while(iter.hasNext()) {
@@ -458,23 +483,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         //Visual updates
         doAim();
         updateBallPositions();
-        updateGhostBall();
-        
-        //Gravity and misc.
-        iter = balls.iterator();        
-        while(iter.hasNext()) {
-            Iterator<PoolPocket> pocketIterator = pockets.iterator();
-            PoolBall ball = iter.next();
-            while(pocketIterator.hasNext()) {
-                PoolPocket pocket = pocketIterator.next();
-                if(pocket.ballIsOver(ball) && !ball.sunk) {
-                    ball.doGravity(pocket);
-                }                
-                if(ball.sunk) {
-                    ball.decreaseTransparency();
-                }
-            }
-        }
+        updateGhostBall();                
     }
     
     void updateBallPositions(){
@@ -977,10 +986,12 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
 	    PoolBall ball = iter.next();
             ball.pos.set(ball.lpos);
             ball.vel.set(CameraController.zero);
+            ball.spin.set(CameraController.zero);
             if(ball.wasactive && !ball.active) {
                 ball.active = true;
             }
-        }                
+        }
+        mouseController.ballInHand = null;
     }
     
     //--------------------EVENTS--------------------//    

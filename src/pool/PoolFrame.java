@@ -15,7 +15,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     PoolPanel poolPanel = PoolPanel.getPoolPanel();    
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
-    SpinController spinController = new SpinController(32, poolPanel);
+    SpinController spinController = new SpinController(64, poolPanel);
     
     PoolSettings settings = PoolSettings.getSettings();
     PoolHelp help;
@@ -99,11 +99,12 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
 	toolbar.add(selectionModeButton);
         //toolbar.add(spinSlider);
         toolbar.add(powerSlider);
-        toolbar.add(spinController);
+        //toolbar.add(spinController);
         toolbar.add(undoButton);
         toolbar.add(settingsButton);
         toolbar.add(helpButton);
 	content.add(toolbar, BorderLayout.NORTH);
+        content.add(spinController, BorderLayout.SOUTH);
         
         //Finalize
         Dimension dim = toolkit.getScreenSize();
@@ -192,6 +193,8 @@ class SpinController extends JPanel implements MouseListener {
         g.setColor(Color.white);
         g.fillOval(0, 0, 2*radius, 2*radius);
         g.setColor(Color.BLACK);
+        g.fillOval(radius-1, radius-1, 2, 2);
+        g.setColor(Color.RED);
         g.fillOval(aim.x-2, aim.y-2, 4, 4);
     }
 
