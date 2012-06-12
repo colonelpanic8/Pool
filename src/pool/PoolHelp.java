@@ -80,7 +80,6 @@ public class PoolHelp extends JFrame {
         content.validate();
         this.validate();
         int y = overheadInfo.getLocation().y + space + overheadInfo.getSize().height;
-        System.out.println(y);
         this.setSize(500, 750);
         
     }    

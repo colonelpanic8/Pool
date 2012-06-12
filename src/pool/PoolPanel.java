@@ -189,16 +189,18 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         
         //Add aiming line.
         Appearance appearance = new Appearance();
+        TransparencyAttributes lineTA = new TransparencyAttributes(TransparencyAttributes.FASTEST, .4f);
         ColoringAttributes ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
         LineAttributes dashLa = new LineAttributes();
         aimLineRA = new RenderingAttributes();
-        dashLa.setLineWidth(1.0f);
+        dashLa.setLineWidth(3.0f);
         appearance.setColoringAttributes(ca);
         appearance.setLineAttributes(dashLa);
+        appearance.setTransparencyAttributes(lineTA);
         appearance.setRenderingAttributes(aimLineRA);
         aimLineRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
         appearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
-        //dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
+        dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
         aimLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
         aimLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
         aimLine = new Shape3D(aimLineGeometry, appearance);
@@ -211,17 +213,20 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         ghostBallRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
         ghostBallAppearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
         ghostBallAppearance.setRenderingAttributes(ghostBallRA);
-        ghostBall = new Sphere((float)ballSize, Sphere.ENABLE_APPEARANCE_MODIFY, ghostBallAppearance);
+        ghostBallAppearance.setTransparencyAttributes(lineTA);
+        ghostBall = new Sphere((float)ballSize, Sphere.ENABLE_APPEARANCE_MODIFY, 30);
+        ghostBall.setAppearance(ghostBallAppearance);
         ghostBallTransformGroup.addChild(ghostBall);
         ghostBallTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         group.addChild(ghostBallTransformGroup);
         
         //Add ghost ball aiming line
         appearance = new Appearance();
+        appearance.setTransparencyAttributes(lineTA);
         LineAttributes la = new LineAttributes();
-        la.setLineWidth(1.0f);
+        la.setLineWidth(3.0f);
         appearance.setColoringAttributes(ca);
-        appearance.setLineAttributes(la);
+        appearance.setLineAttributes(dashLa);
         appearance.setRenderingAttributes(ghostBallRA);
         ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
         ghostBallLineGeometry.setCoordinate(0, new Point3f(1.0f, 0.0f, 0.0f));
