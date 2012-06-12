@@ -85,7 +85,7 @@ public class PoolBall extends Sphere{
     }
     
     public final void setInactivePos() {
-        pos.set(2*(ballNumber-.5f)*size-(size*15), PoolPanel.height/2 + PoolPanel.borderSize + size, 0.0);
+        pos.set(2*(ballNumber-.5f)*size-(size*15), PoolPanel.height/2 + PoolPanel.borderSize + 2*size, 0.0);
     }    
 
     public double detectCollisionWith(PoolBall ball) {

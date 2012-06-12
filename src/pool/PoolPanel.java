@@ -166,8 +166,8 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         
         //Create the bounding box for the game.
         BoundingBox bounds = new BoundingBox();
-        bounds.setLower(-width/2-borderSize, -height/2-borderSize, -3);
-        bounds.setUpper(width/2+borderSize, height/2+borderSize, 3);
+        bounds.setLower(-width/2-3*borderSize, -height/2-3*borderSize, -3);
+        bounds.setUpper(width/2+3*borderSize, height/2+3*borderSize, 3);
         
         //Create light sources.
         Color3f lightColor = white;

@@ -44,8 +44,9 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     ImageIcon stopIcon;
     
     public PoolFrame(String str) {
-        super(str);
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        URL filename = this.getClass().getResource("/images/Icon.jpg");
+        Toolkit toolkit = Toolkit.getDefaultToolkit();        
+        this.setIconImage(toolkit.createImage(filename));
                 
         //Component Configuration
         powerSlider.setPaintTicks(true);
@@ -61,7 +62,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         
         
         //Button construction.
-        URL filename = this.getClass().getResource("/images/SnapIcon.jpg");
+        filename = this.getClass().getResource("/images/SnapIcon.jpg");
         snapIcon = new ImageIcon(toolkit.createImage(filename));        
         snapButton = new JButton(snapIcon);
         snapButton.setMaximumSize(new Dimension(64,64));
@@ -95,7 +96,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         toolbar.add(overheadViewButton);
         toolbar.add(makeRackButton);
 	toolbar.add(selectionModeButton);
-        toolbar.add(spinSlider);
+        //toolbar.add(spinSlider);
         toolbar.add(powerSlider);
         toolbar.add(spinController);
         toolbar.add(settingsButton);
@@ -174,6 +175,7 @@ class SpinController extends JPanel implements MouseListener {
         radius = s;
         this.setPreferredSize(new Dimension(2*radius,2*radius));
         this.addMouseListener(this);
+        aim.setLocation(radius, radius);
         poolPanel = pp;
     }
     
