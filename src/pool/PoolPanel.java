@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
+import java.awt.geom.Point2D;
 import java.net.URL;
 import java.util.*;
 import javax.media.j3d.*;
@@ -33,7 +34,8 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     ArrayList<PoolPocket> pockets = new ArrayList(6);
     ArrayList<PoolPolygon> polygons = new ArrayList(10);
     PriorityQueue<PoolCollision> collisions;
-    double spin, power;
+    double power;
+    Point2D.Double spin = new Point2D.Double(0,0);
     int collisionsExecuted = 0;
     int numberOfAimLines = 3;
     boolean inMotion = false;
@@ -875,9 +877,9 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             inMotion = true;
             shootingBall.vel.x = -aim.x * power * powerS;
             shootingBall.vel.y = -aim.y * power * powerS;
-            shootingBall.spin.x = -aim.x * spin * spinS;
-            shootingBall.spin.y = -aim.y * spin * spinS;
-            shootingBall.spin.z = .3;
+            shootingBall.spin.x = -aim.x * spin.y * spinS;
+            shootingBall.spin.y = -aim.y * spin.y * spinS;
+            shootingBall.spin.z = spin.x;
             ghostBallRA.setVisible(false);
             aimLineRA.setVisible(false);
         }
@@ -895,8 +897,9 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         //pf.angleSlider.setValue((int)(Math.atan(aim.x/aim.y)*pf.aimRange/Math.PI*2));
     }
     
-    public void setSpin(double v) {
-        spin = v;
+    public void setSpin(double x, double y) {
+        spin.x = x;
+        spin.y = y;
     }
     
     public void setPower(double p) {

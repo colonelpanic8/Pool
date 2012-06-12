@@ -1,10 +1,10 @@
 package pool;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.net.URL;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -15,15 +15,15 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     PoolPanel poolPanel = PoolPanel.getPoolPanel();    
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
+    SpinController spinController = new SpinController(32, poolPanel);
+    
     PoolSettings settings = PoolSettings.getSettings();
     PoolHelp help;
-        
-    int aimRange = 5000;
+    
     int powerRange = 100;
     int spinRange = 100;
     
     //Buttons and components
-    JSlider angleSlider = new JSlider(0, aimRange, 0);//Defines angle of shot
     JSlider powerSlider = new JSlider(0, powerRange, powerRange/4);
     JSlider spinSlider = new JSlider(-spinRange, spinRange, 0);
         
@@ -51,9 +51,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         powerSlider.setPaintTicks(true);
         powerSlider.setMajorTickSpacing(20);
         powerSlider.setMinorTickSpacing(5);
-        powerSlider.setBorder(BorderFactory.createTitledBorder("Power"));
-        
-        angleSlider.setBorder(BorderFactory.createTitledBorder("Angle"));
+        powerSlider.setBorder(BorderFactory.createTitledBorder("Power"));                
         
         spinSlider.setPaintTicks(true);
         spinSlider.setSnapToTicks(true);
@@ -90,8 +88,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         
         //Add content to frame.
 	content.setLayout(new BorderLayout());
-	content.add(poolPanel, BorderLayout.CENTER);
-	content.add(angleSlider, BorderLayout.SOUTH);
+	content.add(poolPanel, BorderLayout.CENTER);	
         
         //Toolbar setup.
         toolbar.add(snapButton);
@@ -100,6 +97,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
 	toolbar.add(selectionModeButton);
         toolbar.add(spinSlider);
         toolbar.add(powerSlider);
+        toolbar.add(spinController);
         toolbar.add(settingsButton);
         toolbar.add(helpButton);
 	content.add(toolbar, BorderLayout.NORTH);
@@ -114,9 +112,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
 	this.setVisible(true);
         
         //Init proper shooting values
-        double val = angleSlider.getValue();
-        poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
-        val = powerSlider.getValue();
+        float val = powerSlider.getValue();
         poolPanel.setPower(val/powerRange);
         help = new PoolHelp(this);
     }
@@ -126,8 +122,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         makeRackButton.addActionListener(this);
         snapButton.addActionListener(this);
 	powerSlider.addChangeListener(this);
-        spinSlider.addChangeListener(this);
-        angleSlider.addChangeListener(this);
+        spinSlider.addChangeListener(this);       
         overheadViewButton.addActionListener(this);
         settingsButton.addActionListener(this);
         helpButton.addActionListener(this);
@@ -159,18 +154,67 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     public void stateChanged(ChangeEvent ce) {
         Object source = ce.getSource();
             
-        if       (source == angleSlider) {
-            if(ce.getSource() != poolPanel) {
-                double val = angleSlider.getValue();
-                poolPanel.setAim(Math.cos((val)*2*Math.PI/aimRange), Math.sin((val)*2*Math.PI/aimRange));
-            }
-        } else if(source == powerSlider) {
+        if(source == powerSlider)               {
             double val = powerSlider.getValue();
             poolPanel.setPower(val/powerRange);
-        } else if(source == spinSlider)  {
+        } else if(source == spinSlider)         {
             double val = spinSlider.getValue();
-            poolPanel.setSpin(val/spinRange);
+            poolPanel.setSpin(val/spinRange, 0.0);
         }        
+    }    
+}
+class SpinController extends JPanel implements MouseListener {
+    int radius;
+    Point click = new Point();
+    Point aim = new Point(0,0);
+    PoolPanel poolPanel;
+    
+    
+    public SpinController(int s, PoolPanel pp) {
+        radius = s;
+        this.setPreferredSize(new Dimension(2*radius,2*radius));
+        this.addMouseListener(this);
+        poolPanel = pp;
     }
     
+    
+    
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        g.setColor(Color.white);
+        g.fillOval(0, 0, 2*radius, 2*radius);
+        g.setColor(Color.BLACK);
+        g.fillOval(aim.x-2, aim.y-2, 4, 4);
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent me) {
+        click.setLocation(me.getX(), me.getY());
+        if(click.distance(radius, radius) <= radius) {
+            aim.setLocation(click);
+            this.repaint();
+            poolPanel.setSpin((double)(click.x-radius)/radius, (double)-(click.y-radius)/radius);
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent me) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent me) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent me) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent me) {
+    }
+
 }

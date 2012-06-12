@@ -101,7 +101,7 @@ public class PoolApplet extends JApplet implements ActionListener, ChangeListene
             poolPanel.setPower(val/powerRange);
         } else if(source == spinSlider)  {
             double val = spinSlider.getValue();
-            poolPanel.setSpin(val/spinRange);
+            poolPanel.setSpin(val/spinRange, 0.0);
         }        
     }    
 }
