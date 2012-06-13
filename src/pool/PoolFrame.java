@@ -1,10 +1,10 @@
 package pool;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.net.URL;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -15,7 +15,6 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     PoolPanel poolPanel = PoolPanel.getPoolPanel();    
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
-    SpinController spinController = new SpinController(64, poolPanel);
     
     PoolSettings settings = PoolSettings.getSettings();
     PoolHelp help;
@@ -103,8 +102,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         toolbar.add(undoButton);
         toolbar.add(settingsButton);
         toolbar.add(helpButton);
-	content.add(toolbar, BorderLayout.NORTH);
-        content.add(spinController, BorderLayout.SOUTH);
+	content.add(toolbar, BorderLayout.NORTH);       
         
         //Finalize
         Dimension dim = toolkit.getScreenSize();
@@ -169,62 +167,4 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
             poolPanel.setSpin(val/spinRange, 0.0);
         }        
     }    
-}
-class SpinController extends JPanel implements MouseListener {
-    int radius;
-    Point click = new Point();
-    Point aim = new Point(0,0);
-    PoolPanel poolPanel;
-    
-    
-    public SpinController(int s, PoolPanel pp) {
-        radius = s;
-        this.setPreferredSize(new Dimension(2*radius,2*radius));
-        this.addMouseListener(this);
-        aim.setLocation(radius, radius);
-        poolPanel = pp;
-    }
-    
-    
-    
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        g.setColor(Color.white);
-        g.fillOval(0, 0, 2*radius, 2*radius);
-        g.setColor(Color.BLACK);
-        g.fillOval(radius-1, radius-1, 2, 2);
-        g.setColor(Color.RED);
-        g.fillOval(aim.x-2, aim.y-2, 4, 4);
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent me) {
-        click.setLocation(me.getX(), me.getY());
-        if(click.distance(radius, radius) <= radius) {
-            aim.setLocation(click);
-            this.repaint();
-            poolPanel.setSpin((double)(click.x-radius)/radius, (double)-(click.y-radius)/radius);
-        }
-    }
-
-    @Override
-    public void mousePressed(MouseEvent me) {
-
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent me) {
-
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent me) {
-
-    }
-
-    @Override
-    public void mouseExited(MouseEvent me) {
-    }
-
 }

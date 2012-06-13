@@ -3,6 +3,7 @@ package pool;
 import cameracontrol.CameraController;
 import com.sun.j3d.utils.geometry.Primitive;
 import com.sun.j3d.utils.picking.PickResult;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import javax.vecmath.Vector3f;
@@ -48,7 +49,11 @@ class PoolMouseController extends CameraController{
     }
 
     
-    @Override public void mouseClicked(MouseEvent me) {        
+    @Override public void mouseClicked(MouseEvent me) {
+        PoolCanvas pc = (PoolCanvas) canvas;
+        if(pc.respondToClick(new Point(me.getX(), me.getY()))) {
+            return;
+        }
         if(ballInHand == null) {
             if(selectionMode) {
                 pp.pickCanvas.setShapeLocation(me);

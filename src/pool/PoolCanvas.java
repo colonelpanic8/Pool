@@ -5,14 +5,9 @@
 package pool;
 
 import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.imageio.ImageIO;
+import java.awt.Point;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.J3DGraphics2D;
 import org.j3d.geom.overlay.ImageOverlay;
@@ -24,12 +19,12 @@ import org.j3d.geom.overlay.ImageOverlay;
 public class PoolCanvas extends Canvas3D {    
     PoolPanel poolPanel;
     ImageOverlay io;
-    SpinControl spinControl;
+    SpinController sc;
     
     public PoolCanvas(GraphicsConfiguration g, PoolPanel pp) {
         super(g);
         poolPanel = pp;
-        spinControl = new SpinControl(64, 64, 64);
+        sc = new SpinController(64, 64, 64, pp);
         /*
         URL filename = this.getClass().getResource("/images/SnapIcon.jpg");
         BufferedImage i = null;
@@ -43,14 +38,18 @@ public class PoolCanvas extends Canvas3D {
         io.setSize(64,64);
         io.setLocation(100, 100);
         io.setVisible(true);*/
-    }        
+    }
+    
+    public boolean respondToClick(Point p) {
+        return sc.respondToClick(p);
+    }
     
     @Override
     public void postRender()  {
-        /*
+        
         J3DGraphics2D g = this.getGraphics2D();
-        spinControl.draw(g);
-        g.flush(false);*/
+        sc.draw(g);
+        g.flush(false);
         /*
         g.setColor(Color.white);
         if(poolPanel.cueball != null && false) {
@@ -64,20 +63,51 @@ public class PoolCanvas extends Canvas3D {
     }
 }
 
-class SpinControl {
+abstract class C3DUIElem {
+    public abstract void draw(Graphics g);
+    public abstract boolean respondToClick(Point click);
+}
+
+class SpinController extends C3DUIElem {
     int radius;
     int xpos, ypos;
+    Point click = new Point(0,0);
+    PoolPanel poolPanel;
     
-    public SpinControl(int s, int x, int y) {
+    
+    public SpinController(int s, int x, int y, PoolPanel pp) {
         radius = s;
-        xpos = x;
-        ypos = y;
+        click.setLocation(x, y);
+        xpos = x; ypos = y;
+        poolPanel = pp;
     }
     
+    public void set(int x, int y) {
+        click.setLocation(x,y);
+        poolPanel.setSpin((double)(click.x-xpos)/radius, (double)-(click.y-ypos)/radius);
+    }
     
-    public void draw(J3DGraphics2D g) {
+    public void set(Point p) {
+        click.setLocation(p);
+        poolPanel.setSpin((double)(click.x-xpos)/radius, (double)-(click.y-ypos)/radius);
+    }
+    
+    @Override
+    public void draw(Graphics g) {
         g.setColor(Color.white);
-        //g.drawImage(img1, new AffineTransform(1f,0f,0f,1f,x,y), null);
-        g.fillOval(xpos - radius, ypos-radius, 2*radius, 2*radius);
+        g.fillOval(xpos-radius, ypos-radius, 2*radius, 2*radius);
+        g.setColor(Color.BLACK);
+        g.fillOval(xpos - 1, ypos - 1, 2, 2);
+        g.setColor(Color.RED);
+        g.fillOval(click.x-2, click.y-2, 4, 4);
+    }
+
+    @Override
+    public boolean respondToClick(Point p) {
+        if(p.distance(xpos, ypos) <= radius) {
+            set(p);
+            return true;
+        }
+        return false;
     }
 }
