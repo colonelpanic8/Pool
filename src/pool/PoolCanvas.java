@@ -10,15 +10,13 @@ import java.awt.GraphicsConfiguration;
 import java.awt.Point;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.J3DGraphics2D;
-import org.j3d.geom.overlay.ImageOverlay;
 
 /**
  *
  * @author ivanmalison
  */
 public class PoolCanvas extends Canvas3D {    
-    PoolPanel poolPanel;
-    ImageOverlay io;
+    PoolPanel poolPanel;  
     SpinController sc;
     
     public PoolCanvas(GraphicsConfiguration g, PoolPanel pp) {
