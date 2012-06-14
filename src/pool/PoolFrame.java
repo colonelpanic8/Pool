@@ -1,18 +1,29 @@
 package pool;
 
+
+import com.jogamp.opengl.util.Animator;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLEventListener;
+import javax.media.opengl.awt.GLCanvas;
+import javax.media.opengl.glu.GLU;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
+public class PoolFrame extends JFrame implements ChangeListener, ActionListener, GLEventListener {
     
-    PoolPanel poolPanel = PoolPanel.getPoolPanel();    
+    //JOGL Stuff
+    GLU glu = new GLU();
+    static GLCanvas canvas = new GLCanvas();
+    Animator animator = new Animator();
+    
+    PoolSimulation simulation = PoolSimulation.getPoolSimulation();    
     JPanel content = new JPanel();
     JToolBar toolbar = new JToolBar();
     
@@ -89,7 +100,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         
         //Add content to frame.
 	content.setLayout(new BorderLayout());
-	content.add(poolPanel, BorderLayout.CENTER);	
+	content.add(canvas, BorderLayout.CENTER);	
         
         //Toolbar setup.
         toolbar.add(snapButton);
@@ -115,7 +126,7 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
         
         //Init proper shooting values
         float val = powerSlider.getValue();
-        poolPanel.setPower(val/powerRange);
+        simulation.setPower(val/powerRange);
         help = new PoolHelp(this);
     }
     
@@ -135,23 +146,23 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
     public void actionPerformed(ActionEvent evt){        
         Object source = evt.getSource();
         if(source == snapButton)          {
-            poolPanel.mouseController.snapToShootingBall();
+            simulation.mouseController.snapToShootingBall();
         } else if(source == selectionModeButton) {
-            if(poolPanel.flipSelectionMode()) {
+            if(simulation.flipSelectionMode()) {
                 selectionModeButton.setIcon(stopIcon);
             } else {
                 selectionModeButton.setIcon(selectionModeIcon);
             }
         } else if(source == makeRackButton)      {
-            poolPanel.new9BallRack();
+            simulation.new9BallRack();
         } else if(source == overheadViewButton)  {
-            poolPanel.mouseController.overheadView();
+            simulation.mouseController.overheadView();
         } else if(source == settingsButton)      {
             settings.setVisible(true);
         } else if(source == helpButton)          {
             help.setVisible(true);
         } else if(source == undoButton) {
-            poolPanel.rewind();
+            simulation.rewind();
         }
     }
     
@@ -161,10 +172,30 @@ public class PoolFrame extends JFrame implements ChangeListener, ActionListener{
             
         if(source == powerSlider)               {
             double val = powerSlider.getValue();
-            poolPanel.setPower(val/powerRange);
+            simulation.setPower(val/powerRange);
         } else if(source == spinSlider)         {
             double val = spinSlider.getValue();
-            poolPanel.setSpin(val/spinRange, 0.0);
+            simulation.setSpin(val/spinRange, 0.0);
         }        
-    }    
+    }
+
+    @Override
+    public void init(GLAutoDrawable glad) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void dispose(GLAutoDrawable glad) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void display(GLAutoDrawable glad) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void reshape(GLAutoDrawable glad, int i, int i1, int i2, int i3) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

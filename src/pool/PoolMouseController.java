@@ -9,13 +9,13 @@ import java.awt.event.MouseEvent;
 import javax.vecmath.Vector3f;
 
 class PoolMouseController extends CameraController{
-    PoolPanel pp;
+    PoolSimulation pp;
     boolean mouseAim = true, autoCamera = false,
             selectionMode = false;    
     PoolBall ballInHand = null;
     
-    public PoolMouseController(PoolPanel p) {
-        super(p.universe, p.canvas);
+    public PoolMouseController(PoolSimulation p) {
+        super(null, null);
         pp = p;
         //Start timer
     }
@@ -50,14 +50,11 @@ class PoolMouseController extends CameraController{
 
     
     @Override public void mouseClicked(MouseEvent me) {
-        PoolCanvas pc = (PoolCanvas) canvas;
-        if(pc.respondToClick(new Point(me.getX(), me.getY()))) {
-            return;
-        }
         if(ballInHand == null) {
             if(selectionMode) {
-                pp.pickCanvas.setShapeLocation(me);
-                PickResult[] res = pp.pickCanvas.pickAllSorted();
+                //
+                //pp.pickCanvas.setShapeLocation(me);
+                PickResult[] res = null; //pp.pickCanvas.pickAllSorted();
                 int i;
                 for(i = 0; i < res.length; i++) {
                     if(res[i].getNode(PickResult.PRIMITIVE) instanceof PoolBall) {
@@ -146,7 +143,6 @@ class PoolMouseController extends CameraController{
                     this.cameraRotationAxis.set(upVector);
                     break;                
                 default:
-                    return;
             }
         }
             

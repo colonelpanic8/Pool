@@ -93,7 +93,7 @@ public class PoolBall extends Sphere{
     }
     
     public final void setInactivePos() {
-        pos.set(2*(ballNumber-.5f)*size-(size*15), PoolPanel.height/2 + PoolPanel.borderSize + 2*size, 0.0);
+        pos.set(2*(ballNumber-.5f)*size-(size*15), PoolSimulation.height/2 + PoolSimulation.borderSize + 2*size, 0.0);
     }    
 
     public double detectCollisionWith(PoolBall ball) {
@@ -184,13 +184,13 @@ public class PoolBall extends Sphere{
         fd.y -= vel.y;
         
         //Rolling without slipping.
-        if(fd.length() < PoolPanel.frictionThreshold) {
+        if(fd.length() < PoolSimulation.frictionThreshold) {
             isRolling = true;
             if(vel.length() > 0) {
                 Vector3d sub = new Vector3d();
                 sub.set(vel);
                 sub.normalize();
-                sub.scale(-1*PoolPanel.rollingResistance);
+                sub.scale(-1*PoolSimulation.rollingResistance);
                 if(sub.length() > vel.length()) {
                     vel.set(0.0, 0.0, 0.0);
                     spin.set(vel.x, vel.y, spin.z);
@@ -206,7 +206,7 @@ public class PoolBall extends Sphere{
         
         //Apply the force of friction.
         fd.normalize();
-        fd.scale(PoolPanel.friction);
+        fd.scale(PoolSimulation.friction);
         vel.x += fd.x;
         vel.y += fd.y;
         fd.scale((float)(2.5/size));
@@ -216,7 +216,7 @@ public class PoolBall extends Sphere{
     }
     
     void doGravity(PoolPocket pocket) {
-        if(pos.z <= (-PoolPanel.pocketDepth+size)) {
+        if(pos.z <= (-PoolSimulation.pocketDepth+size)) {
             vel.set(0.0,0.0,0.0); 
             spin.set(vel);
             ballSunk();
@@ -237,8 +237,8 @@ public class PoolBall extends Sphere{
             acceleration.normalize();
             if(acceleration.z != 0) {
                 double scale = (1/acceleration.z);
-                vel.x += acceleration.x*scale * PoolPanel.gravity;
-                vel.y += acceleration.y*scale * PoolPanel.gravity;
+                vel.x += acceleration.x*scale * PoolSimulation.gravity;
+                vel.y += acceleration.y*scale * PoolSimulation.gravity;
             }
             
             acceleration.set(pos);
@@ -247,7 +247,7 @@ public class PoolBall extends Sphere{
                 System.out.println("Problem");
             }            
         } else {
-            vel.z -= PoolPanel.gravity;
+            vel.z -= PoolSimulation.gravity;
         }        
     }
     
@@ -275,7 +275,7 @@ public class PoolBall extends Sphere{
             pos.set((double)p.x, (double)p.y, 0.0);
             active = true;
             sunk = true;            
-            PoolPanel.ref.mouseController.putBallInHand(this);                        
+            PoolSimulation.ref.mouseController.putBallInHand(this);                        
         } else {
             active = false;
             setInactivePos();           

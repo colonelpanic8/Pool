@@ -14,10 +14,10 @@ public abstract class PoolCollision {
     
     public static float velScale = .5f;
 
-    public abstract void doEffects(PoolPanel pp);
+    public abstract void doEffects(PoolSimulation sim);
 
-    public void doCollision(PoolPanel pp) {
-	Iterator<PoolCollision> collIterator = pp.collisions.iterator();
+    public void doCollision(PoolSimulation sim) {
+	Iterator<PoolCollision> collIterator = sim.collisions.iterator();
 	Iterator<PoolBall> ballIterator;
 	while(collIterator.hasNext()) {
 	    PoolCollision item = collIterator.next();
@@ -25,8 +25,8 @@ public abstract class PoolCollision {
 		collIterator.remove();
 	    }
 	}
-	doEffects(pp);
-	ballIterator = pp.balls.iterator();
+	doEffects(sim);
+	ballIterator = sim.balls.iterator();
         
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
@@ -34,20 +34,20 @@ public abstract class PoolCollision {
 		double t = ball1.detectCollisionWith(ball);
 		t += time;
 		if(t < 1 && t >= time){
-		    pp.collisions.add(new BallCollision(t, ball1, ball));
+		    sim.collisions.add(new BallCollision(t, ball1, ball));
 		}
 	    }
 	}
-	detectPolygonCollisions(pp, ball1);
-	pp.detectPocketCollisions(ball1, time);
+	detectPolygonCollisions(sim, ball1);
+	sim.detectPocketCollisions(ball1, time);
     }
         
     public boolean involves(PoolBall b) {
         return ball1 == b;
     }
     
-    public void detectPolygonCollisions(PoolPanel pp, PoolBall x) {
-        pp.detectPolygonCollisions(x, time);
+    public void detectPolygonCollisions(PoolSimulation sim, PoolBall x) {
+        sim.detectPolygonCollisions(x, time);
     }
 }
 
@@ -60,9 +60,9 @@ class BallCollision extends PoolCollision {
         ball2 = c;
     }
 
-    @Override public void doCollision(PoolPanel pp) {
+    @Override public void doCollision(PoolSimulation sim) {
 	Iterator<PoolBall> ballIterator;
-        Iterator<PoolCollision> collIterator = pp.collisions.iterator();
+        Iterator<PoolCollision> collIterator = sim.collisions.iterator();
         
         //Remove collisions involiving the balls
         while(collIterator.hasNext()) {
@@ -71,7 +71,7 @@ class BallCollision extends PoolCollision {
 		collIterator.remove();
 	    }
 	}
-        collIterator = pp.collisions.iterator();
+        collIterator = sim.collisions.iterator();
         while(collIterator.hasNext()) {
 	    PoolCollision item = collIterator.next();
 	    if(item.involves(ball2)) {
@@ -79,41 +79,41 @@ class BallCollision extends PoolCollision {
 	    }
 	}
         
-        doEffects(pp);
+        doEffects(sim);
         
        
         //Check for new collisions involving the balls
-	ballIterator = pp.balls.iterator();
+	ballIterator = sim.balls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2) {
 		double t = ball1.detectCollisionWith(ball);
 		t += time;
 		if(t <= 1 && t >= time){
-		    pp.collisions.add(new BallCollision(t, ball1, ball));
+		    sim.collisions.add(new BallCollision(t, ball1, ball));
 		}
 	    }
 	}
         
-        ballIterator = pp.balls.iterator();
+        ballIterator = sim.balls.iterator();
 	while(ballIterator.hasNext()) {
 	    PoolBall ball = ballIterator.next();
 	    if(ball != ball1 && ball != ball2){
 		double t = ball2.detectCollisionWith(ball);
 		t += time;
 		if(t <= 1 && t >= time){
-		    pp.collisions.add(new BallCollision(t, ball2, ball));
+		    sim.collisions.add(new BallCollision(t, ball2, ball));
 		}
 	    }
 	}
         
-	detectPolygonCollisions(pp, ball1);
-	pp.detectPocketCollisions(ball1, time);
-	detectPolygonCollisions(pp, ball2);
-	pp.detectPocketCollisions(ball2, time);
+	detectPolygonCollisions(sim, ball1);
+	sim.detectPocketCollisions(ball1, time);
+	detectPolygonCollisions(sim, ball2);
+	sim.detectPocketCollisions(ball2, time);
     }
     
-    @Override public void doEffects(PoolPanel pp) {
+    @Override public void doEffects(PoolSimulation sim) {
         if(ball1.sunk || ball2.sunk) {
             ball1.vel.set(0.0, 0.0, 0.0);
             ball2.vel.set(0.0, 0.0, 0.0);
@@ -158,13 +158,13 @@ class WallCollision extends PoolCollision {
         newSpin = s;
     }
 
-    @Override public void doEffects(PoolPanel pp) {        
+    @Override public void doEffects(PoolSimulation sim) {        
         ball1.vel.set(newVel);
         ball1.spin.set(newSpin);
     }
     
-    @Override public void detectPolygonCollisions(PoolPanel pp, PoolBall x) {
-        pp.detectPolygonCollisions(x, time, this);
+    @Override public void detectPolygonCollisions(PoolSimulation sim, PoolBall x) {
+        sim.detectPolygonCollisions(x, time, this);
     }
 }
 
@@ -177,7 +177,7 @@ class PointCollision extends PoolCollision {
 	point = p;
     }
 
-    @Override public void doEffects(PoolPanel pp) {
+    @Override public void doEffects(PoolSimulation sim) {
         Vector3d res;
 	Point2D.Double unit, trans, temp;
 	double dist = point.distance(ball1.pos.x, ball1.pos.y);
@@ -196,22 +196,6 @@ class PointCollision extends PoolCollision {
     }
 }
 
-
-class SinkCollision extends PoolCollision {
-    PoolPocket pocket;
-    
-    public SinkCollision(PoolBall b, double t, PoolPocket p) {
-        ball1 = b;
-	time = t;
-        pocket = p;
-    }
-    
-    @Override
-    public void doEffects(PoolPanel pp) {
-    }
-    
-}
-
 class PocketCollision extends PoolCollision {
     PoolPocket pocket;
     public PocketCollision(PoolBall b, double t, PoolPocket p) {
@@ -220,7 +204,7 @@ class PocketCollision extends PoolCollision {
         pocket = p;
     }
     
-    @Override public void doEffects(PoolPanel pp) {
+    @Override public void doEffects(PoolSimulation sim) {
         Vector3f colDir = new Vector3f((float)(ball1.pos.x - pocket.pos.x),
                 (float)(ball1.pos.y - pocket.pos.y),
                 0.0f);

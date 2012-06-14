@@ -1,34 +1,31 @@
 package pool;
 
 import cameracontrol.CameraController;
-import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.image.TextureLoader;
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.universe.SimpleUniverse;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
 import java.awt.geom.Point2D;
 import java.net.URL;
 import java.util.*;
-import javax.media.j3d.*;
-import javax.swing.JLayeredPane;
+import javax.media.j3d.Appearance;
+import javax.media.j3d.Texture;
 import javax.swing.Timer;
-import javax.vecmath.*;
-import unbboolean.j3dbool.BooleanModeller;
-import unbboolean.j3dbool.Solid;
-import unbboolean.solids.DefaultCoordinates;
+import javax.vecmath.Color3f;
+import javax.vecmath.Point3d;
+import javax.vecmath.Tuple3f;
+import javax.vecmath.Vector3f;
 
-public final class PoolPanel extends JLayeredPane implements ActionListener, Comparator, HierarchyBoundsListener {
+public final class PoolSimulation implements ActionListener, Comparator {
     
-    static PoolPanel ref;
+    static PoolSimulation ref;
     
     static final float gravity = .01f;
-    protected static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
+    static final float friction = .0075f, rollingResistance = .001f, frictionThreshold = .015f;
     static double spinS = 4.0, powerS = 1.3f;
     static double height, width;    
-    static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;   
+    static double pocketSize, railSize, ballSize, borderSize, railIndent, sidePocketSize, sideIndent, pocketDepth;
+    
     PoolBall cueball, shootingBall, ghostBallObjectBall;
     ArrayList<PoolBall>     balls = new ArrayList(16);
     ArrayList<PoolPocket> pockets = new ArrayList(6);
@@ -38,29 +35,8 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     Point2D.Double spin = new Point2D.Double(0,0);
     int collisionsExecuted = 0;
     int numberOfAimLines = 3;
-    boolean inMotion = false;
-    
-    //Java3D
-    Canvas3D canvas;
-    PickCanvas pickCanvas;
-    SimpleUniverse universe;
+    boolean inMotion = false;    
     PoolMouseController mouseController;
-    BranchGroup group;    
-    
-    //Aim
-    Shape3D aimLine;    
-    LineArray aimLineGeometry;
-    Point3d aim;
-    RenderingAttributes aimLineRA;
-    
-    //Ghostball
-    TransformGroup ghostBallTransformGroup = new TransformGroup();
-    RenderingAttributes ghostBallRA = new RenderingAttributes();
-    Sphere ghostBall;
-    Vector3f ghostBallPosition;
-    Appearance ghostBallAppearance;
-    Shape3D ghostBallLine;
-    LineArray ghostBallLineGeometry;
     
     //Colors
     Color3f black = new Color3f(0.0f, 0.0f, 0.0f);
@@ -78,18 +54,16 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     Color3f borderColor = darkRed;
     Color3f pocketColor = darkRed;
     
-    //Shared Scene Graph Objects
-    TextureAttributes ta = new TextureAttributes();
-    Material ballMaterial = new Material(new Color3f(.5f,.5f,.5f), white, white, black, 128f);
+    Point3d aim;
     
     //Debug
     boolean frameSkip = false, err = false;
+    private Vector3f ghostBallPosition;
     
     //--------------------INITIALIZATION--------------------//
     
-    private PoolPanel(double bs, double rs, double w, double h) {
-        //Initialize size values
-        //this.setLayout(new OverlayLayout(this));
+    private PoolSimulation(double bs, double rs, double w, double h) {
+        super();
         height = h;
         width = w;
         ballSize = bs;
@@ -100,48 +74,24 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         railIndent = railSize;
         sideIndent = railIndent/4;
         pocketDepth = ballSize*8;
-        
-        /*
-        Button button = new Button("test");
-        add(button, JLayeredPane.DRAG_LAYER);
-        validate();
-        Point p = button.getLocation();
-        System.out.println(String.format("%d, %d", p.x, p.y));
-        validate();        */
-        
-        //Initialize 3D components
-        ta.setTextureMode(TextureAttributes.MODULATE);       
-        init3D();        
+                
         initPockets();
         initPolygons();
-        initTable();
-        initBalls();
-        
-        /*
-        button.validate();        
-        p = button.getLocation();
-        System.out.println(String.format("%d, %d", p.x, p.y));
-        * 
-        */
-        
-        
-        //Add listeners.
-	addHierarchyBoundsListener(this);
+        initBalls();                        
         
         //Miscellaneous
 	ghostBallPosition = new Vector3f(0,0,0);
         aim = new Point3d(1.0, 0.0, 0.0);
 	collisions = new PriorityQueue(16, this);
-       
-        //Start timer
+               
 	Timer timer = new Timer(30, this);
 	timer.start();
     }    
 
-    public static PoolPanel getPoolPanel()
+    public static PoolSimulation getPoolSimulation()
     {
         if (ref == null){}
-            ref = new PoolPanel(.3,.35, 25, 13);		
+            ref = new PoolSimulation(.3,.35, 25, 13);		
         return ref;
     }
     
@@ -152,93 +102,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     }
     
     void init3D() {
-        //Initialize Java 3D components.
-        canvas = new PoolCanvas(SimpleUniverse.getPreferredConfiguration(), this);
-        add(canvas);
-        universe = new SimpleUniverse(canvas);
-        universe.getViewer().getView().setBackClipDistance(width*3);
-        group = new BranchGroup();
-        group.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
-        group.setCapability(BranchGroup.ALLOW_CHILDREN_WRITE);
-        group.setCapability(BranchGroup.ENABLE_PICK_REPORTING);
-        pickCanvas = new PickCanvas(canvas, group);
-        pickCanvas.setMode(PickCanvas.BOUNDS);
         
-        //Create the bounding box for the game.
-        BoundingBox bounds = new BoundingBox();
-        bounds.setLower(-width/2-3*borderSize, -height/2-3*borderSize, -3);
-        bounds.setUpper(width/2+3*borderSize, height/2+3*borderSize, 3);
-        
-        //Create light sources.
-        Color3f lightColor = white;
-        Vector3f lightDirection = new Vector3f(0.0f, -1.0f, -1.0f);        
-        DirectionalLight light = new DirectionalLight(lightColor, lightDirection);
-        light.setInfluencingBounds(bounds);
-        group.addChild(light);
-        
-        Color3f ambientColor = white;        
-        AmbientLight ambientLight = new AmbientLight(ambientColor);
-        ambientLight.setInfluencingBounds(bounds);
-        group.addChild(ambientLight);
-        
-        SpotLight sl = new SpotLight(true, white, new Point3f(0.0f,0.0f, 5.0f),
-        new Point3f(1.0f,1.0f, 3.0f), new Vector3f(0.0f,0.0f, -1.0f), (float)Math.PI, 100.0f);
-        sl.setInfluencingBounds(bounds);
-        //group.addChild(sl);
-        //group.addChild(this.newSpotLight(bounds, new Point3f(0.0f,0.0f, 5.0f), (float)Math.PI, 100.0f));
-        
-        //Add aiming line.
-        Appearance appearance = new Appearance();
-        TransparencyAttributes lineTA = new TransparencyAttributes(TransparencyAttributes.FASTEST, .4f);
-        ColoringAttributes ca = new ColoringAttributes(white, ColoringAttributes.SHADE_FLAT);
-        LineAttributes dashLa = new LineAttributes();
-        aimLineRA = new RenderingAttributes();
-        dashLa.setLineWidth(3.0f);
-        appearance.setColoringAttributes(ca);
-        appearance.setLineAttributes(dashLa);
-        appearance.setTransparencyAttributes(lineTA);
-        appearance.setRenderingAttributes(aimLineRA);
-        aimLineRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
-        appearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
-        dashLa.setLinePattern(LineAttributes.PATTERN_DASH);
-        aimLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
-        aimLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
-        aimLine = new Shape3D(aimLineGeometry, appearance);
-        aimLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        group.addChild(aimLine);
-        
-        //Add ghost ball.        
-        ghostBallAppearance = new Appearance();
-        ghostBallRA.setVisible(false);
-        ghostBallRA.setCapability(RenderingAttributes.ALLOW_VISIBLE_WRITE);
-        ghostBallAppearance.setCapability(Appearance.ALLOW_RENDERING_ATTRIBUTES_WRITE);
-        ghostBallAppearance.setRenderingAttributes(ghostBallRA);
-        ghostBallAppearance.setTransparencyAttributes(lineTA);
-        ghostBall = new Sphere((float)ballSize, Sphere.ENABLE_APPEARANCE_MODIFY, 30);
-        ghostBall.setAppearance(ghostBallAppearance);
-        ghostBallTransformGroup.addChild(ghostBall);
-        ghostBallTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        group.addChild(ghostBallTransformGroup);
-        
-        //Add ghost ball aiming line
-        appearance = new Appearance();
-        appearance.setTransparencyAttributes(lineTA);
-        LineAttributes la = new LineAttributes();
-        la.setLineWidth(3.0f);
-        appearance.setColoringAttributes(ca);
-        appearance.setLineAttributes(dashLa);
-        appearance.setRenderingAttributes(ghostBallRA);
-        ghostBallLineGeometry = new LineArray(this.numberOfAimLines*2, LineArray.COORDINATES);
-        ghostBallLineGeometry.setCoordinate(0, new Point3f(1.0f, 0.0f, 0.0f));
-        ghostBallLineGeometry.setCoordinate(1, new Point3f(0.0f, 1.0f, 0.0f));
-        ghostBallLine = new Shape3D(ghostBallLineGeometry, appearance);
-        ghostBallLineGeometry.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
-        ghostBallLine.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
-        ghostBallLine.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        group.addChild(ghostBallLine);
-        
-        //Finalize 3D setup, initialize camera control.
-        universe.addBranchGraph(group);        
         mouseController = new PoolMouseController(this);                      
     }
     
@@ -317,7 +181,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
 
     void initPockets() {
         Appearance pocketAppearance = new Appearance();
-        pocketAppearance.setMaterial(ballMaterial);
+        //pocketAppearance.setMaterial(ballMaterial);
         Iterator<PoolPocket> iter;
         pockets.add(new PoolPocket(width/2,  height/2,  pocketSize,     
                 (float)pocketDepth, (float)ballSize, pocketColor, pocketAppearance));
@@ -334,12 +198,13 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         iter = pockets.iterator();
         while(iter.hasNext()) {
             PoolPocket pocket = iter.next();
-            universe.addBranchGraph(pocket.group);
+            //universe.addBranchGraph(pocket.group);
         }
     }
     
     void initBalls() {
         //Initialize cueball.
+        /*
         try {
             URL filename = this.getClass().getResource("/textures/cueball.jpg");        
             Texture cueballImage = new TextureLoader(filename,this).getTexture();        
@@ -361,84 +226,13 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             app.setTextureAttributes(ta);
             app.setMaterial(ballMaterial);
             PoolBall ball = new PoolBall(app, ballSize, i);            
-            group.addChild(ball.group);      
+            //group.addChild(ball.group);      
             balls.add(ball);
-        }                
-    }
-    
-    private void initTable() {
-        PoolPocket pocket;
-        BooleanModeller bm;        
-        BranchGroup borderGroup = new BranchGroup();
-        Solid solid1 = new Solid();
-        Solid solid2 = new Solid();        
-        
-        //Top border
-        solid1.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
-        solid1.scale(width + 2*borderSize, borderSize, ballSize*2);
-        
-        //Bottom
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
-        solid2.scale(width + 2*borderSize, borderSize, ballSize*2);
-
-        
-        solid1.translate(0, height/2 + borderSize/2);
-        solid2.translate(0, -(height/2 + borderSize/2));
-        bm = new BooleanModeller(solid1, solid2);
-        solid1 = bm.getUnion();
-        
-        //Left
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
-        solid2.scale(borderSize, height, ballSize*2);
-        solid2.translate(-(width/2 + borderSize/2) ,0);
-        
-        bm = new BooleanModeller(solid1, solid2);
-        solid1 = bm.getUnion();
-        
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, borderColor);
-        solid2.scale(borderSize, height, ballSize*2);
-        solid2.translate(width/2 + borderSize/2,0);
-        
-        bm = new BooleanModeller(solid1, solid2);
-        solid1 = bm.getUnion();
-        
-        //Table
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, tableColor);
-        solid2.scale(width, height, ballSize/2);
-        
-        for(int i = 0; i < 6; i++) {            
-            pocket = pockets.get(i);
-            pocket.inner.translate(pocket.pos.x, pocket.pos.y);
-            pocket.inner.rotate(Math.PI/2, 0);
-            bm = new BooleanModeller(solid1, pocket.inner);
-            solid1 = bm.getDifference();
         }
-        
-        
-        Solid solid3 = new Solid();
-                
-        
-        borderGroup.addChild(solid1);
-        
-        //Table
-        TransformGroup tg = new TransformGroup();
-        Vector3f shift = new Vector3f(0.0f, 0.0f, (float)-ballSize*3/2);
-        Transform3D transform = new Transform3D();
-        transform.setTranslation(shift);
-        tg.setTransform(transform);
-        solid2.setData(DefaultCoordinates.DEFAULT_BOX_VERTICES, DefaultCoordinates.DEFAULT_BOX_COORDINATES, tableColor);
-        solid2.scale(width, height, ballSize);        
-        for(int i = 0; i < 6; i++) {            
-            pocket = pockets.get(i);
-            bm = new BooleanModeller(solid2, pocket.inner);
-            solid2 = bm.getDifference();
-        }
-        tg.addChild(solid2);
-        borderGroup.addChild(tg);
-        universe.addBranchGraph(borderGroup);
-        
+        *
+        */
     }
-    
+        
     //--------------------SIMULATION--------------------//
     
     @Override
@@ -481,7 +275,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
 	}
         
         //Visual updates
-        doAim();
+        //doAim();
         updateBallPositions();
         updateGhostBall();                
     }
@@ -600,28 +394,8 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     }
     
     //--------------------GRAPHICAL FUNCTIONS--------------------//
-        
-    Appearance createMatAppear(Color3f dColor, Color3f sColor, float shine) {
-        
-        Appearance appear = new Appearance();
-        Material material = new Material();
-        material.setDiffuseColor(dColor);
-        material.setSpecularColor(sColor);
-        material.setShininess(shine);
-        appear.setMaterial(material);        
-        return appear;
-  }
-    
-    SpotLight newSpotLight(Bounds bounds, Point3f pos, float spread,
-            float concentration) {
-        SpotLight sl = new SpotLight();
-        sl.setInfluencingBounds(bounds);
-        sl.setPosition(pos);
-        sl.setSpreadAngle(spread);
-        sl.setConcentration(concentration);
-        return sl;
-    }
-    
+
+/*    
     void doAim() {        
         if(shootingBall != null && !mouseController.selectionMode && !this.inMotion) {
             aimLineRA.setVisible(true);
@@ -707,7 +481,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             last.set(next);
         }        
     }
-    
+    */
     //--------------------ACTIONS--------------------//
     
     public void new9BallRack() {
@@ -716,7 +490,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         cueball.move(0.0);
         aim.x = -1.0;
         aim.y = 0.0;
-        doAim();
+        //doAim();
         mouseController.overheadView();
         ArrayList<PoolBall> solids = new ArrayList();
         Random random = new Random();
@@ -781,7 +555,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         cueball.move(0.0);
         aim.x = -1.0;
         aim.y = 0.0;
-        doAim();
+        //doAim();
         mouseController.overheadView();
         
         ArrayList<PoolBall> solids = new ArrayList(), stripes = new ArrayList();
@@ -900,8 +674,8 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             shootingBall.spin.x = -aim.x * spin.y * spinS;
             shootingBall.spin.y = -aim.y * spin.y * spinS;
             shootingBall.spin.z = spin.x;
-            ghostBallRA.setVisible(false);
-            aimLineRA.setVisible(false);
+            //ghostBallRA.setVisible(false);
+            //aimLineRA.setVisible(false);
         }        
     }
     
@@ -928,15 +702,15 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     
     public boolean flipSelectionMode() {
         mouseController.selectionMode = !mouseController.selectionMode;
-        ghostBallRA.setVisible(!mouseController.selectionMode);
-        aimLineRA.setVisible(!mouseController.selectionMode);
+        //ghostBallRA.setVisible(!mouseController.selectionMode);
+        //aimLineRA.setVisible(!mouseController.selectionMode);
         return mouseController.selectionMode;
     }
     
     public void setSelectionMode(boolean v) {
         mouseController.selectionMode = v;
-        ghostBallRA.setVisible(!v);
-        aimLineRA.setVisible(!v);
+        //ghostBallRA.setVisible(!v);
+        //aimLineRA.setVisible(!v);
     }
     
     public PoolBall addBall(double x, double y, double s, Appearance appearance) {        
@@ -946,7 +720,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
         ball.vel.x = 0.0;
         ball.vel.y = 0.0;
         ball.pos.z = 0.0;
-        group.addChild(ball.group);
+        //group.addChild(ball.group);
         balls.add(ball);
         makeActive(ball);
         return ball;
@@ -967,7 +741,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
             Color3f c, double ballsize) {
         PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, c, ballsize);
-        universe.addBranchGraph(poly.group);
+        //universe.addBranchGraph(poly.group);
         polygons.add(poly);
         return poly;        
     }
@@ -975,7 +749,7 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     public PoolPolygon addPolygon(double[] xpoints, double[] ypoints, int npoints,
             Appearance app, double ballsize) {
         PoolPolygon poly = new PoolPolygon(xpoints, ypoints, npoints, app, ballsize);
-        universe.addBranchGraph(poly.group);
+        //universe.addBranchGraph(poly.group);
         polygons.add(poly);
         return poly;
     }
@@ -1030,21 +804,12 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
     }
 
     @Override public boolean equals(Object obj) {
-        if(obj instanceof PoolPanel)
+        if(obj instanceof PoolSimulation)
             return true;
         else
             return false;
     }
     
-    //--------------------HIERARCHY BOUNDS INTERFACE--------------------//
-    
-    @Override
-    public void ancestorResized(HierarchyEvent he) {        
-        canvas.setSize(getWidth(), getHeight());
-    }
-    
-    @Override
-    public void ancestorMoved(HierarchyEvent he) { }
     
     //--------------------ERROR HANDLING--------------------//
     
@@ -1068,11 +833,5 @@ public final class PoolPanel extends JLayeredPane implements ActionListener, Com
             }
         }
         return false;
-    }
-    
-    public void fixOverlap(PoolBall a, PoolBall b) {
-        err = true;
-        
-    }    
-    
+    }        
 }

@@ -6,7 +6,8 @@ import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 
 public class PoolSettings extends JFrame implements ActionListener {
-    //Values    
+    //Values        
+    
     static float OverheadDistance = 40f;
     public static float englishDecay = .005f;
     static double englishConstant = .5f;
